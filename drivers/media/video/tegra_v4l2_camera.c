@@ -20,7 +20,6 @@
 #include <linux/clk.h>
 #include <linux/pm_runtime.h>
 #include <linux/nvhost.h>
-#include <linux/slab.h>
 
 #include <media/soc_camera.h>
 #include <media/soc_mediabus.h>
@@ -1059,7 +1058,7 @@ static int tegra_camera_videobuf_prepare(struct vb2_buffer *vb)
 {
 	struct soc_camera_device *icd = container_of(vb->vb2_queue, struct soc_camera_device, vb2_vidq);
 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
-struct tegra_camera_dev *pcdev = ici->priv;
+	struct tegra_camera_dev *pcdev = ici->priv;
 	struct tegra_buffer *buf;
 	int bytes_per_line = soc_mbus_bytes_per_line(icd->user_width,
 						icd->current_fmt->host_fmt);
@@ -1333,9 +1332,8 @@ static int tegra_camera_set_fmt(struct soc_camera_device *icd,
 			      struct v4l2_format *f)
 {
 	struct device *dev = icd->parent;
-        struct soc_camera_host *ici = to_soc_camera_host(dev);
-        struct tegra_camera_dev *pcdev = ici->priv;
-
+	struct soc_camera_host *ici = to_soc_camera_host(dev);
+	struct tegra_camera_dev *pcdev = ici->priv;
 	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
 	const struct soc_camera_format_xlate *xlate = NULL;
 	struct v4l2_pix_format *pix = &f->fmt.pix;
