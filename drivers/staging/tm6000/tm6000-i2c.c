@@ -50,7 +50,7 @@ static int tm6000_i2c_send_regs(struct tm6000_core *dev, unsigned char addr,
 	unsigned int i2c_packet_limit = 16;
 
 	if (dev->dev_type == TM6010)
-		i2c_packet_limit = 64;
+		i2c_packet_limit = 256;
 
 	if (!buf)
 		return -1;
