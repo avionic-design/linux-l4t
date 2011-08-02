@@ -591,11 +591,6 @@ static int tm6000_prepare_isoc(struct tm6000_core *dev)
 	tm6000_uninit_isoc(dev);
 	/* Stop interrupt USB pipe */
 	tm6000_ir_int_stop(dev);
-
-	usb_set_interface(dev->udev,
-			  dev->isoc_in.bInterfaceNumber,
-			  dev->isoc_in.bAlternateSetting);
-
 	/* Start interrupt USB pipe */
 	tm6000_ir_int_start(dev);
 
@@ -1478,6 +1473,18 @@ static int tm6000_open(struct file *file)
 	case VFL_TYPE_RADIO:
 		radio = 1;
 		break;
+	}
+
+	if (dev->users == 0) {
+		int err = usb_set_interface(dev->udev,
+				dev->isoc_in.bInterfaceNumber,
+				dev->isoc_in.bAlternateSetting);
+		if (err < 0) {
+			dev_err(&vdev->dev, "failed to select interface %d, "
+					"alt. setting %d\n",
+					dev->isoc_in.bInterfaceNumber,
+					dev->isoc_in.bAlternateSetting);
+		}
 	}
 
 	/* If more than one user, mutex should be added */
