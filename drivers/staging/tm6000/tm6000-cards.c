@@ -943,6 +943,7 @@ static void tm6000_config_tuner(struct tm6000_core *dev)
 		case TM6010_BOARD_TERRATEC_CINERGY_HYBRID_XE:
 		case TM6010_BOARD_TWINHAN_TU501:
 			ctl.fname = "xc3028L-v36.fw";
+			ctl.input1 = 1;
 			break;
 		default:
 			if (dev->dev_type == TM6010)
