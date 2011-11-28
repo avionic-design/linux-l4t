@@ -1610,8 +1610,6 @@ static int tm6000_release(struct file *file)
 	res_free(dev, fh);
 
 	if (!dev->users) {
-		int err;
-
 		tm6000_uninit_isoc(dev);
 
 		/* Stop interrupt USB pipe */
