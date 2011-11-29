@@ -240,6 +240,43 @@ struct wm8903_priv {
 #endif
 };
 
+#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
+static ssize_t wm8903_reg_show(struct device *dev,
+                               struct device_attribute *attr, char *buf)
+{
+	struct i2c_client *i2c = to_i2c_client(dev);
+	int r, pos = 0;
+
+	for (r = 0 ; r < ARRAY_SIZE(wm8903_reg_defaults) ; r += 1) {
+		pos += sprintf(buf + pos, "R%03d = %04x\n", r,
+		               be16_to_cpu(i2c_smbus_read_word_data(i2c, r)));
+	}
+	return pos;
+}
+
+static ssize_t wm8903_reg_store(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	struct i2c_client *i2c = to_i2c_client(dev);
+	int r, reg, val;
+
+	r = sscanf(buf, "R%i=%i", &reg, &val);
+	if (r < 2)
+		return -EINVAL;
+
+	if (reg < 0 || reg >= ARRAY_SIZE(wm8903_reg_defaults) ||
+	    val < 0 || val >  0xFFFF)
+		return -EINVAL;
+
+	r = i2c_smbus_write_word_data(i2c, reg, cpu_to_be16(val));
+
+	return r < 0 ? r : count;
+}
+
+DEVICE_ATTR(codec_registers, S_IRUGO | S_IWUSR, wm8903_reg_show, wm8903_reg_store);
+#endif
+
 static int wm8903_volatile_register(struct snd_soc_codec *codec, unsigned int reg)
 {
 	switch (reg) {
@@ -2096,6 +2133,12 @@ static __devinit int wm8903_i2c_probe(struct i2c_client *i2c,
 	struct wm8903_priv *wm8903;
 	int ret;
 
+	ret = device_create_file(&i2c->dev, &dev_attr_codec_registers);
+	if (ret != 0) {
+		dev_err(&i2c->dev, "Failed to register reg file: %d\n", ret);
+		return ret;
+	}
+
 	wm8903 = kzalloc(sizeof(struct wm8903_priv), GFP_KERNEL);
 	if (wm8903 == NULL)
 		return -ENOMEM;
@@ -2112,6 +2155,7 @@ static __devinit int wm8903_i2c_probe(struct i2c_client *i2c,
 
 static __devexit int wm8903_i2c_remove(struct i2c_client *client)
 {
+	device_remove_file(&client->dev, &dev_attr_codec_registers);
 	snd_soc_unregister_codec(&client->dev);
 	kfree(i2c_get_clientdata(client));
 	return 0;
