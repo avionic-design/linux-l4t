@@ -43,7 +43,7 @@
 #include "tm6000-regs.h"
 #include "tm6000.h"
 
-#define BUFFER_TIMEOUT     msecs_to_jiffies(2000)  /* 2 seconds */
+#define TIMEOUT_QUEUE msecs_to_jiffies(1000)
 
 /* Limits minimum and default number of buffers */
 #define TM6000_MIN_BUF 4
@@ -201,6 +201,9 @@ static inline void buffer_filled(struct tm6000_core *dev,
 
 	list_del(&buf->vb.queue);
 	wake_up(&buf->vb.done);
+
+	if (!list_empty(&dma_q->active))
+		mod_timer(&dma_q->timeout, jiffies + TIMEOUT_QUEUE);
 }
 
 /*
@@ -504,6 +507,28 @@ static inline int tm6000_isoc_copy(struct urb *urb)
  * ------------------------------------------------------------------
  */
 
+static void tm6000_video_timeout(unsigned long data)
+{
+	struct tm6000_core *dev = (struct tm6000_core *)data;
+	struct v4l2_device *vdev = &dev->v4l2_dev;
+	struct tm6000_dmaqueue *q = &dev->vidq;
+
+	dev_err(vdev->dev, "timed out waiting for data\n");
+
+	while (!list_empty(&q->active)) {
+		struct tm6000_buffer *buffer;
+
+		buffer = list_entry(q->active.next, struct tm6000_buffer,
+				vb.queue);
+		list_del(&buffer->vb.queue);
+
+		buffer->vb.state = VIDEOBUF_ERROR;
+		wake_up(&buffer->vb.done);
+	}
+
+	mod_timer(&q->timeout, jiffies + msecs_to_jiffies(1000));
+}
+
 /*
  * IRQ callback, called by URB callback
  */
@@ -551,6 +576,8 @@ static void tm6000_uninit_isoc(struct tm6000_core *dev)
 {
 	struct urb *urb;
 	int i;
+
+	del_timer_sync(&dev->vidq.timeout);
 
 	dev->isoc_ctl.buf = NULL;
 	for (i = 0; i < dev->isoc_ctl.num_bufs; i++) {
@@ -786,6 +813,7 @@ buffer_prepare(struct videobuf_queue *vq, struct videobuf_buffer *vb,
 		if (rc < 0)
 			goto fail;
 
+		mod_timer(&dev->vidq.timeout, jiffies + TIMEOUT_QUEUE);
 	}
 
 	buf->vb.state = VIDEOBUF_PREPARED;
@@ -1756,6 +1784,10 @@ int tm6000_v4l2_register(struct tm6000_core *dev)
 		       dev->name);
 		return -ENOMEM;
 	}
+
+	dev->vidq.timeout.function = tm6000_video_timeout;
+	dev->vidq.timeout.data = (unsigned long)dev;
+	init_timer(&dev->vidq.timeout);
 
 	/* init video dma queues */
 	INIT_LIST_HEAD(&dev->vidq.active);
