@@ -1,0 +1,54 @@
+Semtech SX8634 Capacitive Button and Slider Touch Controller
+
+The SX8634 controller is configured with the following properties:
+
+  Required properties:
+  - compatible: "semtech,sx8634"
+  - reg: I2C bus address of the device
+  - interrupts: interrupt number of the device
+  - #address-cells: must be <1>
+  - #size-cells: must be <0>
+
+  Optional Properties:
+  - threshold: number of ticks required to detect a touch/release
+    - range: 0x00 to 0xff
+    - default: 0xa0
+  - sensitivity: sensitivity of the sensors
+    - range: 0x0 to 0x7
+    - default: 0x0
+
+Each capacitive sensor is configured via a separate sub-node:
+
+  Required Properties:
+  - reg: sensor index
+  - label: name of the sensor
+  - linux,code: Keycode to emit for buttons. If absent, the capacitive sensor
+    is part of the slider element.
+
+  Optional Properties:
+  - threshold: overrides the global threshold setting
+  - sensitivity: overrides the global sensitivity setting
+
+Example:
+
+	keypad: sx8634@2b {
+		compatible = "semtech,sx8634";
+		reg = <0x2b>;
+		interrupts = <386>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		threshold = <0xa0>;
+		sensitivity = <7>;
+
+		cap@1 {
+			reg = <1>;
+			label = "Up";
+			linux,code = <103>; /* KEY_UP */
+		};
+
+		cap@2 {
+			reg = <2>;
+			label = "Down";
+			linux,code = <108>; /* KEY_DOWN */
+		};
+	};
