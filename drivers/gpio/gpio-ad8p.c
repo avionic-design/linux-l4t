@@ -36,6 +36,8 @@ struct ad8p {
 
 	u8 irq_mask;
 	u8 irq_mask_cur;
+	u8 irq_rising;
+	u8 irq_falling;
 #endif
 };
 
@@ -199,88 +201,57 @@ static int ad8p_gpio_setup(struct ad8p *gpio)
 }
 
 #ifdef CONFIG_GPIO_AD8P_IRQ
-static u8 ad8p_irq_pending(struct ad8p *gpio)
+static unsigned long __ad8p_irq_pending(struct ad8p *gpio)
 {
 	u8 status = 0;
 	int err;
-
-	mutex_lock(&gpio->i2c_lock);
 
 	err = ad8p_read(gpio, GPIO_ISR, &status);
 	if (err < 0)
 		status = 0;
 
-	mutex_unlock(&gpio->i2c_lock);
 	return status;
-}
-
-static void ad8p_irq_enable(struct ad8p *gpio, unsigned int offset)
-{
-	u8 value = 0;
-	int err;
-
-	mutex_lock(&gpio->i2c_lock);
-
-	err = ad8p_read(gpio, GPIO_IER, &value);
-	if (err < 0)
-		goto out;
-
-	value |= BIT(offset);
-
-	err = ad8p_write(gpio, GPIO_IER, value);
-	if (err < 0)
-		goto out;
-
-out:
-	mutex_unlock(&gpio->i2c_lock);
-}
-
-static void ad8p_irq_disable(struct ad8p *gpio, unsigned int offset)
-{
-	u8 value = 0;
-	int err;
-
-	mutex_lock(&gpio->i2c_lock);
-
-	err = ad8p_read(gpio, GPIO_IER, &value);
-	if (err < 0)
-		goto out;
-
-	value &= ~BIT(offset);
-
-	err = ad8p_write(gpio, GPIO_IER, value);
-	if (err < 0)
-		goto out;
-
-out:
-	mutex_unlock(&gpio->i2c_lock);
-}
-
-static void ad8p_irq_ack(struct ad8p *gpio, unsigned int offset)
-{
-	mutex_lock(&gpio->i2c_lock);
-	ad8p_write(gpio, GPIO_ISR, BIT(offset));
-	mutex_unlock(&gpio->i2c_lock);
 }
 
 static irqreturn_t ad8p_irq(int irq, void *data)
 {
 	struct ad8p *gpio = data;
-	u8 pending;
+	unsigned long pending;
+	u8 level = 0;
+	int bit;
+	int err;
 
-	pending = ad8p_irq_pending(gpio);
+	/*
+	 * TODO: Reading pending and acknowledge should be atomic. Perhaps the
+	 *       CPLD implementation needs to change to allow disabling all
+	 *       interrupts before reading the ISR.
+	 */
 
-	while (pending) {
-		int bit = __ffs(pending);
+	mutex_lock(&gpio->i2c_lock);
 
-		ad8p_irq_disable(gpio, bit);
-		ad8p_irq_ack(gpio, bit);
-
-		handle_nested_irq(gpio->irq_base + bit);
-
-		ad8p_irq_enable(gpio, bit);
-		pending &= ~BIT(bit);
+	pending = __ad8p_irq_pending(gpio);
+	if (!pending) {
+		dev_err(&gpio->client->dev, "no pending interrupts!\n");
+		mutex_unlock(&gpio->i2c_lock);
+		return IRQ_NONE;
 	}
+
+	err = ad8p_read(gpio, GPIO_PLR, &level);
+	if (err < 0) {
+		dev_err(&gpio->client->dev, "failed to read pin level "
+				"register: %d\n", err);
+		mutex_unlock(&gpio->i2c_lock);
+		return IRQ_NONE;
+	}
+
+	/* clear pending interrupts */
+	ad8p_write(gpio, GPIO_ISR, pending);
+	mutex_unlock(&gpio->i2c_lock);
+
+	pending &= (gpio->irq_falling & ~level) | (gpio->irq_rising & level);
+
+	for_each_set_bit(bit, &pending, 8)
+		handle_nested_irq(gpio->irq_base + bit);
 
 	return IRQ_HANDLED;
 }
@@ -317,8 +288,21 @@ static void ad8p_irq_unmask(struct irq_data *data)
 
 static int ad8p_irq_set_type(struct irq_data *data, unsigned int type)
 {
-	if (type != IRQ_TYPE_EDGE_BOTH)
+	struct ad8p *gpio = irq_data_get_irq_chip_data(data);
+	unsigned int pin = data->irq - gpio->irq_base;
+
+	if ((type & IRQ_TYPE_EDGE_BOTH) == 0)
 		return -EINVAL;
+
+	if (type & IRQ_TYPE_EDGE_RISING)
+		gpio->irq_rising |= BIT(pin);
+	else
+		gpio->irq_rising &= ~BIT(pin);
+
+	if (type & IRQ_TYPE_EDGE_FALLING)
+		gpio->irq_falling |= BIT(pin);
+	else
+		gpio->irq_falling &= ~BIT(pin);
 
 	return 0;
 }
@@ -407,7 +391,8 @@ static void ad8p_irq_teardown(struct ad8p *gpio)
 }
 #endif
 
-static __devinit int ad8p_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static __devinit int ad8p_i2c_probe(struct i2c_client *client,
+		const struct i2c_device_id *id)
 {
 	struct ad8p_platform_data *pdata;
 	struct ad8p *gpio;
