@@ -11,6 +11,7 @@
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/module.h>
+#include <linux/seq_file.h>
 #include <linux/slab.h>
 
 #include <linux/i2c/ad8p.h>
@@ -180,6 +181,60 @@ out:
 	return err;
 }
 
+#ifdef CONFIG_DEBUG_FS
+static void ad8p_gpio_dbg_show(struct seq_file *s, struct gpio_chip *chip)
+{
+	struct ad8p *gpio = container_of(chip, struct ad8p, gpio);
+	u8 ddr, plr, ier, isr, ptr;
+	unsigned int i;
+	int err;
+
+	err = ad8p_read(gpio, GPIO_DDR, &ddr);
+	if (err < 0)
+		return;
+
+	err = ad8p_read(gpio, GPIO_PLR, &plr);
+	if (err < 0)
+		return;
+
+	err = ad8p_read(gpio, GPIO_IER, &ier);
+	if (err < 0)
+		return;
+
+	err = ad8p_read(gpio, GPIO_ISR, &isr);
+	if (err < 0)
+		return;
+
+	err = ad8p_read(gpio, GPIO_PTR, &ptr);
+	if (err < 0)
+		return;
+
+	for (i = 0; i < chip->ngpio; i++) {
+		const char *direction = "input ";
+		const char *level = "low ";
+		const char *interrupt = "disabled";
+		const char *pending = "";
+
+		if (ddr & BIT(i))
+			direction = "output";
+
+		if (plr & BIT(i))
+			level = "high";
+
+		if (ier & BIT(i))
+			interrupt = "enabled ";
+
+		if (isr & BIT(i))
+			pending = "pending";
+
+		seq_printf(s, "%2u: %s %s IRQ %s %s\n", i, direction, level,
+				interrupt, pending);
+	}
+}
+#else
+#define ad8p_gpio_dbg_show NULL
+#endif
+
 static int ad8p_gpio_setup(struct ad8p *gpio)
 {
 	struct gpio_chip *chip = &gpio->gpio;
@@ -188,6 +243,7 @@ static int ad8p_gpio_setup(struct ad8p *gpio)
 	chip->direction_output = ad8p_gpio_direction_output;
 	chip->get = ad8p_gpio_get;
 	chip->set = ad8p_gpio_set;
+	chip->dbg_show = ad8p_gpio_dbg_show;
 	chip->can_sleep = 1;
 
 	chip->base = gpio->gpio_base;
