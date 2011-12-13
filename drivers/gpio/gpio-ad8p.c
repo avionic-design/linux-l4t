@@ -253,6 +253,10 @@ static int ad8p_gpio_setup(struct ad8p *gpio)
 	chip->owner = THIS_MODULE;
 	chip->names = gpio->names;
 
+#ifdef CONFIG_OF_GPIO
+	chip->of_node = chip->dev->of_node;
+#endif
+
 	return 0;
 }
 
@@ -463,6 +467,10 @@ static __devinit int ad8p_i2c_probe(struct i2c_client *client,
 		gpio->gpio_base = pdata->gpio_base;
 		gpio->irq_base = pdata->irq_base;
 		gpio->names = pdata->names;
+	} else {
+		gpio->gpio_base = -1;
+		gpio->irq_base = INT_BOARD_BASE;
+		gpio->names = NULL;
 	}
 
 	mutex_init(&gpio->i2c_lock);
