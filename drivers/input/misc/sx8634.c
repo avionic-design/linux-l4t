@@ -150,8 +150,14 @@ static ssize_t spm_write_block(struct i2c_client *client, loff_t offset,
 		return err;
 
 	err = spm_wait(client);
-	if (err < 0)
+	if (err < 0) {
+		if (err == -ETIMEDOUT) {
+			dev_warn(&client->dev, "spm_wait() timed out\n");
+			err = 0;
+		}
+
 		return err;
+	}
 
 	return 0;
 }
@@ -418,8 +424,12 @@ static int sx8634_setup(struct sx8634 *sx, struct sx8634_platform_data *pdata)
 
 	err = sx8634_reset(sx);
 	if (err < 0) {
-		dev_err(&sx->client->dev, "sx8634_reset(): %d\n", err);
-		return err;
+		if (err == -ETIMEDOUT) {
+			dev_warn(&sx->client->dev, "spm_wait() timed out\n");
+		} else {
+			dev_err(&sx->client->dev, "sx8634_reset(): %d\n", err);
+			return err;
+		}
 	}
 
 	err = sx8634_spm_load(sx);
