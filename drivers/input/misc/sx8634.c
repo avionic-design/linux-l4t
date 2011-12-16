@@ -66,6 +66,8 @@
 #define SPM_NUM_BLOCKS 16
 #define SPM_SIZE (SPM_BLOCK_SIZE * SPM_NUM_BLOCKS)
 
+#define MAX_RETRIES 64
+
 struct sx8634 {
 	struct i2c_client *client;
 	struct input_dev *input;
@@ -77,7 +79,7 @@ struct sx8634 {
 
 static int spm_wait(struct i2c_client *client)
 {
-	unsigned int retries = 32;
+	unsigned int retries = MAX_RETRIES;
 	int err;
 
 	do {
@@ -224,7 +226,7 @@ static int sx8634_spm_write(struct sx8634 *sx, unsigned int offset, u8 value)
 
 static int sx8634_reset(struct sx8634 *sx)
 {
-	unsigned int retries = 32;
+	unsigned int retries = MAX_RETRIES;
 	int err;
 
 	err = i2c_smbus_write_byte_data(sx->client, I2C_SOFT_RESET, 0xde);
