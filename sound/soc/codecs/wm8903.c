@@ -405,7 +405,7 @@ static int wm8903_class_w_put(struct snd_kcontrol *kcontrol,
 	ret = snd_soc_dapm_put_volsw(kcontrol, ucontrol);
 
 	/* If we've just disabled the last bypass path turn Class W on */
-	if (!ucontrol->value.integer.value[0]) {
+	if (!ucontrol->value.integer.value[0] && wm8903->class_w_users > 0) {
 		if (wm8903->class_w_users == 1) {
 			dev_dbg(codec->dev, "Enabling Class W\n");
 			snd_soc_write(codec, WM8903_CLASS_W_0, reg |
