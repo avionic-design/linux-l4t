@@ -183,7 +183,7 @@ static int ehci_mem_init (struct ehci_hcd *ehci, gfp_t flags)
 	ehci->qtd_pool = dma_pool_create ("ehci_qtd",
 			ehci_to_hcd(ehci)->self.controller,
 			sizeof (struct ehci_qtd),
-			32 /* byte alignment (for hw parts) */,
+			CONFIG_USB_QH_QTD_ALIGNMENT /* byte alignment (for hw parts) */,
 			4096 /* can't cross 4K */);
 	if (!ehci->qtd_pool) {
 		goto fail;
@@ -193,7 +193,7 @@ static int ehci_mem_init (struct ehci_hcd *ehci, gfp_t flags)
 	ehci->qh_pool = dma_pool_create ("ehci_qh",
 			ehci_to_hcd(ehci)->self.controller,
 			sizeof(struct ehci_qh_hw),
-			32 /* byte alignment (for hw parts) */,
+			CONFIG_USB_QH_QTD_ALIGNMENT /* byte alignment (for hw parts) */,
 			4096 /* can't cross 4K */);
 	if (!ehci->qh_pool) {
 		goto fail;

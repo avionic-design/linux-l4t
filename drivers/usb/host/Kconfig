@@ -173,6 +173,13 @@ config USB_EHCI_TEGRA
          This driver enables support for the internal USB Host Controllers
          found in NVIDIA Tegra SoCs. The controllers are EHCI compliant.
 
+config USB_QH_QTD_ALIGNMENT
+	int "QH/QTD Structure byte alignmnet for TEGRA"
+	depends on USB_EHCI_TEGRA
+	default 32
+	---help---
+	QH and QTD structures in Tegra 2 should be padded to be 128 bytes apart.
+
 config USB_EHCI_HCD_PPC_OF
 	bool "EHCI support for PPC USB controller on OF platform bus"
 	depends on USB_EHCI_HCD && PPC_OF
