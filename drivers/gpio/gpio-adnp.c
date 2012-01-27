@@ -251,15 +251,17 @@ static void adnp_gpio_dbg_show(struct seq_file *s, struct gpio_chip *chip)
 		for (j = 0; j < 8; j++) {
 			unsigned int bit = (i << gpio->reg_shift) + j;
 			const char *direction = "input ";
-			const char *level = "low ";
+			const char *level = "low     ";
 			const char *interrupt = "disabled";
 			const char *pending = "";
 
 			if (ddr[i] & BIT(j))
 				direction = "output";
 
-			if (plr[i] & BIT(j))
-				level = "high";
+			if (ptr[i] & BIT(j))
+				level = "tristate";
+			else if (plr[i] & BIT(j))
+				level = "high    ";
 
 			if (ier[i] & BIT(j))
 				interrupt = "enabled ";
