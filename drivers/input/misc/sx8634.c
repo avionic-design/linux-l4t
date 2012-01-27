@@ -134,20 +134,36 @@ static ssize_t spm_write_block(struct i2c_client *client, loff_t offset,
 	BUG_ON((offset & 7) != 0);
 
 	err = i2c_smbus_write_byte_data(client, I2C_SPM_CFG, enable);
-	if (err < 0)
+	if (err < 0) {
+		dev_warn(&client->dev, "%s failed: %d\n",
+			 "i2c_smbus_write_byte_data(I2C_SPM_CFG, ON)",
+			 err);
 		return err;
+	}
 
 	err = i2c_smbus_write_byte_data(client, I2C_SPM_BASE, offset);
-	if (err < 0)
+	if (err < 0) {
+		dev_warn(&client->dev, "%s failed: %d\n",
+			 "i2c_smbus_write_byte_data(I2C_SPM_BASE)",
+			 err);
 		return err;
+	}
 
 	err = i2c_smbus_write_i2c_block_data(client, 0, SPM_BLOCK_SIZE, buffer);
-	if (err < 0)
+	if (err < 0) {
+		dev_warn(&client->dev, "%s failed: %d\n",
+			 "i2c_smbus_write_i2c_block_data()",
+			 err);
 		return err;
+	}
 
 	err = i2c_smbus_write_byte_data(client, I2C_SPM_CFG, I2C_SPM_CFG_OFF);
-	if (err < 0)
+	if (err < 0) {
+		dev_warn(&client->dev, "%s failed: %d\n",
+			 "i2c_smbus_write_byte_data(I2C_SPM_CFG, OFF)",
+			 err);
 		return err;
+	}
 
 	err = spm_wait(client);
 	if (err < 0) {
