@@ -94,28 +94,36 @@ out:
 	return err;
 }
 
-static void adnp_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+static int __adnp_gpio_set(struct adnp *gpio, unsigned offset, int value)
 {
-	struct adnp *gpio = container_of(chip, struct adnp, gpio);
 	unsigned int reg = offset >> gpio->reg_shift;
 	unsigned int pos = offset & 7;
 	int err;
 	u8 val;
 
-	mutex_lock(&gpio->i2c_lock);
-
 	err = adnp_read(gpio, GPIO_PLR(gpio) + reg, &val);
 	if (err < 0)
-		goto out;
+		return err;
 
 	if (value)
 		val |= BIT(pos);
 	else
 		val &= ~BIT(pos);
 
-	adnp_write(gpio, GPIO_PLR(gpio) + reg, val);
+	return adnp_write(gpio, GPIO_PLR(gpio) + reg, val);
+}
 
-out:
+static void adnp_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+{
+	struct adnp *gpio = container_of(chip, struct adnp, gpio);
+	int err;
+
+	mutex_lock(&gpio->i2c_lock);
+
+	err = __adnp_gpio_set(gpio, offset, value);
+	if (err < 0)
+		dev_err(chip->dev, "failed to set pin level: %d\n", err);
+
 	mutex_unlock(&gpio->i2c_lock);
 }
 
@@ -183,7 +191,7 @@ static int adnp_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
 		goto out;
 	}
 
-	adnp_gpio_set(chip, offset, value);
+	__adnp_gpio_set(gpio, offset, value);
 	err = 0;
 
 out:
