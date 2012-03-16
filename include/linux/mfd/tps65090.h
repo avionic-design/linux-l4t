@@ -1,5 +1,4 @@
 /*
- * include/linux/mfd/tps65090.h
  * Core driver interface for TI TPS65090 PMIC family
  *
  * Copyright (C) 2012 NVIDIA Corporation
@@ -23,8 +22,6 @@
 #ifndef __LINUX_MFD_TPS65090_H
 #define __LINUX_MFD_TPS65090_H
 
-#include <linux/rtc.h>
-
 struct tps65090_subdev_info {
 	int		id;
 	const char	*name;
@@ -42,12 +39,8 @@ struct tps65090_platform_data {
  * of the TPS65090 sub-device drivers
  */
 extern int tps65090_write(struct device *dev, int reg, uint8_t val);
-extern int tps65090_writes(struct device *dev, int reg, int len, uint8_t *val);
 extern int tps65090_read(struct device *dev, int reg, uint8_t *val);
-extern int tps65090_reads(struct device *dev, int reg, int len, uint8_t *val);
 extern int tps65090_set_bits(struct device *dev, int reg, uint8_t bit_num);
 extern int tps65090_clr_bits(struct device *dev, int reg, uint8_t bit_num);
-extern int tps65090_update(struct device *dev, int reg, uint8_t val,
-			   uint8_t bit_num);
 
 #endif /*__LINUX_MFD_TPS65090_H */
