@@ -1035,6 +1035,11 @@ static void __init tegra_enterprise_reserve(void)
 	tegra_ram_console_debug_reserve(SZ_1M);
 }
 
+static const char *enterprise_dt_board_compat[] = {
+	"nvidia,enterprise",
+	NULL
+};
+
 MACHINE_START(TEGRA_ENTERPRISE, "tegra_enterprise")
 	.boot_params    = 0x80000100,
 	.map_io         = tegra_map_common_io,
@@ -1043,4 +1048,5 @@ MACHINE_START(TEGRA_ENTERPRISE, "tegra_enterprise")
 	.init_irq       = tegra_init_irq,
 	.timer          = &tegra_timer,
 	.init_machine   = tegra_enterprise_init,
+	.dt_compat	= enterprise_dt_board_compat,
 MACHINE_END
