@@ -1000,7 +1000,6 @@ static void enterprise_audio_init(void)
 					audio_port_id = 2;
 			platform_device_register(&tegra_i2s_device2);
 		}
-
 	}
 	platform_add_devices(enterprise_audio_devices,
 		ARRAY_SIZE(enterprise_audio_devices));
