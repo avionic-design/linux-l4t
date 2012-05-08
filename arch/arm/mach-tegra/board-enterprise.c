@@ -1,7 +1,7 @@
 /*
  * arch/arm/mach-tegra/board-enterprise.c
  *
- * Copyright (c) 2011-2012, NVIDIA Corporation.
+ * Copyright (c) 2011-2012, NVIDIA CORPORATION. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -182,7 +182,6 @@ static __initdata struct tegra_clk_init_table enterprise_clk_init_table[] = {
 	{ "blink",	"clk_32k",	32768,		true},
 	{ "i2s0",	"pll_a_out0",	0,		false},
 	{ "i2s1",	"pll_a_out0",	0,		false},
-	{ "i2s2",	"pll_a_out0",	0,		false},
 	{ "i2s3",	"pll_a_out0",	0,		false},
 	{ "spdif_out",	"pll_a_out0",	0,		false},
 	{ "d_audio",	"clk_m",	12000000,	false},
@@ -195,6 +194,18 @@ static __initdata struct tegra_clk_init_table enterprise_clk_init_table[] = {
 	{ "audio3",	"i2s3_sync",	0,		false},
 	{ "vi",		"pll_p",	0,		false},
 	{ "vi_sensor",	"pll_p",	0,		false},
+	{ NULL,		NULL,		0,		0},
+};
+
+static __initdata struct tegra_clk_init_table enterprise_clk_i2s2_table[] = {
+	/* name		parent		rate		enabled */
+	{ "i2s2",	"pll_a_out0",	0,		false},
+	{ NULL,		NULL,		0,		0},
+};
+
+static __initdata struct tegra_clk_init_table enterprise_clk_i2s4_table[] = {
+	/* name		parent		rate		enabled */
+	{ "i2s4",	"pll_a_out0",	0,		false},
 	{ NULL,		NULL,		0,		0},
 };
 
@@ -507,7 +518,6 @@ static struct tegra_asoc_platform_data enterprise_audio_pdata = {
 		.sample_size	= 16,
 	},
 	.i2s_param[BASEBAND]	= {
-		.audio_port_id	= 2,
 		.is_i2s_master	= 1,
 		.i2s_mode	= TEGRA_DAIFMT_DSP_A,
 		.sample_size	= 16,
@@ -850,7 +860,6 @@ static struct platform_device *enterprise_audio_devices[] __initdata = {
 	&tegra_dam_device2,
 	&tegra_i2s_device0,
 	&tegra_i2s_device1,
-	&tegra_i2s_device2,
 	&tegra_i2s_device3,
 	&tegra_spdif_device,
 	&spdif_dit_device,
@@ -869,6 +878,13 @@ static void enterprise_audio_init(void)
 
 	if (board_info.board_id == BOARD_E1197)
 		enterprise_audio_pdata.i2s_param[HIFI_CODEC].audio_port_id = 1;
+	else if (board_info.fab == BOARD_FAB_A04) {
+		enterprise_audio_pdata.i2s_param[BASEBAND].audio_port_id = 4;
+		platform_device_register(&tegra_i2s_device4);
+	} else {
+		enterprise_audio_pdata.i2s_param[BASEBAND].audio_port_id = 2;
+		platform_device_register(&tegra_i2s_device2);
+	}
 
 	platform_add_devices(enterprise_audio_devices,
 			ARRAY_SIZE(enterprise_audio_devices));
@@ -979,6 +995,13 @@ static void enterprise_nfc_init(void)
 
 static void __init tegra_enterprise_init(void)
 {
+	struct board_info board_info;
+	tegra_get_board_info(&board_info);
+	if (board_info.fab == BOARD_FAB_A04)
+		tegra_clk_init_from_table(enterprise_clk_i2s4_table);
+	else
+		tegra_clk_init_from_table(enterprise_clk_i2s2_table);
+
 	tegra_thermal_init(&thermal_data,
 				throttle_list,
 				ARRAY_SIZE(throttle_list));
