@@ -10,3 +10,4 @@ dtb-$(CONFIG_MACH_HARMONY) += tegra-harmony.dtb
 dtb-$(CONFIG_MACH_SEABOARD) += tegra-seaboard.dtb
 dtb-$(CONFIG_MACH_VENTANA) += tegra-ventana.dtb
 dtb-$(CONFIG_MACH_CARDHU) += tegra-cardhu.dtb
+dtb-$(CONFIG_ARCH_TEGRA_3x_SOC) += tegra30-enterprise.dtb
