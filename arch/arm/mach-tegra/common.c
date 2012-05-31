@@ -290,6 +290,20 @@ static inline void tegra_init_cache_tz(bool init)
 #endif	/* CONFIG_TRUSTED_FOUNDATIONS  */
 
 #ifdef CONFIG_CACHE_L2X0
+/*
+ * We define our own outer_disable() to avoid L2 flush upon LP2 entry.
+ * Since the Tegra kernel will always be in single core mode when
+ * L2 is being disabled, we can omit the locking. Since we are not
+ * accessing the spinlock we also avoid the problem of the spinlock
+ * storage getting out of sync.
+ */
+static inline void tegra_l2x0_disable(void)
+{
+	void __iomem *p = IO_ADDRESS(TEGRA_ARM_PERIF_BASE) + 0x3000;
+	writel_relaxed(0, p + L2X0_CTRL);
+	dsb();
+}
+
 void tegra_init_cache(bool init)
 {
 #ifdef CONFIG_TRUSTED_FOUNDATIONS
@@ -336,6 +350,8 @@ void tegra_init_cache(bool init)
 	aux_ctrl |= 0x7C000001;
 	if (init) {
 		l2x0_init(p, aux_ctrl, 0x8200c3fe);
+		/* use our outer_disable() routine to avoid flush */
+		outer_cache.disable = tegra_l2x0_disable;
 	} else {
 		u32 tmp;
 
