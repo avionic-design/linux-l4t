@@ -60,3 +60,4 @@ obj-$(CONFIG_TEGRA_BB_SUPPORT)	+= tegra-baseband/
 obj-$(CONFIG_TEGRA_CEC_SUPPORT)	+= tegra-cec/
 obj-$(CONFIG_MAX1749_VIBRATOR)	+= max1749.o
 obj-$(CONFIG_THERM_EST)		+= therm_est.o
+obj-$(CONFIG_TEGRA_THROUGHPUT)	+= tegra-throughput.o
