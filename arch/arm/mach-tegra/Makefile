@@ -19,6 +19,7 @@ obj-y                                   += tegra2_clocks.o
 obj-y                                   += timer-t2.o
 else
 obj-y                                   += tegra3_clocks.o
+obj-$(CONFIG_DEBUG_FS)                  += clocks_stats.o
 obj-y                                   += timer-t3.o
 endif
 obj-y                                   += pinmux.o
