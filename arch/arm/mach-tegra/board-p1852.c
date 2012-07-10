@@ -198,7 +198,6 @@ static void __init p1852_uart_init(void)
 	platform_add_devices(p1852_uart_devices,
 				ARRAY_SIZE(p1852_uart_devices));
 }
-
 #if defined(CONFIG_TEGRA_P1852_TDM)
 static struct tegra_p1852_platform_data p1852_audio_tdm_pdata = {
 	.codec_info[0] = {
@@ -241,6 +240,7 @@ static struct tegra_p1852_platform_data p1852_audio_i2s_pdata = {
 		.name = "tegra-i2s-1",
 		.pcm_driver = "tegra-pcm-audio",
 		.i2s_format = format_i2s,
+		/* Defines whether the Audio codec chip is master or slave */
 		.master = 1,
 	},
 	.codec_info[1] = {
@@ -250,6 +250,7 @@ static struct tegra_p1852_platform_data p1852_audio_i2s_pdata = {
 		.name = "tegra-i2s-2",
 		.pcm_driver = "tegra-pcm-audio",
 		.i2s_format = format_i2s,
+		/* Defines whether the Audio codec chip is master or slave */
 		.master = 0,
 	},
 };
@@ -277,6 +278,8 @@ static struct platform_device tegra_snd_p1852 = {
 
 static void p1852_i2s_audio_init(void)
 {
+	struct tegra_p1852_platform_data *pdata;
+
 	platform_device_register(&tegra_pcm_device);
 	platform_device_register(&tegra_tdm_pcm_device);
 	platform_device_register(&generic_codec_1);
@@ -285,6 +288,11 @@ static void p1852_i2s_audio_init(void)
 	platform_device_register(&tegra_i2s_device4);
 	platform_device_register(&tegra_ahub_device);
 	platform_device_register(&tegra_snd_p1852);
+
+	/* Change pinmux of I2S4 for master mode */
+	pdata = tegra_snd_p1852.dev.platform_data;
+	if (!pdata->codec_info[1].master)
+		p1852_pinmux_set_i2s4_master();
 }
 
 
