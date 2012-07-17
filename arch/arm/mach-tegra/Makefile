@@ -175,7 +175,11 @@ obj-${CONFIG_MACH_CARDHU}               += board-cardhu-power.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-pm298-power-rails.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-pm299-power-rails.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-sdhci.o
+ifeq ($(CONFIG_VIDEO_TEGRA),y)
+obj-${CONFIG_MACH_CARDHU}               += board-cardhu-v4l2.o
+else
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-sensors.o
+endif
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-memory.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-powermon.o
 
