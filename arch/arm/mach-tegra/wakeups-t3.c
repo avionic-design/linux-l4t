@@ -66,7 +66,8 @@ static struct tegra_wake_info tegra_wake_event_data_t3[] = {
 	{-EINVAL, POLARITY_NONE}, /* TEGRA_USB3_ID, */		/* wake38 */
 	{INT_USB, POLARITY_LEVEL_HI}, /* TEGRA_USB1_UTMIP, */		/* wake39 */
 	{INT_USB2, POLARITY_LEVEL_HI}, /* TEGRA_USB2_UTMIP, */	/* wake40 */
-	{INT_USB3, POLARITY_LEVEL_HI} /* TEGRA_USB3_UTMIP, */	/* wake41 */
+	{INT_USB3, POLARITY_LEVEL_HI}, /* TEGRA_USB3_UTMIP, */	/* wake41 */
+	{INT_USB2, POLARITY_LEVEL_HI}, /* TEGRA_USB2_UHSIC, */	/* wake42 */
 };
 
 struct tegra_wake_info *tegra_wake_event_data = tegra_wake_event_data_t3;
