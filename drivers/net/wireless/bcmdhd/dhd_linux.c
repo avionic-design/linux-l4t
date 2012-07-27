@@ -22,7 +22,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_linux.c 329682 2012-04-26 09:20:38Z $
+ * $Id: dhd_linux.c 333885 2012-05-18 00:39:03Z $
  */
 
 #include <typedefs.h>
@@ -42,7 +42,6 @@
 #include <linux/ethtool.h>
 #include <linux/fcntl.h>
 #include <linux/fs.h>
-#include <linux/device.h>
 
 #include <asm/uaccess.h>
 #include <asm/unaligned.h>
@@ -1526,9 +1525,12 @@ dhd_rx_frame(dhd_pub_t *dhdp, int ifidx, void *pktbuf, int numpkt, uint8 chan)
 				tout_ctrl = DHD_PACKET_TIMEOUT_MS;
 			if (event.event_type == WLC_E_BTA_HCI_EVENT) {
 				dhd_bta_doevt(dhdp, data, event.datalen);
-			} else if (event.event_type == WLC_E_PFN_NET_FOUND) {
+			}
+#ifdef PNO_SUPPORT
+			if (event.event_type == WLC_E_PFN_NET_FOUND) {
 				tout_ctrl *= 2;
 			}
+#endif /* PNO_SUPPORT */
 		} else {
 			tout_rx = DHD_PACKET_TIMEOUT_MS;
 		}
@@ -2603,7 +2605,6 @@ dhd_attach(osl_t *osh, struct dhd_bus *bus, uint bus_hdrlen, void *dev)
 	}
 	dhd_state |= DHD_ATTACH_STATE_NET_ALLOC;
 
-	SET_NETDEV_DEV(net, (struct device *)dev);
 	/* Allocate primary dhd_info */
 	if (!(dhd = MALLOC(osh, sizeof(dhd_info_t)))) {
 		DHD_ERROR(("%s: OOM - alloc dhd_info\n", __FUNCTION__));
@@ -2941,16 +2942,20 @@ dhd_concurrent_fw(dhd_pub_t *dhd)
 		bcm_mkiovar("p2p", 0, 0, buf, sizeof(buf));
 		if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_GET_VAR, buf, sizeof(buf),
 			FALSE, 0)) < 0) {
-			DHD_TRACE(("%s: Get P2P failed (error=%d)\n", __FUNCTION__, ret));
+			DHD_ERROR(("%s: Get P2P failed (error=%d)\n", __FUNCTION__, ret));
 		} else if (buf[0] == 1) {
 			DHD_TRACE(("%s: P2P is supported\n", __FUNCTION__));
 			return 1;
 		}
 	}
-	return 0;
+	return ret;
 }
 #endif 
 
+/*
+ *   dhd_preinit_ioctls makes special pre-setting in the firmware before radio turns on
+ *   returns : 0 if all settings passed or negative value if anything failed
+*/
 int
 dhd_preinit_ioctls(dhd_pub_t *dhd)
 {
@@ -2959,7 +2964,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	char iovbuf[WL_EVENTING_MASK_LEN + 12];	/*  Room for "event_msgs" + '\0' + bitvec  */
 #if !defined(WL_CFG80211)
 	uint up = 0;
-#endif
+#endif /* defined(WL_CFG80211) */
 	uint power_mode = PM_FAST;
 	uint32 dongle_align = DHD_SDALIGN;
 	uint32 glom = 0;
@@ -3043,19 +3048,31 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 #endif /* SET_RANDOM_MAC_SOFTAP */
 
 	DHD_TRACE(("Firmware = %s\n", fw_path));
+
 #if !defined(AP)  && defined(WLP2P)
 	/* Check if firmware with WFD support used */
+#if defined(WL_ENABLE_P2P_IF)
+	if ((ret = dhd_concurrent_fw(dhd)) < 0) {
+		DHD_ERROR(("%s error : firmware can't support p2p mode\n", __FUNCTION__));
+		goto done;
+	}
+#endif /* (WL_ENABLE_P2P_IF) */
+
 	if ((!op_mode && strstr(fw_path, "_p2p") != NULL)
 #if defined(WL_ENABLE_P2P_IF)
-			|| (op_mode == 0x04) ||(dhd_concurrent_fw(dhd))
+			|| (op_mode == WFD_MASK) || (dhd_concurrent_fw(dhd) == 1)
 #endif
 		) {
 		bcm_mkiovar("apsta", (char *)&apsta, 4, iovbuf, sizeof(iovbuf));
 		if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR,
 			iovbuf, sizeof(iovbuf), TRUE, 0)) < 0) {
-			DHD_ERROR(("%s APSTA for WFD failed ret= %d\n", __FUNCTION__, ret));
+			DHD_ERROR(("%s APSTA setting failed ret= %d\n", __FUNCTION__, ret));
 		} else {
 			dhd->op_mode |= WFD_MASK;
+#if !defined(WL_ENABLE_P2P_IF)
+			/* ICS back capability : disable any packet filtering for p2p only mode */
+			dhd_pkt_filter_enable = FALSE;
+#endif /*!defined(WL_ENABLE_P2P_IF) */
 		}
 	}
 #endif
@@ -3100,16 +3117,20 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 #if defined(ARP_OFFLOAD_SUPPORT)
 				arpoe = 0;
 #endif /* (ARP_OFFLOAD_SUPPORT) */
+				/* disable any filtering for SoftAP mode */
 				dhd_pkt_filter_enable = FALSE;
 			}
 	}
 #endif
 
+#if !defined(WL_ENABLE_P2P_IF)
+	/* ICS mode setting for sta */
 	if ((dhd->op_mode != WFD_MASK) && (dhd->op_mode != HOSTAPD_MASK)) {
 		/* STA only operation mode */
 		dhd->op_mode |= STA_MASK;
 		dhd_pkt_filter_enable = TRUE;
 	}
+#endif /* !defined(WL_ENABLE_P2P_IF) */
 
 	DHD_ERROR(("Firmware up: fw_path=%s op_mode=%d, "
 			"Broadcom Dongle Host Driver mac=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
@@ -3262,6 +3283,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	dhd->pktfilter[1] = NULL;
 	dhd->pktfilter[2] = NULL;
 	dhd->pktfilter[3] = NULL;
+	/* Add filter to pass multicastDNS packet and NOT filter out as Broadcast */
 	dhd->pktfilter[4] = "104 0 0 0 0xFFFFFFFFFFFF 0x01005E0000FB";
 #if defined(SOFTAP)
 	if (ap_fw_loaded) {
@@ -4448,6 +4470,17 @@ dhd_dev_pno_set(struct net_device *dev, wlc_ssid_t* ssids_local, int nssid,
 	return (dhd_pno_set(&dhd->pub, ssids_local, nssid, scan_fr, pno_repeat, pno_freq_expo_max));
 }
 
+/* Linux wrapper to call common dhd_pno_set_ex */
+int
+dhd_dev_pno_set_ex(struct net_device *dev, wl_pfn_t* ssidnet, int nssid,
+	ushort  pno_interval, int pno_repeat, int pno_expo_max, int pno_lost_time)
+{
+	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
+
+	return (dhd_pno_set_ex(&dhd->pub, ssidnet, nssid,
+					pno_interval, pno_repeat, pno_expo_max, pno_lost_time));
+}
+
 /* Linux wrapper to get  pno status */
 int
 dhd_dev_get_pno_status(struct net_device *dev)
@@ -4466,9 +4499,9 @@ static void dhd_hang_process(struct work_struct *work)
 	struct net_device *dev;
 
 	dhd = (dhd_info_t *)container_of(work, dhd_info_t, work_hang);
-		dev = dhd->iflist[0]->net;
+	dev = dhd->iflist[0]->net;
 
-		if (dev) {
+	if (dev) {
 		rtnl_lock();
 		dev_close(dev);
 		rtnl_unlock();
@@ -4478,7 +4511,7 @@ static void dhd_hang_process(struct work_struct *work)
 #if defined(WL_CFG80211)
 		wl_cfg80211_hang(dev, WLAN_REASON_UNSPECIFIED);
 #endif
-       }
+	}
 }
 
 int net_os_send_hang_message(struct net_device *dev)
