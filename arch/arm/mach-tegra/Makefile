@@ -199,6 +199,11 @@ ifeq ($(CONFIG_VIDEO_TEGRA),y)
 obj-${CONFIG_MACH_P1852}		+= board-p1852-v4l2.o
 endif
 
+obj-${CONFIG_MACH_E1853}               += board-e1853.o
+obj-${CONFIG_MACH_E1853}               += board-e1853-panel.o
+obj-${CONFIG_MACH_E1853}               += board-e1853-pinmux.o
+obj-${CONFIG_MACH_E1853}               += board-e1853-sdhci.o
+
 obj-${CONFIG_MACH_TEGRA_ENTERPRISE}     += board-enterprise.o
 obj-${CONFIG_MACH_TEGRA_ENTERPRISE}     += board-enterprise-panel.o
 obj-${CONFIG_MACH_TEGRA_ENTERPRISE}     += board-enterprise-pinmux.o
