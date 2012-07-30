@@ -347,6 +347,13 @@ config REGULATOR_TPS6586X
 	help
 	  This driver supports TPS6586X voltage regulator chips.
 
+config REGULATOR_TPS65090
+	tristate "TI TPS65090 Power regulator"
+	depends on MFD_TPS65090
+	help
+	  This driver provides support for the voltage regulators on the
+	  TI TPS65090 PMIC.
+
 config REGULATOR_TPS6524X
 	tristate "TI TPS6524X Power regulators"
 	depends on SPI
@@ -396,12 +403,6 @@ config REGULATOR_TPS6591X
 	default n
 	help
 	  This driver supports TPS6591X voltage regulator chips.
-
-config REGULATOR_TPS65090
-	tristate "TI TPS65090 Power regulators"
-	depends on MFD_TPS65090
-	help
-	  This driver supports TPS65090 voltage regulator chips.
 
 config REGULATOR_TPS80031
 	tristate "TI TPS80031 Power regulators"
