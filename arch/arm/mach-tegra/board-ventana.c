@@ -424,9 +424,6 @@ static struct i2c_board_info __initdata i2c_info[] = {
 
 static int __init ventana_touch_init_atmel(void)
 {
-	tegra_gpio_enable(TEGRA_GPIO_PV6);
-	tegra_gpio_enable(TEGRA_GPIO_PQ7);
-
 	gpio_request(TEGRA_GPIO_PV6, "atmel-irq");
 	gpio_direction_input(TEGRA_GPIO_PV6);
 
@@ -455,9 +452,6 @@ static struct i2c_board_info __initdata ventana_i2c_bus1_touch_info[] = {
 
 static int __init ventana_touch_init_panjit(void)
 {
-	tegra_gpio_enable(TEGRA_GPIO_PV6);
-
-	tegra_gpio_enable(TEGRA_GPIO_PQ7);
 	i2c_register_board_info(0, ventana_i2c_bus1_touch_info, 1);
 
 	return 0;
@@ -471,7 +465,6 @@ static int __init ventana_gps_init(void)
 		clk_enable(clk32);
 	}
 
-	tegra_gpio_enable(TEGRA_GPIO_PZ3);
 	return 0;
 }
 
@@ -527,9 +520,6 @@ static void ulpi_link_platform_open(void)
 	int reset_gpio = TEGRA_GPIO_PV1;
 
 	gpio_request(reset_gpio, "ulpi_phy_reset");
-	gpio_direction_output(reset_gpio, 0);
-	tegra_gpio_enable(reset_gpio);
-
 	gpio_direction_output(reset_gpio, 0);
 	msleep(5);
 	gpio_direction_output(reset_gpio, 1);
