@@ -223,14 +223,6 @@ static struct platform_device harmony_gpio_keys_device = {
 	}
 };
 
-static void harmony_keys_init(void)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(harmony_gpio_keys_buttons); i++)
-		tegra_gpio_enable(harmony_gpio_keys_buttons[i].gpio);
-}
-
 static struct tegra_asoc_platform_data harmony_audio_pdata = {
 	.gpio_spkr_en		= TEGRA_GPIO_SPKR_EN,
 	.gpio_hp_det		= TEGRA_GPIO_HP_DET,
@@ -500,8 +492,6 @@ static int __init harmony_wifi_prepower(void)
                 pr_warning("Unable to get gpio for WLAN Power and Reset\n");
         else {
 
-		tegra_gpio_enable(TEGRA_GPIO_WLAN_PWR_LOW);
-		tegra_gpio_enable(TEGRA_GPIO_WLAN_RST_LOW);
                 /* toggle in this order as per spec */
                 gpio_direction_output(TEGRA_GPIO_WLAN_PWR_LOW, 0);
                 gpio_direction_output(TEGRA_GPIO_WLAN_RST_LOW, 0);
@@ -527,8 +517,6 @@ static void __init tegra_harmony_init(void)
 	tegra_clk_init_from_table(harmony_clk_init_table);
 
 	harmony_pinmux_init();
-
-	harmony_keys_init();
 
 	harmony_uart_init();
 
