@@ -142,7 +142,7 @@ int tegra_gpio_get_bank_int_nr(int gpio)
 	return irq;
 }
 
-void tegra_gpio_enable(int gpio)
+static void tegra_gpio_enable(int gpio)
 {
 	if (gpio >= TEGRA_NR_GPIOS) {
 		pr_warn("%s : Invalid gpio ID - %d\n", __func__, gpio);
@@ -150,9 +150,8 @@ void tegra_gpio_enable(int gpio)
 	}
 	tegra_gpio_mask_write(GPIO_MSK_CNF(gpio), gpio, 1);
 }
-EXPORT_SYMBOL_GPL(tegra_gpio_enable);
 
-void tegra_gpio_disable(int gpio)
+static void tegra_gpio_disable(int gpio)
 {
 	if (gpio >= TEGRA_NR_GPIOS) {
 		pr_warn("%s : Invalid gpio ID - %d\n", __func__, gpio);
@@ -160,7 +159,6 @@ void tegra_gpio_disable(int gpio)
 	}
 	tegra_gpio_mask_write(GPIO_MSK_CNF(gpio), gpio, 0);
 }
-EXPORT_SYMBOL_GPL(tegra_gpio_disable);
 
 void tegra_gpio_init_configure(unsigned gpio, bool is_input, int value)
 {
