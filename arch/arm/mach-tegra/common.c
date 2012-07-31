@@ -227,6 +227,7 @@ static __initdata struct tegra_clk_init_table common_clk_init_table[] = {
 };
 
 #ifdef CONFIG_TRUSTED_FOUNDATIONS
+
 static inline void tegra_l2x0_disable_tz(void)
 {
 	static u32 l2x0_way_mask;
