@@ -22,7 +22,9 @@ obj-$(CONFIG_TEGRA_GRHOST) += t20/
 obj-$(CONFIG_TEGRA_GRHOST) += t30/
 obj-$(CONFIG_TEGRA_GRHOST) += gr2d/
 obj-$(CONFIG_TEGRA_GRHOST) += isp/
+ifneq ($(CONFIG_VIDEO_TEGRA),y)
 obj-$(CONFIG_TEGRA_GRHOST) += vi/
+endif
 obj-$(CONFIG_TEGRA_GRHOST) += nvhost.o
 
 obj-$(CONFIG_TEGRA_GRHOST_USE_NVMAP) += nvmap.o
