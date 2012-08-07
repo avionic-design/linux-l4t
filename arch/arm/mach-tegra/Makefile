@@ -122,6 +122,12 @@ obj-${CONFIG_MACH_HARMONY}              += board-harmony-pinmux.o
 obj-${CONFIG_MACH_HARMONY}              += board-harmony-pcie.o
 obj-${CONFIG_MACH_HARMONY}              += board-harmony-power.o
 
+obj-${CONFIG_MACH_MEDCOM}              += board-medcom.o
+obj-${CONFIG_MACH_MEDCOM}              += board-medcom-panel.o
+obj-${CONFIG_MACH_MEDCOM}              += board-medcom-pinmux.o
+obj-${CONFIG_MACH_MEDCOM}              += board-medcom-pcie.o
+obj-${CONFIG_MACH_MEDCOM}              += board-medcom-power.o
+
 obj-${CONFIG_MACH_PAZ00}                += board-paz00.o
 obj-${CONFIG_MACH_PAZ00}                += board-paz00-pinmux.o
 

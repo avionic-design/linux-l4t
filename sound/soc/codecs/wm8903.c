@@ -1645,6 +1645,15 @@ int wm8903_mic_detect(struct snd_soc_codec *codec, struct snd_soc_jack *jack,
 	} else {
 		snd_soc_update_bits(codec, WM8903_MIC_BIAS_CONTROL_0,
 				    WM8903_MICDET_ENA, 0);
+
+		/* if mic detection is disabled the mic_jack should be assumed
+		   to be connected all the time */
+		if (!det) {
+			snd_soc_update_bits(codec, WM8903_INTERRUPT_POLARITY_1,
+				WM8903_MICDET_INV, WM8903_MICDET_INV);
+			snd_soc_jack_report(wm8903->mic_jack, 
+				SND_JACK_MICROPHONE, SND_JACK_MICROPHONE);
+		}
 	}
 
 	return 0;
