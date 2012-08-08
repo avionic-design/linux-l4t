@@ -542,40 +542,40 @@ static const struct v4l2_queryctrl ov5640_controls[] = {
 /* read a register */
 static int ov5640_reg_read(struct i2c_client *client, u16 reg, u8 *val)
 {
-        int ret;
-        unsigned char data[2] = { reg >> 8, reg & 0xff };
+	int ret;
+	unsigned char data[2] = { reg >> 8, reg & 0xff };
 
-        ret = i2c_master_send(client, data, 2);
-        if (ret < 2) {
-                dev_err(&client->dev, "%s: i2c read error, reg: %x\n",
-                        __func__, reg);
-                return ret < 0 ? ret : -EIO;
-        }
+	ret = i2c_master_send(client, data, 2);
+	if (ret < 2) {
+		dev_err(&client->dev, "%s: i2c read error, reg: %x\n",
+				__func__, reg);
+		return ret < 0 ? ret : -EIO;
+	}
 
-        ret = i2c_master_recv(client, val, 1);
-        if (ret < 1) {
-                dev_err(&client->dev, "%s: i2c read error, reg: %x\n",
-                                __func__, reg);
-                return ret < 0 ? ret : -EIO;
-        }
+	ret = i2c_master_recv(client, val, 1);
+	if (ret < 1) {
+		dev_err(&client->dev, "%s: i2c read error, reg: %x\n",
+				__func__, reg);
+		return ret < 0 ? ret : -EIO;
+	}
 
-        return 0;
+	return 0;
 }
 
 /* write a register */
 static int ov5640_reg_write(struct i2c_client *client, u16 reg, u8 val)
 {
-        int ret;
-        unsigned char data[3] = { reg >> 8, reg & 0xff, val };
+	int ret;
+	unsigned char data[3] = { reg >> 8, reg & 0xff, val };
 
-        ret = i2c_master_send(client, data, 3);
-        if (ret < 3) {
-                dev_err(&client->dev, "%s: i2c write error, reg: %x\n",
-                        __func__, reg);
-                return ret < 0 ? ret : -EIO;
-        }
+	ret = i2c_master_send(client, data, 3);
+	if (ret < 3) {
+		dev_err(&client->dev, "%s: i2c write error, reg: %x\n",
+				__func__, reg);
+		return ret < 0 ? ret : -EIO;
+	}
 
-        return 0;
+	return 0;
 }
 
 
