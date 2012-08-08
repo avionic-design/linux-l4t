@@ -2658,7 +2658,7 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 	}
 #else
 	/* Power down the phy if cable is not connected */
-	if (!vbus_enabled())
+	if (!vbus_enabled(udc))
 		tegra_usb_phy_power_off(udc->phy);
 #endif
 
