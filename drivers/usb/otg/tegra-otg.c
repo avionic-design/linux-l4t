@@ -230,7 +230,7 @@ static void irq_work(struct work_struct *work)
 	status = tegra->int_status;
 
 	/* Debug prints */
-	DBG("%s(%d) status = 0x%x\n", __func__, __LINE__, status);
+	DBG("%s(%d) status = 0x%lx\n", __func__, __LINE__, status);
 	if ((status & USB_ID_INT_STATUS) &&
 			(status & USB_VBUS_INT_STATUS))
 		DBG("%s(%d) got vbus & id interrupt\n", __func__, __LINE__);
@@ -260,10 +260,10 @@ static irqreturn_t tegra_otg_irq(int irq, void *data)
 
 	spin_lock_irqsave(&tegra->lock, flags);
 	val = otg_readl(tegra, USB_PHY_WAKEUP);
-	DBG("%s(%d) interrupt val = 0x%x\n", __func__, __LINE__, val);
+	DBG("%s(%d) interrupt val = 0x%lx\n", __func__, __LINE__, val);
 
 	if (val & (USB_VBUS_INT_EN | USB_ID_INT_EN)) {
-		DBG("%s(%d) PHY_WAKEUP = 0x%x\n", __func__, __LINE__, val);
+		DBG("%s(%d) PHY_WAKEUP = 0x%lx\n", __func__, __LINE__, val);
 		otg_writel(tegra, val, USB_PHY_WAKEUP);
 		if ((val & USB_ID_INT_STATUS) || (val & USB_VBUS_INT_STATUS)) {
 			tegra->int_status = val;
