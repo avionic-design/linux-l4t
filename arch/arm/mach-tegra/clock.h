@@ -64,6 +64,7 @@
 #include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/spinlock.h>
+#include <trace/events/power.h>
 #include <asm/cputime.h>
 
 #include <mach/clk.h>
@@ -281,6 +282,7 @@ static inline bool clk_cansleep(struct clk *c)
 
 static inline void clk_lock_save(struct clk *c, unsigned long *flags)
 {
+	trace_clock_lock(c->name, c->rate, smp_processor_id());
 	if (clk_cansleep(c)) {
 		*flags = 0;
 		mutex_lock(&c->mutex);
@@ -295,6 +297,7 @@ static inline void clk_unlock_restore(struct clk *c, unsigned long *flags)
 		mutex_unlock(&c->mutex);
 	else
 		spin_unlock_irqrestore(&c->spinlock, *flags);
+	trace_clock_unlock(c->name, c->rate, smp_processor_id());
 }
 
 static inline void clk_lock_init(struct clk *c)
