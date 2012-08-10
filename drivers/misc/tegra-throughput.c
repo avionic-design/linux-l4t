@@ -113,7 +113,6 @@ static int throughput_open(struct inode *inode, struct file *file)
 		multiple_app_disable = 1;
 
 	spin_unlock(&lock);
-
 	pr_debug("throughput_open node %p file %p\n", inode, file);
 
 	return 0;
@@ -121,8 +120,6 @@ static int throughput_open(struct inode *inode, struct file *file)
 
 static int throughput_release(struct inode *inode, struct file *file)
 {
-	int need_deinit = 0;
-
 	spin_lock(&lock);
 
 	throughput_active_app_count--;
