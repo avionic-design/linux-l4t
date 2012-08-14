@@ -577,6 +577,13 @@ config TEGRA_SKIN_THROTTLE
 	help
 	  Enable throttling to control the temperature of the skin/case
 	  of the device.
+
+config TEGRA_LP1_950
+	bool "LP1 low core voltage"
+	default n
+	depends on ARCH_TEGRA_3x_SOC
+	help
+		Enable support for LP1 Core voltage to set to lowest
 endif
 
 config TEGRA_DC_USE_HW_BPP
