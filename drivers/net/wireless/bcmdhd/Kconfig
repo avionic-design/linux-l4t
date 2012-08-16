@@ -26,6 +26,7 @@ config BCMDHD_NVRAM_DIR
 
 config BCMDHD_WEXT
 	bool "Enable WEXT support"
+	depends on BCMDHD
 	select WIRELESS_EXT
 	select WEXT_PRIV
 	help
@@ -54,14 +55,10 @@ config DHD_ENABLE_P2P
 
 config BCMDHD_CFG80211
 	bool "Enable CFG80211 support"
-	depends on CFG80211
+	depends on BCMDHD && CFG80211
+	default n
 	help
 	  Enables CFG80211 support
-
-config BCMDHD_NOAPI
-	bool "No wireless API"
-	help
-	  No wireless API is needed
 
 config BCMDHD_WIFI_CONTROL_FUNC
 	bool "Use bcmdhd_wlan device"
