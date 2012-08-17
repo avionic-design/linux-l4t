@@ -1412,9 +1412,7 @@ static int __init tm6000_module_init(void)
 {
 	int result;
 
-	printk(KERN_INFO "tm6000" " v4l2 driver version %d.%d.%d loaded\n",
-	       (TM6000_VERSION  >> 16) & 0xff,
-	       (TM6000_VERSION  >> 8) & 0xff, TM6000_VERSION  & 0xff);
+	printk(KERN_INFO "tm6000" " v4l2 driver version loaded\n");
 
 	/* register this driver with the USB subsystem */
 	result = usb_register(&tm6000_usb_driver);
