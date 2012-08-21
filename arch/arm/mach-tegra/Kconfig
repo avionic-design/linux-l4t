@@ -67,6 +67,7 @@ config ARCH_TEGRA_3x_SOC
 	select CPA
 	select ARCH_HAS_SUSPEND_PAGETABLE
 	select NVMAP_CACHE_MAINT_BY_SET_WAYS
+	select PL310_ERRATA_727915
 	help
 	  Support for NVIDIA Tegra 3 family of SoCs, based upon the
 	  ARM CortexA9MP CPU and the ARM PL310 L2 cache controller
