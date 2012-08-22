@@ -1191,6 +1191,8 @@ int __init cardhu_suspend_init(void)
 			cardhu_suspend_data.lp1_core_volt_high = 0x50;
 		}
 #endif
+		if (is_display_board_dsi(display_board_info.board_id))
+			cardhu_suspend_data.cpu_wake_freq = CPU_WAKE_FREQ_LOW;
 	case BOARD_PM305:
 	case BOARD_PM311:
 		break;
