@@ -822,6 +822,7 @@ static struct tegra_suspend_platform_data enterprise_suspend_data = {
 	.lp1_core_volt_low = 0x1D,
 	.lp1_core_volt_high = 0x33,
 #endif
+	.cpu_wake_freq = CPU_WAKE_FREQ_LOW,
 };
 
 static void enterprise_init_deep_sleep_mode(void)
