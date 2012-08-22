@@ -270,6 +270,11 @@ config TWL6040_CORE
 	select MFD_CORE
 	default n
 
+config AIC3262_CODEC
+	bool
+	select MFD_CORE
+	default n
+
 config MFD_STMPE
 	bool "Support STMicroelectronics STMPE"
 	depends on I2C=y && GENERIC_HARDIRQS
