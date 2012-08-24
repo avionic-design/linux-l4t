@@ -136,6 +136,12 @@ static int package_id;
  */
 static int enable_app_profiles;
 
+int app_profiles_enabled(void)
+{
+	return enable_app_profiles;
+}
+EXPORT_SYMBOL(app_profiles_enabled);
+
 static void fuse_speedo_calib(u32 *speedo_g, u32 *speedo_lp)
 {
 	u32 reg;
