@@ -639,6 +639,14 @@ static ssize_t enable_3d_scaling_store(struct device *dev,
 static DEVICE_ATTR(enable_3d_scaling, S_IRUGO | S_IWUSR,
 	enable_3d_scaling_show, enable_3d_scaling_store);
 
+#if defined(CONFIG_ARCH_TEGRA_3x_SOC)
+/*
+ * WAR: disable use_throughput_hint on ap37
+ * this is defined in arch/arm/mach-tegra/tegra3_speedo.c
+ */
+int app_profiles_enabled(void);
+#endif
+
 void nvhost_scale3d_init(struct nvhost_device *d)
 {
 	if (!scale3d.init) {
@@ -750,6 +758,10 @@ void nvhost_scale3d_init(struct nvhost_device *d)
 		scale3d.p_verbosity = 0;
 		scale3d.p_adjust = 1;
 		scale3d.p_use_throughput_hint = 1;
+#if defined(CONFIG_ARCH_TEGRA_3x_SOC)
+		/* app profiles only enabled on ap37 */
+		scale3d.p_use_throughput_hint = !app_profiles_enabled();
+#endif
 		scale3d.p_throughput_lo_limit = 95;
 		scale3d.p_throughput_hi_limit = 100;
 		scale3d.p_scale_step = 60000000;
