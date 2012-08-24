@@ -71,6 +71,7 @@ struct vb2_mem_ops {
 	unsigned int	(*num_users)(void *buf_priv);
 
 	int		(*mmap)(void *buf_priv, struct vm_area_struct *vma);
+	__u32		(*get_buf_handle)(void *buf_priv);
 };
 
 struct vb2_plane {

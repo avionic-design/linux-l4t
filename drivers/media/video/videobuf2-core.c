@@ -60,6 +60,10 @@ static int __vb2_buf_mem_alloc(struct vb2_buffer *vb,
 		/* Associate allocator private data with this plane */
 		vb->planes[plane].mem_priv = mem_priv;
 		vb->v4l2_planes[plane].length = plane_sizes[plane];
+
+		/* Get videobuf-specific buffer handle if we can */
+		vb->v4l2_buf.reserved = call_memop(q, plane, get_buf_handle,
+						   mem_priv);
 	}
 
 	return 0;
