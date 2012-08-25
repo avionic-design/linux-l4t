@@ -1055,7 +1055,7 @@ static void enterprise_nfc_init(void)
 	if (bi.board_id == BOARD_E1205 && bi.fab >= BOARD_FAB_A03) {
 		nfc_pdata.firm_gpio = TEGRA_GPIO_PX7;
 	} else if (bi.board_id == BOARD_E1239) {
-		nfc_pdata.firm_gpio = TEGRA_GPIO_PN6;
+		nfc_pdata.firm_gpio = TEGRA_GPIO_PD2;
 	}
 }
 
@@ -1077,7 +1077,7 @@ static void __init tegra_enterprise_init(void)
 	enterprise_uart_init();
 	enterprise_usb_init();
 	if (board_info.board_id == BOARD_E1239)
-		enterprise_bt_rfkill_pdata[0].shutdown_gpio = TEGRA_GPIO_PF4;
+		enterprise_bt_rfkill_pdata[0].reset_gpio = TEGRA_GPIO_PF4;
 
 	platform_add_devices(enterprise_devices, ARRAY_SIZE(enterprise_devices));
 	tegra_ram_console_debug_init();
