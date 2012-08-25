@@ -227,8 +227,6 @@ static __initdata struct tegra_clk_init_table common_clk_init_table[] = {
 };
 
 #ifdef CONFIG_TRUSTED_FOUNDATIONS
-#define CACHE_LINE_SIZE		32
-
 static inline void tegra_l2x0_disable_tz(void)
 {
 	static u32 l2x0_way_mask;
@@ -244,20 +242,19 @@ static inline void tegra_l2x0_disable_tz(void)
 		l2x0_way_mask = (1 << ways) - 1;
 	}
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
-	/* flush all ways on disable */
+	/* flush all ways on any disable */
 	tegra_generic_smc_uncached(0xFFFFF100, 0x00000002, l2x0_way_mask);
 #elif defined(CONFIG_ARCH_TEGRA_3x_SOC)
-	if (tegra_is_cpu_in_lp2(0)) {
-		register unsigned long sp asm ("sp");
-
-		/* flush only the stack, if entering LP2 */
-		__cpuc_flush_dcache_area((void *)sp, (CACHE_LINE_SIZE * 2));
-		outer_flush_range(__pa(sp), __pa(sp) + (CACHE_LINE_SIZE * 2));
-
-		/* pass zero arg, so secureos flushes only its workspace */
-		tegra_generic_smc_uncached(0xFFFFF100, 0x00000002, 0x0);
-	} else {
-		/* flush all ways on disable, if entering LP0/LP1 */
+	if (tegra_is_cpu_in_lp2(0) == false) {
+		/*
+		 * If entering LP0/LP1, ask secureos to fully flush and
+		 * disable the L2.
+		 *
+		 * If entering LP2, L2 disable is handled by the secureos
+		 * as part of the tegra_sleep_cpu() SMC. This SMC indicates
+		 * no more secureos tasks will be scheduled, allowing it
+		 * to optimize out L2 flushes on its side.
+		 */
 		tegra_generic_smc_uncached(0xFFFFF100,
 						0x00000002, l2x0_way_mask);
 	}
