@@ -579,6 +579,16 @@ static void tegra_sleep_core(enum tegra_suspend_mode mode,
 static inline void tegra_sleep_cpu(unsigned long v2p)
 {
 #ifdef CONFIG_TRUSTED_FOUNDATIONS
+	if (tegra_is_cpu_in_lp2(0)) {
+		struct thread_info *thread;
+
+		/* flush thread state (sleep SMC will also disable L2) */
+		thread = current_thread_info();
+		BUG_ON(!thread);
+
+		__cpuc_flush_dcache_area(thread, THREAD_SIZE);
+		outer_flush_range(__pa(thread), __pa(thread) + THREAD_SIZE);
+	}
 	tegra_generic_smc_uncached(0xFFFFFFFC, 0xFFFFFFE4,
 				   (TEGRA_RESET_HANDLER_BASE +
 				    tegra_cpu_reset_handler_offset));
