@@ -54,6 +54,7 @@ struct tegra_runtime_data {
 	struct tegra_dma_channel *dma_chan;
 	int dma_req_count;
 	int disable_intr;
+	unsigned int avp_dma_addr;
 };
 
 int tegra_pcm_trigger(struct snd_pcm_substream *substream, int cmd);
