@@ -42,6 +42,8 @@
 #include <linux/mfd/tlv320aic3262-core.h>
 
 #include <linux/nfc/pn544.h>
+#include <linux/skbuff.h>
+#include <linux/ti_wilink_st.h>
 #include <sound/max98088.h>
 
 #include <mach/clk.h>
@@ -124,6 +126,32 @@ static struct tegra_thermal_data thermal_data = {
 #endif
 };
 
+/* wl128x BT, FM, GPS connectivity chip */
+struct ti_st_plat_data enterprise_wilink_pdata = {
+	.nshutdown_gpio = TEGRA_GPIO_PE6,
+	.dev_name = BLUETOOTH_UART_DEV_NAME,
+	.flow_cntrl = 1,
+	.baud_rate = 3000000,
+};
+
+static struct platform_device wl128x_device = {
+	.name		= "kim",
+	.id		= -1,
+	.dev.platform_data = &enterprise_wilink_pdata,
+};
+
+static struct platform_device btwilink_device = {
+	.name = "btwilink",
+	.id = -1,
+};
+
+static noinline void __init enterprise_bt_st(void)
+{
+	pr_info("enterprise_bt_st");
+
+	platform_device_register(&wl128x_device);
+	platform_device_register(&btwilink_device);
+}
 static struct rfkill_gpio_platform_data enterprise_bt_rfkill_pdata[] = {
 	{
 		.name           = "bt_rfkill",
@@ -140,8 +168,21 @@ static struct platform_device enterprise_bt_rfkill_device = {
 		.platform_data = &enterprise_bt_rfkill_pdata,
 	},
 };
-
-static struct resource enterprise_bluesleep_resources[] = {
+static struct resource enterprise_ti_bluesleep_resources[] = {
+	[0] = {
+		.name = "gpio_host_wake",
+			.start  = TEGRA_GPIO_PS2,
+			.end    = TEGRA_GPIO_PS2,
+			.flags  = IORESOURCE_IO,
+	},
+	[1] = {
+		.name = "host_wake",
+			.start	= TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PS2),
+			.end	= TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PS2),
+			.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
+	},
+};
+static struct resource enterprise_brcm_bluesleep_resources[] = {
 	[0] = {
 		.name = "gpio_host_wake",
 			.start  = TEGRA_GPIO_PS2,
@@ -162,16 +203,30 @@ static struct resource enterprise_bluesleep_resources[] = {
 	},
 };
 
-static struct platform_device enterprise_bluesleep_device = {
+static struct platform_device enterprise_ti_bluesleep_device = {
 	.name           = "bluesleep",
 	.id             = -1,
-	.num_resources  = ARRAY_SIZE(enterprise_bluesleep_resources),
-	.resource       = enterprise_bluesleep_resources,
+	.num_resources  = ARRAY_SIZE(enterprise_ti_bluesleep_resources),
+	.resource       = enterprise_ti_bluesleep_resources,
 };
 
+static struct platform_device enterprise_brcm_bluesleep_device = {
+	.name           = "bluesleep",
+	.id             = -1,
+	.num_resources  = ARRAY_SIZE(enterprise_brcm_bluesleep_resources),
+	.resource       = enterprise_brcm_bluesleep_resources,
+};
+static void __init enterprise_bt_rfkill(void)
+{
+	platform_device_register(&enterprise_bt_rfkill_device);
+	return;
+}
 static void __init enterprise_setup_bluesleep(void)
 {
-	platform_device_register(&enterprise_bluesleep_device);
+	if (tegra_get_commchip_id() == COMMCHIP_TI_WL18XX)
+		platform_device_register(&enterprise_ti_bluesleep_device);
+	else
+		platform_device_register(&enterprise_brcm_bluesleep_device);
 	return;
 }
 
@@ -634,7 +689,6 @@ static struct platform_device *enterprise_devices[] __initdata = {
 	&tegra_avp_device,
 #endif
 	&tegra_camera,
-	&enterprise_bt_rfkill_device,
 	&tegra_spi_device4,
 	&tegra_hda_device,
 #if defined(CONFIG_CRYPTO_DEV_TEGRA_SE)
@@ -1078,7 +1132,6 @@ static void __init tegra_enterprise_init(void)
 	enterprise_usb_init();
 	if (board_info.board_id == BOARD_E1239)
 		enterprise_bt_rfkill_pdata[0].reset_gpio = TEGRA_GPIO_PF4;
-
 	platform_add_devices(enterprise_devices, ARRAY_SIZE(enterprise_devices));
 	tegra_ram_console_debug_init();
 	enterprise_regulator_init();
@@ -1093,6 +1146,10 @@ static void __init tegra_enterprise_init(void)
 	enterprise_audio_init();
 	enterprise_baseband_init();
 	enterprise_panel_init();
+	if (tegra_get_commchip_id() == COMMCHIP_TI_WL18XX)
+		enterprise_bt_st();
+	else
+		enterprise_bt_rfkill();
 	enterprise_setup_bluesleep();
 	enterprise_emc_init();
 	enterprise_sensors_init();
