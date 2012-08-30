@@ -602,6 +602,9 @@ static void __init tegra_p1852_init(void)
 	p1852_nor_init();
 	p1852_pcie_init();
 	tegra_serial_debug_init(TEGRA_UARTD_BASE, INT_WDT_CPU, NULL, -1, -1);
+#ifdef CONFIG_VIDEO_TEGRA
+	p1852_sensors_init();
+#endif
 }
 
 static void __init tegra_p1852_reserve(void)

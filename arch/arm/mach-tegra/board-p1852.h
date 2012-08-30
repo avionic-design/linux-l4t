@@ -95,6 +95,9 @@ int p1852_pinmux_init(void);
 int p1852_panel_init(void);
 int p1852_gpio_init(void);
 int p1852_pins_state_init(void);
+#ifdef CONFIG_VIDEO_TEGRA
+int p1852_sensors_init(void);
+#endif
 
 #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT
 #define TOUCH_GPIO_IRQ_ATMEL_T9 TEGRA_GPIO_PEE1
