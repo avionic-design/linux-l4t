@@ -132,8 +132,10 @@ static int bcmsdh_sdmmc_probe(struct sdio_func *func,
 #endif
 		sd_trace(("F2 found, calling bcmsdh_probe_bcmdhd...\n"));
 		ret = bcmsdh_probe_bcmdhd(&func->dev);
+#ifndef DHDTHREAD
 		if (mmc_power_save_host(func->card->host))
 			sd_err(("%s: card power save fail", __FUNCTION__));
+#endif
 	}
 
 	return ret;
