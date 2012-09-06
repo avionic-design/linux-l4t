@@ -61,6 +61,7 @@ static spinlock_t up_cpumask_lock;
 static cpumask_t down_cpumask;
 static spinlock_t down_cpumask_lock;
 static struct mutex set_speed_lock;
+static struct kobject *interactive_kobj;
 
 /* Go to max speed when CPU load at or above this value. */
 #define DEFAULT_GO_MAXSPEED_LOAD 85
@@ -660,6 +661,10 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 		rc = sysfs_create_group(cpufreq_global_kobject,
 				&interactive_attr_group);
+		interactive_kobj = kobject_create_and_add(
+					"gov_interactive",
+					cpufreq_global_kobject);
+		kobject_uevent(interactive_kobj, KOBJ_ADD);
 		if (rc)
 			return rc;
 
@@ -687,6 +692,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 		sysfs_remove_group(cpufreq_global_kobject,
 				&interactive_attr_group);
+		kobject_uevent(interactive_kobj, KOBJ_REMOVE);
+		kobject_put(interactive_kobj);
 
 		break;
 
