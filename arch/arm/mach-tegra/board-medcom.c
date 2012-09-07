@@ -254,7 +254,7 @@ static struct tegra_i2c_platform_data medcom_dvc_platform_data = {
 
 static struct wm8903_platform_data medcom_wm8903_pdata = {
 	.irq_active_low = 0,
-	.micdet_cfg = 0,
+	.micdet_cfg = 1,
 	.micdet_delay = 100,
 	.gpio_base = MEDCOM_GPIO_WM8903(0),
 	.gpio_cfg = {
