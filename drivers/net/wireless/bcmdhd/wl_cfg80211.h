@@ -612,7 +612,6 @@ wl_get_profile_by_netdev(struct wl_priv *wl, struct net_device *ndev)
 #define iscan_to_wl(i) ((struct wl_priv *)(i->data))
 #define wl_to_iscan(w) (w->iscan)
 #define wl_to_conn(w) (&w->conn_info)
-#define wiphy_from_scan(w) (w->escan_info.wiphy)
 #define wl_get_drv_status_all(wl, stat) \
 	(wl_get_status_all(wl, WL_STATUS_ ## stat))
 #define wl_get_drv_status(wl, stat, ndev)  \
