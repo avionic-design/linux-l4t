@@ -1143,7 +1143,9 @@ static int tm6000_init_dev(struct tm6000_core *dev)
 	tm6000_add_into_devlist(dev);
 	tm6000_init_extension(dev);
 
+#if 0
 	tm6000_ir_init(dev);
+#endif
 
 	request_modules(dev);
 
