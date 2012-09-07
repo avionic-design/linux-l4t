@@ -184,6 +184,9 @@ static __initdata struct tegra_drive_pingroup_config p1852_drive_pinmux[] = {
 	}
 
 
+static __initdata struct tegra_pingroup_config p1852_pinmux_i2s4_master[] = {
+	DEFAULT_PINMUX(SDMMC4_CLK,    NAND,   PULL_UP,    NORMAL, INPUT),
+};
 
 static __initdata struct tegra_pingroup_config p1852_pinmux_common[] = {
 	/* SDMMC1 pinmux */
@@ -427,7 +430,7 @@ static __initdata struct tegra_pingroup_config p1852_pinmux_common[] = {
 	DEFAULT_PINMUX(GPIO_PV2,	RSVD1,	NORMAL,	NORMAL,	INPUT),
 	DEFAULT_PINMUX(GPIO_PV3,	RSVD1,	NORMAL,	NORMAL,	INPUT),
 	DEFAULT_PINMUX(SDMMC3_DAT7,	SDMMC3,	NORMAL,	NORMAL,	INPUT),
-	LVPAD_PINMUX(SDMMC4_CLK,	NAND,	NORMAL,	NORMAL,	INPUT,	DISABLE,	DISABLE),
+	DEFAULT_PINMUX(SDMMC4_CLK,	NAND,	NORMAL,	NORMAL,	INPUT),
 	DEFAULT_PINMUX(SDMMC3_CMD,	SDMMC3,	NORMAL,	NORMAL,	INPUT),
 	DEFAULT_PINMUX(SDMMC3_DAT3,	RSVD0,	NORMAL,	NORMAL,	INPUT),
 	DEFAULT_PINMUX(VI_D1,		RSVD1,	NORMAL,	NORMAL,	INPUT),
@@ -445,6 +448,12 @@ int __init p1852_pinmux_init(void)
 	return 0;
 }
 
+int p1852_pinmux_set_i2s4_master(void)
+{
+	tegra_pinmux_config_table(p1852_pinmux_i2s4_master,
+					ARRAY_SIZE(p1852_pinmux_i2s4_master));
+	return 0;
+}
 #define GPIO_INIT_PIN_MODE(_gpio, _is_input, _value)	\
 	{					\
 		.gpio_nr	= _gpio,	\
