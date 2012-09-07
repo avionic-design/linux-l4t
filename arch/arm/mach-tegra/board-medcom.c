@@ -284,7 +284,7 @@ static struct sx8634_platform_data medcom_keypad1_pdata = {
 	.caps = {
 		[1] = {
 			.mode = SX8634_CAP_MODE_BUTTON,
-			.keycode = KEY_MENU,
+			.keycode = KEY_INFO,
 			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
 			.threshold = SX8634_DEFAULT_THRESHOLD,
 		},
