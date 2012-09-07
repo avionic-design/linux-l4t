@@ -136,6 +136,10 @@ extern struct platform_device tegra_nvmap_device;
 extern struct platform_device tegra_cec_device;
 #endif
 
+#ifdef CONFIG_VIDEO_TEGRA
+extern struct nvhost_device tegra_camera_device;
+#endif
+
 void __init tegra_init_debug_uart_rate(void);
 
 #endif
