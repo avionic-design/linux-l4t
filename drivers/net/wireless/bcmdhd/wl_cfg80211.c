@@ -4693,7 +4693,7 @@ static s32 wl_inform_bss(struct wl_priv *wl)
 
 static s32 wl_inform_single_bss(struct wl_priv *wl, struct wl_bss_info *bi)
 {
-	struct wiphy *wiphy = wiphy_from_scan(wl);
+	struct wiphy *wiphy = wl_to_wiphy(wl);
 	struct ieee80211_mgmt *mgmt;
 	struct ieee80211_channel *channel;
 	struct ieee80211_supported_band *band;
