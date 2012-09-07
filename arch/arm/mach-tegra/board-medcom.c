@@ -35,6 +35,7 @@
 #include <linux/input/sx8634.h>
 #include <linux/memblock.h>
 #include <linux/delay.h>
+#include <linux/tegra_uart.h>
 
 #include <sound/wm8903.h>
 
@@ -412,7 +413,31 @@ static struct platform_device pda_power_device = {
 	},
 };
 
-static void medcom_debug_uart_init(void)
+/* uart setup */
+static struct plat_serial8250_port modem_uart_platform_data[] = {
+	{
+		.membase	= IO_ADDRESS(TEGRA_UARTC_BASE),
+		.mapbase	= TEGRA_UARTC_BASE,
+		.irq		= INT_UARTC,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE,
+		.type		= PORT_TEGRA,
+		.iotype		= UPIO_MEM,
+		.regshift	= 2,
+		.uartclk	= 216000000,
+	}, {
+		.flags		= 0
+	}
+};
+
+static struct platform_device modem_uartc_device = {
+	.name = "serial8250",
+	.id = PLAT8250_DEV_PLATFORM1,
+	.dev = {
+		.platform_data = modem_uart_platform_data,
+	},
+};
+
+static void __init medcom_debug_uart_init(void)
 {
 	struct clk *c;
 
@@ -439,8 +464,8 @@ static void medcom_debug_uart_init(void)
 }
 
 static struct platform_device *medcom_devices[] __initdata = {
-	&tegra_uartc_device, /* modem */
 	&debug_uartd_device,
+	&modem_uartc_device,
 	&tegra_sdhci_device1,
 	&tegra_sdhci_device2,
 	&tegra_sdhci_device4,
