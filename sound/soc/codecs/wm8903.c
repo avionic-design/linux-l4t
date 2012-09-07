@@ -1073,11 +1073,13 @@ static const struct snd_soc_dapm_route wm8903_intercon[] = {
 	{ "Left Output Mixer", "Right Bypass Switch", "Right Input PGA" },
 	{ "Left Output Mixer", "DACL Switch", "DACL" },
 	{ "Left Output Mixer", "DACR Switch", "DACR" },
+	{ "Left Output Mixer", NULL, "CLK_DSP" },
 
 	{ "Right Output Mixer", "Left Bypass Switch", "Left Input PGA" },
 	{ "Right Output Mixer", "Right Bypass Switch", "Right Input PGA" },
 	{ "Right Output Mixer", "DACL Switch", "DACL" },
 	{ "Right Output Mixer", "DACR Switch", "DACR" },
+	{ "Right Output Mixer", NULL, "CLK_DSP" },
 
 	{ "Left Speaker Mixer", "Left Bypass Switch", "Left Input PGA" },
 	{ "Left Speaker Mixer", "Right Bypass Switch", "Right Input PGA" },
