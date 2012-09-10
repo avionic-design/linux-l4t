@@ -429,7 +429,7 @@ static const struct i2c_reg_value tvp5150_init_enable[] = {
 	},{	/* Automatic offset and AGC enabled */
 		TVP5150_ANAL_CHL_CTL, 0x15
 	},{	/* Activate YCrCb output 0x9 or 0xd ? */
-		TVP5150_MISC_CTL, 0x6f
+		TVP5150_MISC_CTL, 0x6b
 	},{	/* Activates video std autodetection for all standards */
 		TVP5150_AUTOSW_MSK, 0x0
 	},{	/* Default format: 0x47. For 4:2:2: 0x40 */
@@ -1066,6 +1066,8 @@ static int tvp5150_probe(struct i2c_client *c,
 	u8 msb_id, lsb_id, msb_rom, lsb_rom;
 
 	icd->ops = &tvp5150_soc_ops;
+
+	printk("> %s()\n", __func__);
 
 	/* Check if the adapter supports the needed features */
 	if (!i2c_check_functionality(c->adapter,
