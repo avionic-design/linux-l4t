@@ -13,6 +13,8 @@
 #include <media/tvp5150.h>
 #include <media/v4l2-chip-ident.h>
 #include <media/v4l2-ctrls.h>
+#include <media/soc_camera.h>
+
 
 #include "tvp5150_reg.h"
 
@@ -243,6 +245,8 @@ static inline void tvp5150_selmux(struct v4l2_subdev *sd)
 	int input = 0;
 	unsigned char val;
 
+	printk("%s\n", __func__);
+
 	if ((decoder->output & TVP5150_BLACK_SCREEN) || !decoder->enable)
 		input = 8;
 
@@ -454,6 +458,10 @@ struct i2c_vbi_ram_value {
 	unsigned char values[16];
 };
 
+static enum v4l2_mbus_pixelcode tvp5150_codes[] = {
+	V4L2_MBUS_FMT_YUYV8_2X8,
+};
+
 /* This struct have the values for each supported VBI Standard
  * by
  tvp5150_vbi_types should follow the same order as vbi_ram_default
@@ -545,6 +553,7 @@ static struct i2c_vbi_ram_value vbi_ram_default[] =
 static int tvp5150_write_inittab(struct v4l2_subdev *sd,
 				const struct i2c_reg_value *regs)
 {
+	printk("%s\n", __func__);
 	while (regs->reg != 0xff) {
 		tvp5150_write(sd, regs->reg, regs->value);
 		regs++;
@@ -556,6 +565,8 @@ static int tvp5150_vdp_init(struct v4l2_subdev *sd,
 				const struct i2c_vbi_ram_value *regs)
 {
 	unsigned int i;
+
+	printk("%s\n", __func__);
 
 	/* Disable Full Field */
 	tvp5150_write(sd, TVP5150_FULL_FIELD_ENA, 0);
@@ -583,6 +594,8 @@ static int tvp5150_g_sliced_vbi_cap(struct v4l2_subdev *sd,
 {
 	const struct i2c_vbi_ram_value *regs = vbi_ram_default;
 	int line;
+
+	printk("%s\n", __func__);
 
 	v4l2_dbg(1, debug, sd, "g_sliced_vbi_cap\n");
 	memset(cap, 0, sizeof *cap);
@@ -620,6 +633,8 @@ static int tvp5150_set_vbi(struct v4l2_subdev *sd,
 	v4l2_std_id std = decoder->norm;
 	u8 reg;
 	int pos=0;
+
+	printk("%s\n", __func__);
 
 	if (std == V4L2_STD_ALL) {
 		v4l2_err(sd, "VBI can't be configured without knowing number of lines\n");
@@ -668,6 +683,8 @@ static int tvp5150_get_vbi(struct v4l2_subdev *sd,
 	u8 reg;
 	int pos, type = 0;
 
+	printk("%s\n", __func__);
+
 	if (std == V4L2_STD_ALL) {
 		v4l2_err(sd, "VBI can't be configured without knowing number of lines\n");
 		return 0;
@@ -696,6 +713,8 @@ static int tvp5150_set_std(struct v4l2_subdev *sd, v4l2_std_id std)
 {
 	struct tvp5150 *decoder = to_tvp5150(sd);
 	int fmt = 0;
+
+	printk("%s\n", __func__);
 
 	decoder->norm = std;
 
@@ -728,6 +747,8 @@ static int tvp5150_s_std(struct v4l2_subdev *sd, v4l2_std_id std)
 {
 	struct tvp5150 *decoder = to_tvp5150(sd);
 
+	printk("%s\n", __func__);
+
 	if (decoder->norm == std)
 		return 0;
 
@@ -738,6 +759,8 @@ static int tvp5150_reset(struct v4l2_subdev *sd, u32 val)
 {
 	struct tvp5150 *decoder = to_tvp5150(sd);
 
+	printk("%s\n", __func__);
+
 	/* Initializes TVP5150 to its default values */
 	tvp5150_write_inittab(sd, tvp5150_init_default);
 
@@ -747,6 +770,7 @@ static int tvp5150_reset(struct v4l2_subdev *sd, u32 val)
 	/* Selects decoder input */
 	tvp5150_selmux(sd);
 
+	printk("%s, do init\n", __func__);
 	/* Initializes TVP5150 to stream enabled values */
 	tvp5150_write_inittab(sd, tvp5150_init_enable);
 
@@ -760,6 +784,8 @@ static int tvp5150_reset(struct v4l2_subdev *sd, u32 val)
 static int tvp5150_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct v4l2_subdev *sd = to_sd(ctrl);
+
+	printk("%s\n", __func__);
 
 	switch (ctrl->id) {
 	case V4L2_CID_BRIGHTNESS:
@@ -900,10 +926,87 @@ static int tvp5150_g_tuner(struct v4l2_subdev *sd, struct v4l2_tuner *vt)
 	return 0;
 }
 
+
+/* Alter bus settings on camera side */
+static int tvp5150_set_bus_param(struct soc_camera_device *icd,
+				unsigned long flags)
+{
+	printk("%s: entry\n", __func__);
+	return 0;
+}
+
+/* Request bus settings on camera side */
+static unsigned long tvp5150_query_bus_param(struct soc_camera_device *icd)
+{
+	printk("%s: entry\n", __func__);
+	return 0;
+}
+
+
+static int tvp5150_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
+			   enum v4l2_mbus_pixelcode *code)
+{
+	if (index >= ARRAY_SIZE(tvp5150_codes))
+		return -EINVAL;
+
+	*code = tvp5150_codes[index];
+
+	return 0;
+}
+
+static int tvp5150_try_fmt(struct v4l2_subdev *sd,
+			  struct v4l2_mbus_framefmt *mf)
+{
+	mf->field = V4L2_FIELD_NONE;
+	mf->code = V4L2_MBUS_FMT_YUYV8_2X8;
+	mf->colorspace = V4L2_COLORSPACE_SMPTE170M;
+
+	return 0;
+}
+
+/* set the format we will capture in */
+static int tvp5150_s_fmt(struct v4l2_subdev *sd,
+			struct v4l2_mbus_framefmt *mf)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	enum v4l2_colorspace cspace;
+	enum v4l2_mbus_pixelcode code = mf->code;
+	int ret;
+
+	/*v9740_res_roundup(&mf->width, &mf->height);
+
+	switch (code) {
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		cspace = V4L2_COLORSPACE_SRGB;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	ret = ov9740_reg_write_array(client, ov9740_defaults,
+					 ARRAY_SIZE(ov9740_defaults));
+	if (ret < 0)
+		return ret;
+
+	ret = ov9740_set_res(client, mf->width);
+	if (ret < 0)
+		return ret;*/
+
+	mf->code	= code;
+	mf->colorspace	= cspace;
+
+	return ret;
+}
+
 /* ----------------------------------------------------------------------- */
 
 static const struct v4l2_ctrl_ops tvp5150_ctrl_ops = {
 	.s_ctrl = tvp5150_s_ctrl,
+};
+
+static struct soc_camera_ops tvp5150_soc_ops = {
+	.set_bus_param		= tvp5150_set_bus_param,
+	.query_bus_param	= tvp5150_query_bus_param,
 };
 
 static const struct v4l2_subdev_core_ops tvp5150_core_ops = {
@@ -930,6 +1033,9 @@ static const struct v4l2_subdev_tuner_ops tvp5150_tuner_ops = {
 
 static const struct v4l2_subdev_video_ops tvp5150_video_ops = {
 	.s_routing = tvp5150_s_routing,
+	.enum_mbus_fmt = tvp5150_enum_fmt,
+	.try_mbus_fmt = tvp5150_try_fmt,
+	.s_mbus_fmt = tvp5150_s_fmt,
 };
 
 static const struct v4l2_subdev_vbi_ops tvp5150_vbi_ops = {
@@ -955,8 +1061,11 @@ static int tvp5150_probe(struct i2c_client *c,
 			 const struct i2c_device_id *id)
 {
 	struct tvp5150 *core;
+	struct soc_camera_device *icd	= c->dev.platform_data;
 	struct v4l2_subdev *sd;
 	u8 msb_id, lsb_id, msb_rom, lsb_rom;
+
+	icd->ops = &tvp5150_soc_ops;
 
 	/* Check if the adapter supports the needed features */
 	if (!i2c_check_functionality(c->adapter,
@@ -1014,6 +1123,8 @@ static int tvp5150_probe(struct i2c_client *c,
 		return err;
 	}
 	v4l2_ctrl_handler_setup(&core->hdl);
+
+	tvp5150_reset(sd, 0);
 
 	if (debug > 1)
 		tvp5150_log_status(sd);
