@@ -127,6 +127,9 @@ obj-${CONFIG_MACH_MEDCOM}              += board-medcom-panel.o
 obj-${CONFIG_MACH_MEDCOM}              += board-medcom-pinmux.o
 obj-${CONFIG_MACH_MEDCOM}              += board-medcom-pcie.o
 obj-${CONFIG_MACH_MEDCOM}              += board-medcom-power.o
+ifeq ($(CONFIG_VIDEO_TEGRA),y)
+obj-${CONFIG_MACH_MEDCOM}              += board-medcom-v4l2.o
+endif
 
 obj-${CONFIG_MACH_PAZ00}                += board-paz00.o
 obj-${CONFIG_MACH_PAZ00}                += board-paz00-pinmux.o

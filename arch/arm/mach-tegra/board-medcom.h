@@ -48,5 +48,6 @@ int medcom_suspend_init(void);
 int medcom_panel_init(void);
 int medcom_kbc_init(void);
 int medcom_pcie_init(void);
+int medcom_sensors_init(void);
 
 #endif

@@ -567,6 +567,9 @@ static void __init tegra_medcom_init(void)
 	medcom_suspend_init();
 	medcom_panel_init();
 	medcom_pcie_init();
+#ifdef CONFIG_VIDEO_TEGRA
+	medcom_sensors_init();
+#endif
 }
 
 void __init tegra_medcom_reserve(void)
