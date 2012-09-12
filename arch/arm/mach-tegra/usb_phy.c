@@ -315,6 +315,7 @@ struct tegra_usb_phy *tegra_usb_phy_open(struct platform_device *pdev)
 				 instance : %d\n", PTR_ERR(phy->vbus_reg),
 								phy->inst);
 				err = PTR_ERR(phy->vbus_reg);
+				phy->vbus_reg = NULL;
 				goto fail_init;
 			}
 		} else {
