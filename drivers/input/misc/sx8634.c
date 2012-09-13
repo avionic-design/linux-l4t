@@ -62,6 +62,10 @@
 #define SPM_CAP_THRESHOLD(x) (0x13 + (x))
 #define SPM_CAP_THRESHOLD_MAX 0xff
 
+#define SPM_BTN_CFG 0x21
+#define SPM_BTN_CFG_TOUCH_DEBOUNCE_MASK 0x03
+#define SPM_BTN_CFG_TOUCH_DEBOUNCE_SHIFT 0
+
 #define SPM_BLOCK_SIZE 8
 #define SPM_NUM_BLOCKS 16
 #define SPM_SIZE (SPM_BLOCK_SIZE * SPM_NUM_BLOCKS)
@@ -75,6 +79,10 @@ MODULE_PARM_DESC(sensitivity, "The pad sensitivity (0-7).");
 static int threshold = -1;
 module_param(threshold, int, S_IRUGO);
 MODULE_PARM_DESC(threshold, "The value which needs to be exceed or fall below to trigger (0-100).");
+
+static int debounce = -1;
+module_param(debounce, int, S_IRUGO);
+MODULE_PARM_DESC(debounce, "The number of samples above the threshold (1-4, 1 is default).");
 
 struct sx8634 {
 	struct i2c_client *client;
@@ -446,6 +454,28 @@ static int sx8634_set_threshold(struct sx8634 *sx, unsigned int cap,
 	return 0;
 }
 
+static int sx8634_set_debounce(struct sx8634 *sx, u8 samples)
+{
+	u8 value = 0;
+	int err;
+
+	if (samples < 1 || samples > 4)
+		return -EINVAL;
+
+	err = sx8634_spm_read(sx, SPM_BTN_CFG, &value);
+	if (err < 0)
+		return err;
+
+	value &= ~SPM_BTN_CFG_TOUCH_DEBOUNCE_MASK;
+	value |= (samples - 1) << SPM_BTN_CFG_TOUCH_DEBOUNCE_SHIFT;
+
+	err = sx8634_spm_write(sx, SPM_BTN_CFG, value);
+	if (err < 0)
+		return err;
+
+	return 0;
+}
+
 static int sx8634_setup(struct sx8634 *sx, struct sx8634_platform_data *pdata)
 {
 	bool slider = false;
@@ -509,6 +539,18 @@ static int sx8634_setup(struct sx8634 *sx, struct sx8634_platform_data *pdata)
 		err = sx8634_set_threshold(sx, i, value);
 		if (err < 0) {
 		}
+	}
+
+	if (debounce < 0)
+		value = pdata->debounce;
+	else
+		value = debounce;
+
+	err = sx8634_set_debounce(sx, value);
+	if (err < 0) {
+		dev_warn(&sx->client->dev, "sx8634_set_debounce(samples=%d): %d\n",
+			value, err);
+		return err;
 	}
 
 	err = sx8634_spm_sync(sx);
