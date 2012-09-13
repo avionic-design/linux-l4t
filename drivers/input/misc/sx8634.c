@@ -68,6 +68,14 @@
 
 #define MAX_RETRIES 64
 
+static int sensitivity = -1;
+module_param(sensitivity, int, S_IRUGO);
+MODULE_PARM_DESC(sensitivity, "The pad sensitivity (0-7).");
+
+static int threshold = -1;
+module_param(threshold, int, S_IRUGO);
+MODULE_PARM_DESC(threshold, "The value which needs to be exceed or fall below to trigger (0-100).");
+
 struct sx8634 {
 	struct i2c_client *client;
 	struct input_dev *input;
@@ -403,6 +411,9 @@ static int sx8634_set_sensitivity(struct sx8634 *sx, unsigned int cap,
 	if (cap >= SX8634_NUM_CAPS)
 		return -EINVAL;
 
+	if (sensitivity < 0x00 || sensitivity > 0x07)
+		return -EINVAL;
+
 	err = sx8634_spm_read(sx, SPM_CAP_SENS(cap), &value);
 	if (err < 0)
 		return err;
@@ -425,6 +436,9 @@ static int sx8634_set_threshold(struct sx8634 *sx, unsigned int cap,
 	if (cap >= SX8634_NUM_CAPS)
 		return -EINVAL;
 
+	if (threshold < 0x00 || threshold > 0xa0)
+		return -EINVAL;
+
 	err = sx8634_spm_write(sx, SPM_CAP_THRESHOLD(cap), threshold);
 	if (err < 0)
 		return err;
@@ -436,6 +450,7 @@ static int sx8634_setup(struct sx8634 *sx, struct sx8634_platform_data *pdata)
 {
 	bool slider = false;
 	unsigned int i;
+	u8 value;
 	int err;
 
 	err = sx8634_reset(sx);
@@ -477,11 +492,21 @@ static int sx8634_setup(struct sx8634 *sx, struct sx8634_platform_data *pdata)
 	for (i = 0; i < SX8634_NUM_CAPS; i++) {
 		struct sx8634_cap *cap = &pdata->caps[i];
 
-		err = sx8634_set_sensitivity(sx, i, cap->sensitivity);
+		if (sensitivity < 0)
+			value = cap->sensitivity;
+		else
+			value = sensitivity;
+
+		err = sx8634_set_sensitivity(sx, i, value);
 		if (err < 0) {
 		}
 
-		err = sx8634_set_threshold(sx, i, cap->threshold);
+		if (threshold < 0)
+			value = cap->threshold;
+		else
+			value = threshold;
+
+		err = sx8634_set_threshold(sx, i, value);
 		if (err < 0) {
 		}
 	}
