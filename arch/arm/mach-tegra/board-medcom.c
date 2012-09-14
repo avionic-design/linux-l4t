@@ -280,6 +280,7 @@ static struct adnp_platform_data medcom_adnp_pdata = {
 #define SX8634_DEFAULT_THRESHOLD	0x45
 
 static struct sx8634_platform_data medcom_keypad1_pdata = {
+	.debounce = 3,
 	.caps = {
 		[1] = {
 			.mode = SX8634_CAP_MODE_BUTTON,
@@ -322,6 +323,7 @@ static struct sx8634_platform_data medcom_keypad1_pdata = {
 
 
 static struct sx8634_platform_data medcom_keypad2_pdata = {
+	.debounce = 3,
 	.caps = {
 		[1] = {
 			.mode = SX8634_CAP_MODE_BUTTON,
