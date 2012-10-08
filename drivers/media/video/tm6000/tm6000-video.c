@@ -57,7 +57,7 @@
 static unsigned int vid_limit = 16;	/* Video memory limit, in Mb */
 static int video_nr = -1;		/* /dev/videoN, -1 for autodetect */
 static int radio_nr = -1;		/* /dev/radioN, -1 for autodetect */
-static int keep_urb = 0;		/* keep urb buffers allocated */
+static int keep_urb = 1;		/* keep urb buffers allocated */
 
 /* Debug level */
 int tm6000_debug;
