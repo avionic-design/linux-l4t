@@ -20,6 +20,7 @@
 #include <linux/clk.h>
 #include <linux/pm_runtime.h>
 #include <linux/nvhost.h>
+#include <linux/slab.h>
 
 #include <media/soc_camera.h>
 #include <media/soc_mediabus.h>
@@ -426,6 +427,7 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_RAISE, 0x00000001);
 
 	if (port == TEGRA_CAMERA_PORT_CSI_A) {
+		printk("%s(): Using CSI-A input\n", __func__);
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VI_CORE_CONTROL, 0x02000000);
 
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VI_INPUT_CONTROL,
@@ -509,6 +511,7 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 		TC_VI_REG_WT(pcdev, TEGRA_CSI_PIXEL_STREAM_PPA_COMMAND,
 			0x0000f002);
 	} else if (port == TEGRA_CAMERA_PORT_CSI_B) {
+		printk("%s(): Using CSI-B input\n", __func__);
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VI_CORE_CONTROL, 0x04000000);
 
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VI_INPUT_CONTROL,
@@ -593,6 +596,9 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 		TC_VI_REG_WT(pcdev, TEGRA_CSI_PIXEL_STREAM_PPB_COMMAND,
 			0x0000f002);
 	} else {
+		printk("%s(): Using VI input\n", __func__);
+		TC_VI_REG_WT(pcdev, TEGRA_VI_VI_DATA_INPUT_CONTROL,
+		0x000003fc);
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VI_CORE_CONTROL, 0x00000000);
 
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VI_INPUT_CONTROL,
@@ -1509,31 +1515,31 @@ static int __devinit tegra_camera_probe(struct nvhost_device *ndev)
 	}
 
 	pcdev->clk_vi = clk_get_sys("tegra_camera", "vi");
-	if (!pcdev->clk_vi) {
+	if (IS_ERR(pcdev->clk_vi)) {
 		dev_err(&ndev->dev, "Failed to get vi clock.\n");
 		goto exit_free_pcdev;
 	}
 
 	pcdev->clk_vi_sensor = clk_get_sys("tegra_camera", "vi_sensor");
-	if (!pcdev->clk_vi_sensor) {
+	if (IS_ERR(pcdev->clk_vi_sensor)) {
 		dev_err(&ndev->dev, "Failed to get vi_sensor clock.\n");
 		goto exit_put_clk_vi;
 	}
 
 	pcdev->clk_csi = clk_get_sys("tegra_camera", "csi");
-	if (!pcdev->clk_csi) {
+	if (IS_ERR(pcdev->clk_csi)) {
 		dev_err(&ndev->dev, "Failed to get csi clock.\n");
 		goto exit_put_clk_vi_sensor;
 	}
 
 	pcdev->clk_isp = clk_get_sys("tegra_camera", "isp");
-	if (!pcdev->clk_isp) {
+	if (IS_ERR(pcdev->clk_isp)) {
 		dev_err(&ndev->dev, "Failed to get isp clock.\n");
 		goto exit_put_clk_csi;
 	}
 
 	pcdev->clk_csus = clk_get_sys("tegra_camera", "csus");
-	if (!pcdev->clk_csus) {
+	if (IS_ERR(pcdev->clk_csus)) {
 		dev_err(&ndev->dev, "Failed to get csus clock.\n");
 		goto exit_put_clk_isp;
 	}
