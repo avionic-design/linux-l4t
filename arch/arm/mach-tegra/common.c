@@ -812,7 +812,7 @@ void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 	}
 
 	if (fb2_size) {
-		tegra_fb2_start = memblock_end_of_DRAM() - fb2_size;
+		tegra_fb2_start = memblock_end_of_DRAM() - 2 * fb2_size;
 		if (memblock_remove(tegra_fb2_start, fb2_size)) {
 			pr_err("Failed to remove second framebuffer "
 				"%08lx@%08lx from memory map\n",
@@ -824,7 +824,7 @@ void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 	}
 
 	if (fb_size) {
-		tegra_fb_start = memblock_end_of_DRAM() - fb_size;
+		tegra_fb_start = memblock_end_of_DRAM() - 2 * fb2_size - fb_size;
 		if (memblock_remove(tegra_fb_start, fb_size)) {
 			pr_err("Failed to remove framebuffer %08lx@%08lx "
 				"from memory map\n",
