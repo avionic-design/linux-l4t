@@ -548,9 +548,9 @@ static irqreturn_t tegra_i2c_isr(int irq, void *dev_id)
 		dev_warn(i2c_dev->dev, "I2c error status 0x%08x\n", status);
 		if (status & I2C_INT_NO_ACK) {
 			i2c_dev->msg_err |= I2C_ERR_NO_ACK;
-			dev_warn(i2c_dev->dev, "no acknowledge from address"
-					" 0x%x\n", i2c_dev->msg_add);
-			dev_warn(i2c_dev->dev, "Packet status 0x%08x\n",
+			dev_dbg(i2c_dev->dev, "no acknowledge from address"
+				" 0x%x\n", i2c_dev->msg_add);
+			dev_dbg(i2c_dev->dev, "Packet status 0x%08x\n",
 				i2c_readl(i2c_dev, I2C_PACKET_TRANSFER_STATUS));
 		}
 
