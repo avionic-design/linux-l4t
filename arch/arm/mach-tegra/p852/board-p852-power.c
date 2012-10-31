@@ -173,11 +173,12 @@ static void __init tps6586x_rtc_preinit(void)
 		system_rev == P852_SKU5_C01) {
 		for (i = 0; i < tps_platform.num_subdevs; ++i)
 			if (!strcmp(tps_platform.subdevs[i].name,
-				"tps6586x-rtc"))
+				"tps6586x-rtc")) {
 				rtc_pdata =
 					(struct tps6586x_rtc_platform_data *)
 					(tps_platform.subdevs[i].platform_data);
 				rtc_pdata->cl_sel = TPS6586X_RTC_CL_SEL_1_5PF;
+			}
 	}
 }
 
