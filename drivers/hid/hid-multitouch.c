@@ -699,6 +699,9 @@ static const struct hid_device_id mt_devices[] = {
 	/* eGalax devices (capacitive) */
 	{ .driver_data = MT_CLS_EGALAX,
 		HID_USB_DEVICE(USB_VENDOR_ID_DWAV,
+			USB_DEVICE_ID_DWAV_EGALAX_MULTITOUCH_7200) },
+	{ .driver_data = MT_CLS_EGALAX,
+		HID_USB_DEVICE(USB_VENDOR_ID_DWAV,
 			USB_DEVICE_ID_DWAV_EGALAX_MULTITOUCH_720C) },
 	{ .driver_data = MT_CLS_EGALAX_SERIAL,
 		HID_USB_DEVICE(USB_VENDOR_ID_DWAV,
