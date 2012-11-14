@@ -21,6 +21,8 @@
 #include <linux/pm_runtime.h>
 #include <linux/nvhost.h>
 
+#include <mach/iomap.h>
+
 #include <media/soc_camera.h>
 #include <media/soc_mediabus.h>
 #include <media/videobuf2-dma-nvmap.h>
@@ -936,6 +938,11 @@ static void tegra_camera_work(struct work_struct *work)
 
 static void tegra_camera_activate(struct tegra_camera_dev *pcdev)
 {
+#ifdef CONFIG_ARCH_TEGRA_2x_SOC
+	u32 val;
+	void __iomem *apb_misc;
+#endif
+
 	nvhost_module_busy_ext(pcdev->ndev);
 
 	/* Turn on relevant clocks. */
@@ -944,6 +951,12 @@ static void tegra_camera_activate(struct tegra_camera_dev *pcdev)
 	clk_enable(pcdev->clk_csi);
 	clk_enable(pcdev->clk_isp);
 	clk_enable(pcdev->clk_csus);
+
+#ifdef CONFIG_ARCH_TEGRA_2x_SOC
+	apb_misc = IO_ADDRESS(TEGRA_APB_MISC_BASE);
+	val = readl(apb_misc + 0x42c);
+	writel(val | 0x1, apb_misc + 0x42c);
+#endif
 
 	/* Save current syncpt values. */
 	tegra_camera_save_syncpts(pcdev);
