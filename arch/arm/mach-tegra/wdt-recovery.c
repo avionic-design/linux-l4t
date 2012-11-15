@@ -36,9 +36,10 @@
 #include <mach/clk.h>
 #include <mach/io.h>
 
-static int wdt_heartbeat = 30;
 
 #if defined(CONFIG_ARCH_TEGRA_3x_SOC)
+static int wdt_heartbeat = 30;
+
 #define TIMER_PTV			0
  #define TIMER_EN			(1 << 31)
  #define TIMER_PERIODIC			(1 << 30)
@@ -97,6 +98,7 @@ static int tegra_wdt_reset_disable(void)
 }
 #endif
 
+#ifdef CONFIG_PM
 static int tegra_pm_notify(struct notifier_block *nb,
 			unsigned long event, void *nouse)
 {
@@ -115,6 +117,7 @@ static int tegra_pm_notify(struct notifier_block *nb,
 static struct notifier_block tegra_wdt_notify = {
 	.notifier_call = tegra_pm_notify,
 };
+#endif
 
 static struct syscore_ops tegra_wdt_syscore_ops = {
 	.suspend =	tegra_wdt_reset_disable,

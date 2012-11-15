@@ -1301,8 +1301,10 @@ static int tegra_pcie_probe(struct platform_device *pdev)
 		__func__, tegra_pcie.plat_data->port_status[0]);
 	dev_dbg(&pdev->dev, "PCIE.C: %s : _port_status[1] %d\n",
 		__func__, tegra_pcie.plat_data->port_status[1]);
+#if 0
 	dev_dbg(&pdev->dev, "PCIE.C: %s : _port_status[2] %d\n",
 		__func__, tegra_pcie.plat_data->port_status[2]);
+#endif
 	ret = tegra_pcie_init();
 
 	/* disable async PM of pci devices to ensure right order */

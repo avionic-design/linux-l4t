@@ -96,7 +96,9 @@ unsigned long tegra2_lp2_timer_remain(void)
 void __init tegra2_init_timer(u32 *offset, int *irq)
 {
 	unsigned long rate = tegra_clk_measure_input_freq();
+#ifdef CONFIG_PM_SLEEP
 	int ret;
+#endif
 
 	switch (rate) {
 	case 12000000:
