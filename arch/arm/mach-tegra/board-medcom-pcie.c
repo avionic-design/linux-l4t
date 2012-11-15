@@ -68,13 +68,6 @@ int __init medcom_pcie_init(void)
 
 	return 0;
 
-err_pcie:
-	tegra_pinmux_set_tristate(TEGRA_PINGROUP_GPV, TEGRA_TRI_TRISTATE);
-	tegra_pinmux_set_tristate(TEGRA_PINGROUP_SLXA, TEGRA_TRI_TRISTATE);
-	tegra_pinmux_set_tristate(TEGRA_PINGROUP_SLXK, TEGRA_TRI_TRISTATE);
-
-	regulator_disable(regulator);
-	regulator_put(regulator);
 err_reg:
 	gpio_free(EN_VDD_1V05_GPIO);
 
