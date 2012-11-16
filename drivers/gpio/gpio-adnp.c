@@ -485,7 +485,7 @@ static int adnp_irq_setup(struct adnp *gpio)
 	gpio->irq_rising = gpio->irq_mask + (regs * 2);
 	gpio->irq_falling = gpio->irq_mask + (regs * 3);
 
-	err = irq_alloc_descs(-1, gpio->irq_base, gpio->gpio.ngpio, -1);
+	err = irq_alloc_descs(gpio->irq_base, 0, gpio->gpio.ngpio, -1);
 	if (err < 0) {
 		dev_err(gpio->gpio.dev, "%s failed: %d\n",
 				"irq_alloc_descs()", err);
