@@ -472,12 +472,14 @@ static int tegra_otg_probe(struct platform_device *pdev)
 		goto err_irq;
 	}
 
-	err = enable_irq_wake(tegra->irq);
-	if (err < 0) {
-		dev_warn(&pdev->dev,
-			"Couldn't enable USB otg mode wakeup, irq=%d, error=%d\n",
-			tegra->irq, err);
-		err = 0;
+	if (pdata->ehci_pdata->u_data.host.remote_wakeup_supported) {
+		err = enable_irq_wake(tegra->irq);
+		if (err < 0) {
+			dev_warn(&pdev->dev,
+				"Couldn't enable USB otg mode wakeup,"
+				" irq=%d, error=%d\n", tegra->irq, err);
+			err = 0;
+		}
 	}
 
 	INIT_WORK(&tegra->work, irq_work);

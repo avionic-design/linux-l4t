@@ -38,6 +38,7 @@
 #include <linux/err.h>
 #include <linux/io.h>
 #include <linux/pm_qos_params.h>
+#include <linux/platform_data/tegra_usb.h>
 
 #include <asm/byteorder.h>
 #include <asm/io.h>
@@ -2565,6 +2566,7 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 {
 	struct tegra_udc *udc;
 	struct resource *res;
+	struct tegra_usb_platform_data *pdata = dev_get_platdata(&pdev->dev);
 	int err = -ENODEV;
 	DBG("%s(%d) BEGIN\n", __func__, __LINE__);
 
@@ -2615,12 +2617,14 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 		goto err_iounmap;
 	}
 
-	err = enable_irq_wake(udc->irq);
-	if (err < 0) {
-		dev_warn(&pdev->dev,
-			"Couldn't enable USB udc mode wakeup, irq=%d, error=%d\n",
-			udc->irq, err);
-		err = 0;
+	if (pdata->u_data.dev.remote_wakeup_supported) {
+		err = enable_irq_wake(udc->irq);
+		if (err < 0) {
+			dev_warn(&pdev->dev,
+				"Couldn't enable USB udc mode wakeup, irq=%d,"
+				" error=%d\n", udc->irq, err);
+			err = 0;
+		}
 	}
 
 	udc->phy = tegra_usb_phy_open(pdev);
