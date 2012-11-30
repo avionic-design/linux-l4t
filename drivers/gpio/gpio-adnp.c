@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Avionic Design GmbH
+ * Copyright (C) 2011-2012 Avionic Design GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -25,7 +25,6 @@
 
 struct adnp {
 	struct i2c_client *client;
-	const char *const *names;
 	struct gpio_chip gpio;
 	unsigned int reg_shift;
 
@@ -35,23 +34,30 @@ struct adnp {
 #ifdef CONFIG_GPIO_ADNP_IRQ
 	struct mutex irq_lock;
 	int irq_base;
-	int irq;
 
-	u8 *irq_mask;
-	u8 *irq_mask_cur;
-	u8 *irq_rising;
-	u8 *irq_falling;
+	u8 *irq_enable;
+	u8 *irq_level;
+	u8 *irq_none;
+	u8 *irq_rise;
+	u8 *irq_fall;
+	u8 *irq_high;
+	u8 *irq_low;
 #endif
 };
 
-static int adnp_read(struct adnp *gpio, unsigned offset, uint8_t *value)
+static inline struct adnp *to_adnp(struct gpio_chip *chip)
+{
+	return container_of(chip, struct adnp, gpio);
+}
+
+static int adnp_read(struct adnp *adnp, unsigned offset, uint8_t *value)
 {
 	int err;
 
-	err = i2c_smbus_read_byte_data(gpio->client, offset);
+	err = i2c_smbus_read_byte_data(adnp->client, offset);
 	if (err < 0) {
-		dev_err(gpio->gpio.dev, "%s failed: %d\n",
-				"i2c_smbus_read_byte_data()", err);
+		dev_err(adnp->gpio.dev, "%s failed: %d\n",
+			"i2c_smbus_read_byte_data()", err);
 		return err;
 	}
 
@@ -59,14 +65,14 @@ static int adnp_read(struct adnp *gpio, unsigned offset, uint8_t *value)
 	return 0;
 }
 
-static int adnp_write(struct adnp *gpio, unsigned offset, uint8_t value)
+static int adnp_write(struct adnp *adnp, unsigned offset, uint8_t value)
 {
 	int err;
 
-	err = i2c_smbus_write_byte_data(gpio->client, offset, value);
+	err = i2c_smbus_write_byte_data(adnp->client, offset, value);
 	if (err < 0) {
-		dev_err(gpio->gpio.dev, "%s failed: %d\n",
-				"i2c_smbus_write_byte_data()", err);
+		dev_err(adnp->gpio.dev, "%s failed: %d\n",
+			"i2c_smbus_write_byte_data()", err);
 		return err;
 	}
 
@@ -75,79 +81,68 @@ static int adnp_write(struct adnp *gpio, unsigned offset, uint8_t value)
 
 static int adnp_gpio_get(struct gpio_chip *chip, unsigned offset)
 {
-	struct adnp *gpio = container_of(chip, struct adnp, gpio);
-	unsigned int reg = offset >> gpio->reg_shift;
+	struct adnp *adnp = to_adnp(chip);
+	unsigned int reg = offset >> adnp->reg_shift;
 	unsigned int pos = offset & 7;
 	u8 value;
 	int err;
 
-	mutex_lock(&gpio->i2c_lock);
-
-	err = adnp_read(gpio, GPIO_PLR(gpio) + reg, &value);
+	err = adnp_read(adnp, GPIO_PLR(adnp) + reg, &value);
 	if (err < 0)
-		goto out;
+		return err;
 
-	err = (value & BIT(pos)) ? 1 : 0;
-
-out:
-	mutex_unlock(&gpio->i2c_lock);
-	return err;
+	return (value & BIT(pos)) ? 1 : 0;
 }
 
-static int __adnp_gpio_set(struct adnp *gpio, unsigned offset, int value)
+static void __adnp_gpio_set(struct adnp *adnp, unsigned offset, int value)
 {
-	unsigned int reg = offset >> gpio->reg_shift;
+	unsigned int reg = offset >> adnp->reg_shift;
 	unsigned int pos = offset & 7;
 	int err;
 	u8 val;
 
-	err = adnp_read(gpio, GPIO_PLR(gpio) + reg, &val);
+	err = adnp_read(adnp, GPIO_PLR(adnp) + reg, &val);
 	if (err < 0)
-		return err;
+		return;
 
 	if (value)
 		val |= BIT(pos);
 	else
 		val &= ~BIT(pos);
 
-	return adnp_write(gpio, GPIO_PLR(gpio) + reg, val);
+	adnp_write(adnp, GPIO_PLR(adnp) + reg, val);
 }
 
 static void adnp_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
 {
-	struct adnp *gpio = container_of(chip, struct adnp, gpio);
-	int err;
+	struct adnp *adnp = to_adnp(chip);
 
-	mutex_lock(&gpio->i2c_lock);
-
-	err = __adnp_gpio_set(gpio, offset, value);
-	if (err < 0)
-		dev_err(chip->dev, "failed to set pin level: %d\n", err);
-
-	mutex_unlock(&gpio->i2c_lock);
+	mutex_lock(&adnp->i2c_lock);
+	__adnp_gpio_set(adnp, offset, value);
+	mutex_unlock(&adnp->i2c_lock);
 }
 
 static int adnp_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
 {
-	struct adnp *gpio = container_of(chip, struct adnp, gpio);
-	unsigned int reg = offset >> gpio->reg_shift;
+	struct adnp *adnp = to_adnp(chip);
+	unsigned int reg = offset >> adnp->reg_shift;
 	unsigned int pos = offset & 7;
 	u8 value;
 	int err;
 
-	mutex_lock(&gpio->i2c_lock);
+	mutex_lock(&adnp->i2c_lock);
 
-	err = adnp_read(gpio, GPIO_DDR(gpio) + reg, &value);
+	err = adnp_read(adnp, GPIO_DDR(adnp) + reg, &value);
 	if (err < 0)
 		goto out;
 
 	value &= ~BIT(pos);
 
-	err = adnp_write(gpio, GPIO_DDR(gpio) + reg, value);
+	err = adnp_write(adnp, GPIO_DDR(adnp) + reg, value);
 	if (err < 0)
 		goto out;
 
-	err = adnp_read(gpio, GPIO_DDR(gpio) + reg, &value);
+	err = adnp_read(adnp, GPIO_DDR(adnp) + reg, &value);
 	if (err < 0)
 		goto out;
 
@@ -157,32 +152,32 @@ static int adnp_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
 	err = 0;
 
 out:
-	mutex_unlock(&gpio->i2c_lock);
+	mutex_unlock(&adnp->i2c_lock);
 	return err;
 }
 
 static int adnp_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
-		int value)
+				      int value)
 {
-	struct adnp *gpio = container_of(chip, struct adnp, gpio);
-	unsigned int reg = offset >> gpio->reg_shift;
+	struct adnp *adnp = to_adnp(chip);
+	unsigned int reg = offset >> adnp->reg_shift;
 	unsigned int pos = offset & 7;
 	int err;
 	u8 val;
 
-	mutex_lock(&gpio->i2c_lock);
+	mutex_lock(&adnp->i2c_lock);
 
-	err = adnp_read(gpio, GPIO_DDR(gpio) + reg, &val);
+	err = adnp_read(adnp, GPIO_DDR(adnp) + reg, &val);
 	if (err < 0)
 		goto out;
 
 	val |= BIT(pos);
 
-	err = adnp_write(gpio, GPIO_DDR(gpio) + reg, val);
+	err = adnp_write(adnp, GPIO_DDR(adnp) + reg, val);
 	if (err < 0)
 		goto out;
 
-	err = adnp_read(gpio, GPIO_DDR(gpio) + reg, &val);
+	err = adnp_read(adnp, GPIO_DDR(adnp) + reg, &val);
 	if (err < 0)
 		goto out;
 
@@ -191,277 +186,284 @@ static int adnp_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
 		goto out;
 	}
 
-	__adnp_gpio_set(gpio, offset, value);
+	__adnp_gpio_set(adnp, offset, value);
 	err = 0;
 
 out:
-	mutex_unlock(&gpio->i2c_lock);
+	mutex_unlock(&adnp->i2c_lock);
 	return err;
 }
 
 #ifdef CONFIG_DEBUG_FS
 static void adnp_gpio_dbg_show(struct seq_file *s, struct gpio_chip *chip)
 {
-	struct adnp *gpio = container_of(chip, struct adnp, gpio);
-	unsigned int regs;
-	unsigned int i, j;
-	u8 *base;
-	u8 *ddr;
-	u8 *plr;
-	u8 *ier;
-	u8 *isr;
-	u8 *ptr;
+	struct adnp *adnp = to_adnp(chip);
+	unsigned int num_regs = 1 << adnp->reg_shift, i, j;
 	int err;
 
-	regs = 1 << gpio->reg_shift;
+	for (i = 0; i < num_regs; i++) {
+		u8 ddr, plr, ier, isr, ptr;
 
-	base = kzalloc(regs * 5, GFP_KERNEL);
-	if (!base)
-		return;
+		mutex_lock(&adnp->i2c_lock);
 
-	ddr = base + (regs * 0);
-	plr = base + (regs * 1);
-	ier = base + (regs * 2);
-	isr = base + (regs * 3);
-	ptr = base + (regs * 4);
+		err = adnp_read(adnp, GPIO_DDR(adnp) + i, &ddr);
+		if (err < 0) {
+			mutex_unlock(&adnp->i2c_lock);
+			return;
+		}
 
-	for (i = 0; i < regs; i++) {
-		err = adnp_read(gpio, GPIO_DDR(gpio) + i, &ddr[i]);
-		if (err < 0)
-			goto out;
+		err = adnp_read(adnp, GPIO_PLR(adnp) + i, &plr);
+		if (err < 0) {
+			mutex_unlock(&adnp->i2c_lock);
+			return;
+		}
 
-		err = adnp_read(gpio, GPIO_PLR(gpio) + i, &plr[i]);
-		if (err < 0)
-			goto out;
+		err = adnp_read(adnp, GPIO_IER(adnp) + i, &ier);
+		if (err < 0) {
+			mutex_unlock(&adnp->i2c_lock);
+			return;
+		}
 
-		err = adnp_read(gpio, GPIO_IER(gpio) + i, &ier[i]);
-		if (err < 0)
-			goto out;
+		err = adnp_read(adnp, GPIO_ISR(adnp) + i, &isr);
+		if (err < 0) {
+			mutex_unlock(&adnp->i2c_lock);
+			return;
+		}
 
-		err = adnp_read(gpio, GPIO_ISR(gpio) + i, &isr[i]);
-		if (err < 0)
-			goto out;
+		err = adnp_read(adnp, GPIO_PTR(adnp) + i, &ptr);
+		if (err < 0) {
+			mutex_unlock(&adnp->i2c_lock);
+			return;
+		}
 
-		err = adnp_read(gpio, GPIO_PTR(gpio) + i, &ptr[i]);
-		if (err < 0)
-			goto out;
-	}
+		mutex_unlock(&adnp->i2c_lock);
 
-	for (i = 0; i < regs; i++) {
 		for (j = 0; j < 8; j++) {
-			unsigned int bit = (i << gpio->reg_shift) + j;
+			unsigned int bit = (i << adnp->reg_shift) + j;
 			const char *direction = "input ";
 			const char *level = "low     ";
 			const char *interrupt = "disabled";
 			const char *pending = "";
 
-			if (ddr[i] & BIT(j))
+			if (ddr & BIT(j))
 				direction = "output";
 
-			if (ptr[i] & BIT(j))
+			if (ptr & BIT(j))
 				level = "tristate";
-			else if (plr[i] & BIT(j))
+			else if (plr & BIT(j))
 				level = "high    ";
 
-			if (ier[i] & BIT(j))
+			if (ier & BIT(j))
 				interrupt = "enabled ";
 
-			if (isr[i] & BIT(j))
+			if (isr & BIT(j))
 				pending = "pending";
 
 			seq_printf(s, "%2u: %s %s IRQ %s %s\n", bit,
-					direction, level, interrupt, pending);
+				   direction, level, interrupt, pending);
 		}
 	}
-
-out:
-	kfree(base);
 }
 #else
 #define adnp_gpio_dbg_show NULL
 #endif
 
-static int adnp_gpio_setup(struct adnp *gpio, unsigned int nr_gpios)
+static int adnp_gpio_setup(struct adnp *adnp, unsigned int num_gpios)
 {
-	struct gpio_chip *chip = &gpio->gpio;
+	struct gpio_chip *chip = &adnp->gpio;
 
-	gpio->reg_shift = get_count_order(nr_gpios) - 3;
+	adnp->reg_shift = get_count_order(num_gpios) - 3;
 
 	chip->direction_input = adnp_gpio_direction_input;
 	chip->direction_output = adnp_gpio_direction_output;
 	chip->get = adnp_gpio_get;
 	chip->set = adnp_gpio_set;
-	chip->dbg_show = adnp_gpio_dbg_show;
 	chip->can_sleep = 1;
 
-	chip->base = gpio->gpio_base;
-	chip->ngpio = nr_gpios;
-	chip->label = gpio->client->name;
-	chip->dev = &gpio->client->dev;
-	chip->owner = THIS_MODULE;
-	chip->names = gpio->names;
+	chip->dbg_show = adnp_gpio_dbg_show;
 
-#ifdef CONFIG_OF_GPIO
-	chip->of_node = chip->dev->of_node;
-#endif
+	chip->base = adnp->gpio_base;
+	chip->ngpio = num_gpios;
+	chip->label = adnp->client->name;
+	chip->dev = &adnp->client->dev;
+	chip->owner = THIS_MODULE;
 
 	return 0;
 }
 
 #ifdef CONFIG_GPIO_ADNP_IRQ
-static unsigned long __adnp_irq_pending(struct adnp *gpio, unsigned int reg)
-{
-	u8 status = 0;
-	int err;
-
-	err = adnp_read(gpio, GPIO_ISR(gpio) + reg, &status);
-	if (err < 0)
-		status = 0;
-
-	return status;
-}
-
 static irqreturn_t adnp_irq(int irq, void *data)
 {
-	struct adnp *gpio = data;
-	unsigned int regs;
-	unsigned int reg;
+	struct adnp *adnp = data;
+	unsigned int num_regs, i;
 
-	regs = 1 << gpio->reg_shift;
+	num_regs = 1 << adnp->reg_shift;
 
-	/*
-	 * TODO: Reading pending and acknowledge should be atomic. Perhaps the
-	 *       CPLD implementation needs to change to allow disabling all
-	 *       interrupts before reading the ISR.
-	 */
-
-	for (reg = 0; reg < regs; reg++) {
-		unsigned int base = reg << gpio->reg_shift;
+	for (i = 0; i < num_regs; i++) {
+		unsigned int base = i << adnp->reg_shift, bit;
+		u8 changed, level, isr, ier;
 		unsigned long pending;
-		u8 level = 0;
-		int bit;
 		int err;
 
-		mutex_lock(&gpio->i2c_lock);
+		mutex_lock(&adnp->i2c_lock);
 
-		pending = __adnp_irq_pending(gpio, reg);
-		if (!pending) {
-			mutex_unlock(&gpio->i2c_lock);
-			continue;
-		}
-
-		err = adnp_read(gpio, GPIO_PLR(gpio) + reg, &level);
+		err = adnp_read(adnp, GPIO_PLR(adnp) + i, &level);
 		if (err < 0) {
-			mutex_unlock(&gpio->i2c_lock);
+			mutex_unlock(&adnp->i2c_lock);
 			continue;
 		}
 
-		mutex_unlock(&gpio->i2c_lock);
+		err = adnp_read(adnp, GPIO_ISR(adnp) + i, &isr);
+		if (err < 0) {
+			mutex_unlock(&adnp->i2c_lock);
+			continue;
+		}
 
-		pending &= (gpio->irq_falling[reg] & ~level) |
-			   (gpio->irq_rising[reg] & level);
+		err = adnp_read(adnp, GPIO_IER(adnp) + i, &ier);
+		if (err < 0) {
+			mutex_unlock(&adnp->i2c_lock);
+			continue;
+		}
+
+		mutex_unlock(&adnp->i2c_lock);
+
+		/* determine pins that changed levels */
+		changed = level ^ adnp->irq_level[i];
+		adnp->irq_level[i] = level;
+
+		/* compute edge-triggered interrupts */
+		pending = changed & ((adnp->irq_fall[i] & ~level) |
+				     (adnp->irq_rise[i] & level));
+
+		/* add in level-triggered interrupts */
+		pending |= (adnp->irq_high[i] & level) |
+			   (adnp->irq_low[i] & ~level);
+
+		/*
+		 * Always consider interrupts of unspecified type. They may
+		 * trigger on any of the above condition and will be masked
+		 * out by ISR and IER masks below if they are not actually
+		 * pending or enabled.
+		 */
+		pending |= adnp->irq_none[i];
+
+		/* mask out non-pending and disabled interrupts */
+		pending &= isr & ier;
 
 		for_each_set_bit(bit, &pending, 8)
-			handle_nested_irq(gpio->irq_base + base + bit);
+			handle_nested_irq(adnp->irq_base + base + bit);
 	}
 
 	return IRQ_HANDLED;
 }
 
-static void adnp_irq_update_mask(struct adnp *gpio)
-{
-	unsigned int regs = 1 << gpio->reg_shift;
-	bool equal = true;
-	unsigned int i;
-
-	for (i = 0; i < regs; i++) {
-		if (gpio->irq_mask[i] != gpio->irq_mask_cur[i]) {
-			equal = false;
-			break;
-		}
-	}
-
-	if (equal)
-		return;
-
-	memcpy(gpio->irq_mask, gpio->irq_mask_cur, regs);
-
-	mutex_lock(&gpio->i2c_lock);
-
-	for (i = 0; i < regs; i++)
-		adnp_write(gpio, GPIO_IER(gpio) + i, gpio->irq_mask[i]);
-
-	mutex_unlock(&gpio->i2c_lock);
-}
-
 static int adnp_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
 {
-	struct adnp *gpio = container_of(chip, struct adnp, gpio);
-	return gpio->irq_base + offset;
+	struct adnp *adnp = to_adnp(chip);
+	return adnp->irq_base + offset;
+}
+
+static unsigned int adnp_irq_startup(struct irq_data *data)
+{
+	struct adnp *adnp = irq_data_get_irq_chip_data(data);
+	unsigned int irq = data->irq - adnp->irq_base;
+	unsigned int reg = irq >> adnp->reg_shift;
+	unsigned int pos = irq & 7;
+
+	adnp->irq_none[reg] |= BIT(pos);
+	adnp->irq_enable[reg] |= BIT(pos);
+
+	return 0;
+}
+
+static void adnp_irq_shutdown(struct irq_data *data)
+{
+	struct adnp *adnp = irq_data_get_irq_chip_data(data);
+	unsigned int irq = data->irq - adnp->irq_base;
+	unsigned int reg = irq >> adnp->reg_shift;
+	unsigned int pos = irq & 7;
+
+	adnp->irq_enable[reg] &= ~BIT(pos);
+	adnp->irq_none[reg] &= ~BIT(pos);
 }
 
 static void adnp_irq_mask(struct irq_data *data)
 {
-	struct adnp *gpio = irq_data_get_irq_chip_data(data);
-	unsigned int irq = data->irq - gpio->irq_base;
-	unsigned int reg = irq >> gpio->reg_shift;
+	struct adnp *adnp = irq_data_get_irq_chip_data(data);
+	unsigned int irq = data->irq - adnp->irq_base;
+	unsigned int reg = irq >> adnp->reg_shift;
 	unsigned int pos = irq & 7;
 
-	gpio->irq_mask_cur[reg] &= ~BIT(pos);
+	adnp->irq_enable[reg] &= ~BIT(pos);
 }
 
 static void adnp_irq_unmask(struct irq_data *data)
 {
-	struct adnp *gpio = irq_data_get_irq_chip_data(data);
-	unsigned int irq = data->irq - gpio->irq_base;
-	unsigned int reg = irq >> gpio->reg_shift;
+	struct adnp *adnp = irq_data_get_irq_chip_data(data);
+	unsigned int irq = data->irq - adnp->irq_base;
+	unsigned int reg = irq >> adnp->reg_shift;
 	unsigned int pos = irq & 7;
 
-	gpio->irq_mask_cur[reg] |= BIT(pos);
+	adnp->irq_enable[reg] |= BIT(pos);
 }
 
 static int adnp_irq_set_type(struct irq_data *data, unsigned int type)
 {
-	struct adnp *gpio = irq_data_get_irq_chip_data(data);
-	unsigned int irq = data->irq - gpio->irq_base;
-	unsigned int reg = irq >> gpio->reg_shift;
+	struct adnp *adnp = irq_data_get_irq_chip_data(data);
+	unsigned int irq = data->irq - adnp->irq_base;
+	unsigned int reg = irq >> adnp->reg_shift;
 	unsigned int pos = irq & 7;
 
-	if ((type & IRQ_TYPE_EDGE_BOTH) == 0)
-		return -EINVAL;
-
 	if (type & IRQ_TYPE_EDGE_RISING)
-		gpio->irq_rising[reg] |= BIT(pos);
+		adnp->irq_rise[reg] |= BIT(pos);
 	else
-		gpio->irq_rising[reg] &= ~BIT(pos);
+		adnp->irq_rise[reg] &= ~BIT(pos);
 
 	if (type & IRQ_TYPE_EDGE_FALLING)
-		gpio->irq_falling[reg] |= BIT(pos);
+		adnp->irq_fall[reg] |= BIT(pos);
 	else
-		gpio->irq_falling[reg] &= ~BIT(pos);
+		adnp->irq_fall[reg] &= ~BIT(pos);
+
+	if (type & IRQ_TYPE_LEVEL_HIGH)
+		adnp->irq_high[reg] |= BIT(pos);
+	else
+		adnp->irq_high[reg] &= ~BIT(pos);
+
+	if (type & IRQ_TYPE_LEVEL_LOW)
+		adnp->irq_low[reg] |= BIT(pos);
+	else
+		adnp->irq_low[reg] &= ~BIT(pos);
+
+	adnp->irq_none[reg] &= ~BIT(pos);
 
 	return 0;
 }
 
 static void adnp_irq_bus_lock(struct irq_data *data)
 {
-	struct adnp *gpio = irq_data_get_irq_chip_data(data);
-	unsigned int regs = 1 << gpio->reg_shift;
+	struct adnp *adnp = irq_data_get_irq_chip_data(data);
 
-	mutex_lock(&gpio->irq_lock);
-	memcpy(gpio->irq_mask_cur, gpio->irq_mask, regs);
+	mutex_lock(&adnp->irq_lock);
 }
 
 static void adnp_irq_bus_unlock(struct irq_data *data)
 {
-	struct adnp *gpio = irq_data_get_irq_chip_data(data);
+	struct adnp *adnp = irq_data_get_irq_chip_data(data);
+	unsigned int num_regs = 1 << adnp->reg_shift, i;
 
-	adnp_irq_update_mask(gpio);
-	mutex_unlock(&gpio->irq_lock);
+	mutex_lock(&adnp->i2c_lock);
+
+	for (i = 0; i < num_regs; i++)
+		adnp_write(adnp, GPIO_IER(adnp) + i, adnp->irq_enable[i]);
+
+	mutex_unlock(&adnp->i2c_lock);
+	mutex_unlock(&adnp->irq_lock);
 }
 
 static struct irq_chip adnp_irq_chip = {
 	.name = "gpio-adnp",
+	.irq_startup = adnp_irq_startup,
+	.irq_shutdown = adnp_irq_shutdown,
 	.irq_mask = adnp_irq_mask,
 	.irq_unmask = adnp_irq_unmask,
 	.irq_set_type = adnp_irq_set_type,
@@ -469,36 +471,64 @@ static struct irq_chip adnp_irq_chip = {
 	.irq_bus_sync_unlock = adnp_irq_bus_unlock,
 };
 
-static int adnp_irq_setup(struct adnp *gpio)
+static int adnp_irq_setup(struct adnp *adnp)
 {
-	unsigned int regs = 1 << gpio->reg_shift;
-	int pin;
+	unsigned int num_regs = 1 << adnp->reg_shift, i;
+	struct gpio_chip *chip = &adnp->gpio;
 	int err;
 
-	mutex_init(&gpio->irq_lock);
+	mutex_init(&adnp->irq_lock);
 
-	gpio->irq_mask = devm_kzalloc(gpio->gpio.dev, regs * 4, GFP_KERNEL);
-	if (!gpio->irq_mask)
+	/*
+	 * Allocate memory to keep track of the current level and trigger
+	 * modes of the interrupts. To avoid multiple allocations, a single
+	 * large buffer is allocated and pointers are setup to point at the
+	 * corresponding offsets. For consistency, the layout of the buffer
+	 * is chosen to match the register layout of the hardware in that
+	 * each segment contains the corresponding bits for all interrupts.
+	 */
+	adnp->irq_enable = devm_kzalloc(chip->dev, num_regs * 7, GFP_KERNEL);
+	if (!adnp->irq_enable)
 		return -ENOMEM;
 
-	gpio->irq_mask_cur = gpio->irq_mask + (regs * 1);
-	gpio->irq_rising = gpio->irq_mask + (regs * 2);
-	gpio->irq_falling = gpio->irq_mask + (regs * 3);
+	adnp->irq_level = adnp->irq_enable + (num_regs * 1);
+	adnp->irq_none = adnp->irq_enable + (num_regs * 2);
+	adnp->irq_rise = adnp->irq_enable + (num_regs * 3);
+	adnp->irq_fall = adnp->irq_enable + (num_regs * 4);
+	adnp->irq_high = adnp->irq_enable + (num_regs * 5);
+	adnp->irq_low = adnp->irq_enable + (num_regs * 6);
 
-	err = irq_alloc_descs(gpio->irq_base, 0, gpio->gpio.ngpio, -1);
+	for (i = 0; i < num_regs; i++) {
+		/*
+		 * Read the initial level of all pins to allow the emulation
+		 * of edge triggered interrupts.
+		 */
+		err = adnp_read(adnp, GPIO_PLR(adnp) + i, &adnp->irq_level[i]);
+		if (err < 0)
+			return err;
+
+		/* disable all interrupts */
+		err = adnp_write(adnp, GPIO_IER(adnp) + i, 0);
+		if (err < 0)
+			return err;
+
+		adnp->irq_enable[i] = 0x00;
+	}
+
+	err = irq_alloc_descs(adnp->irq_base, 0, adnp->gpio.ngpio, -1);
 	if (err < 0) {
-		dev_err(gpio->gpio.dev, "%s failed: %d\n",
-				"irq_alloc_descs()", err);
+		dev_err(chip->dev, "%s failed: %d\n", "irq_alloc_descs()",
+			err);
 		return err;
 	}
 
-	gpio->irq_base = err;
+	adnp->irq_base = err;
 
-	for (pin = 0; pin < gpio->gpio.ngpio; pin++) {
-		int irq = gpio->irq_base + pin;
+	for (i = 0; i < adnp->gpio.ngpio; i++) {
+		int irq = adnp->irq_base + i;
 
 		irq_clear_status_flags(irq, IRQ_NOREQUEST);
-		irq_set_chip_data(irq, gpio);
+		irq_set_chip_data(irq, adnp);
 		irq_set_chip(irq, &adnp_irq_chip);
 		irq_set_nested_thread(irq, true);
 #ifdef CONFIG_ARM
@@ -508,135 +538,91 @@ static int adnp_irq_setup(struct adnp *gpio)
 #endif
 	}
 
-	err = request_threaded_irq(gpio->irq, NULL, adnp_irq,
-			IRQF_TRIGGER_RISING | IRQF_ONESHOT,
-			dev_name(&gpio->client->dev), gpio);
+	err = request_threaded_irq(adnp->client->irq, NULL, adnp_irq,
+				   IRQF_TRIGGER_RISING | IRQF_ONESHOT,
+				   dev_name(chip->dev), adnp);
 	if (err != 0) {
-		dev_err(gpio->gpio.dev, "can't request IRQ#%d: %d\n",
-				gpio->irq, err);
+		dev_err(chip->dev, "can't request IRQ#%d: %d\n",
+			adnp->client->irq, err);
 		return err;
 	}
 
-	gpio->gpio.to_irq = adnp_gpio_to_irq;
+	adnp->gpio.to_irq = adnp_gpio_to_irq;
 	return 0;
 }
 
-static void adnp_irq_teardown(struct adnp *gpio)
+static void adnp_irq_teardown(struct adnp *adnp)
 {
-	irq_free_descs(gpio->irq_base, gpio->gpio.ngpio);
-	free_irq(gpio->irq, gpio);
+	irq_free_descs(adnp->irq_base, adnp->gpio.ngpio);
+	free_irq(adnp->client->irq, adnp);
 }
 #else
-static int adnp_irq_setup(struct adnp *gpio)
+static int adnp_irq_setup(struct adnp *adnp)
 {
 	return 0;
 }
 
-static void adnp_irq_teardown(struct adnp *gpio)
+static void adnp_irq_teardown(struct adnp *adnp)
 {
-}
-#endif
-
-#ifdef CONFIG_OF
-static int adnp_parse_dt(struct device *dev, struct adnp_platform_data *pdata)
-{
-	struct device_node *node = dev->of_node;
-	u32 value;
-	int err;
-
-	if (!node)
-		return -ENODEV;
-
-	memset(pdata, 0, sizeof(*pdata));
-
-	pdata->irq_base = INT_BOARD_BASE;
-	pdata->gpio_base = -1;
-	pdata->names = NULL;
-
-	err = of_property_read_u32(node, "nr-gpios", &value);
-	if (err < 0)
-		return err;
-
-	pdata->nr_gpios = value;
-
-	return 0;
-}
-#else
-static int adnp_parse_dt(struct device *dev, struct adnp_platform_data *pdata)
-{
-	return -ENODEV;
 }
 #endif
 
 static __devinit int adnp_i2c_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+				    const struct i2c_device_id *id)
 {
 	struct adnp_platform_data *pdata = client->dev.platform_data;
-	struct adnp_platform_data defpdata;
-	struct adnp *gpio;
+	struct adnp *adnp;
 	int err;
 
-	gpio = kzalloc(sizeof(*gpio), GFP_KERNEL);
-	if (!gpio)
+	adnp = kzalloc(sizeof(*adnp), GFP_KERNEL);
+	if (!adnp)
 		return -ENOMEM;
 
-#ifdef CONFIG_OF
-	if ((client->irq <= 0) && client->dev.of_node)
-		client->irq = irq_of_parse_and_map(client->dev.of_node, 0);
-#endif
+	if (!pdata)
+		return -ENODEV;
 
-	if (!pdata) {
-		err = adnp_parse_dt(&client->dev, &defpdata);
-		if (err < 0)
-			return err;
+	adnp->gpio_base = pdata->gpio_base;
+	adnp->irq_base = pdata->irq_base;
 
-		pdata = &defpdata;
-	}
+	mutex_init(&adnp->i2c_lock);
+	adnp->client = client;
 
-	gpio->gpio_base = pdata->gpio_base;
-	gpio->irq_base = pdata->irq_base;
-	gpio->names = pdata->names;
-
-	mutex_init(&gpio->i2c_lock);
-	gpio->irq = client->irq;
-	gpio->client = client;
-
-	err = adnp_gpio_setup(gpio, pdata->nr_gpios);
+	err = adnp_gpio_setup(adnp, pdata->nr_gpios);
 	if (err < 0)
 		goto gpio_failed;
 
-	err = adnp_irq_setup(gpio);
+	err = adnp_irq_setup(adnp);
 	if (err < 0)
 		goto irq_failed;
 
-	err = gpiochip_add(&gpio->gpio);
+	err = gpiochip_add(&adnp->gpio);
 	if (err < 0)
 		goto irq_failed;
 
-	i2c_set_clientdata(client, gpio);
+	i2c_set_clientdata(client, adnp);
 	return 0;
 
 irq_failed:
-	adnp_irq_teardown(gpio);
+	adnp_irq_teardown(adnp);
 gpio_failed:
-	kfree(gpio);
+	kfree(adnp);
 	return err;
 }
 
 static __devexit int adnp_i2c_remove(struct i2c_client *client)
 {
-	struct adnp *gpio = i2c_get_clientdata(client);
+	struct adnp *adnp = i2c_get_clientdata(client);
 	int err;
 
-	err = gpiochip_remove(&gpio->gpio);
+	err = gpiochip_remove(&adnp->gpio);
 	if (err < 0) {
 		dev_err(&client->dev, "%s failed: %d\n", "gpiochip_remove()",
-				err);
+			err);
 		return err;
 	}
 
-	adnp_irq_teardown(gpio);
-	kfree(gpio);
+	adnp_irq_teardown(adnp);
+	kfree(adnp);
 	return 0;
 }
 
@@ -679,5 +665,5 @@ static void __exit adnp_exit(void)
 module_exit(adnp_exit);
 
 MODULE_DESCRIPTION("Avionic Design N-bit GPIO expander");
-MODULE_DESCRIPTION("Thierry Reding <thierry.reding@avionic-design.de>");
+MODULE_AUTHOR("Thierry Reding <thierry.reding@avionic-design.de>");
 MODULE_LICENSE("GPL");
