@@ -7,6 +7,7 @@
  */
 
 #include <linux/delay.h>
+#include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/input.h>
 #include <linux/interrupt.h>
@@ -91,6 +92,7 @@ struct sx8634 {
 	unsigned long spm_dirty;
 	u8 *spm_cache;
 	u16 status;
+	int reset_gpio;
 };
 
 static int spm_wait(struct i2c_client *client)
@@ -771,15 +773,28 @@ static int __devinit sx8634_i2c_probe(struct i2c_client *client,
 		goto out;
 	}
 
+	sx->reset_gpio = pdata->reset_gpio;
 	sx->client = client;
+
+	if (gpio_is_valid(sx->reset_gpio)) {
+		err = gpio_request_one(sx->reset_gpio, GPIOF_OUT_INIT_HIGH,
+				       "sx8634 reset");
+		if (err < 0) {
+			dev_err(&client->dev,
+				"failed to setup reset GPIO: %d\n", err);
+			goto free;
+		}
+
+		msleep(150);
+	}
 
 	err = sx8634_setup(sx, pdata);
 	if (err < 0)
-		goto free;
+		goto free_gpio;
 
 	err = sysfs_create_group(&client->dev.kobj, &sx8634_attr_group);
 	if (err < 0)
-		goto free;
+		goto free_gpio;
 
 	/* clear interrupts */
 	err = i2c_smbus_read_byte_data(client, I2C_IRQ_SRC);
@@ -808,6 +823,11 @@ free_irq:
 	free_irq(client->irq, sx);
 remove_sysfs:
 	sysfs_remove_group(&client->dev.kobj, &sx8634_attr_group);
+free_gpio:
+	if (gpio_is_valid(sx->reset_gpio)) {
+		gpio_direction_output(sx->reset_gpio, 0);
+		gpio_free(sx->reset_gpio);
+	}
 free:
 	input_free_device(sx->input);
 out:
@@ -821,6 +841,11 @@ static int __devexit sx8634_i2c_remove(struct i2c_client *client)
 	input_unregister_device(sx->input);
 	sysfs_remove_group(&client->dev.kobj, &sx8634_attr_group);
 	free_irq(client->irq, sx);
+
+	if (gpio_is_valid(sx->reset_gpio)) {
+		gpio_direction_output(sx->reset_gpio, 0);
+		gpio_free(sx->reset_gpio);
+	}
 
 	return 0;
 }
