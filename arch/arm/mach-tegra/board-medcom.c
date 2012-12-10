@@ -306,10 +306,6 @@ static struct adnp_platform_data medcom_adnp_pdata = {
 	.names = NULL,
 };
 
-
-#define MEDCOM_GPIO_KEYPAD1 MEDCOM_GPIO_ADNP(3)
-#define MEDCOM_GPIO_KEYPAD2 MEDCOM_GPIO_ADNP(2)
-
 #define SX8634_DEFAULT_SENSITIVITY	0x07
 #define SX8634_DEFAULT_THRESHOLD	0x45
 
@@ -408,11 +404,11 @@ static struct i2c_board_info __initdata medcom_i2c0_board_info[] = {
 	}, {
 		I2C_BOARD_INFO("sx8634", 0x2b),
 		.platform_data = &medcom_keypad1_pdata,
-		.irq = TEGRA_GPIO_TO_IRQ(MEDCOM_GPIO_KEYPAD1),
+		.irq = ADNP_IRQ(3),
 	} , {
 		I2C_BOARD_INFO("sx8634", 0x2c),
 		.platform_data = &medcom_keypad2_pdata,
-		.irq = TEGRA_GPIO_TO_IRQ(MEDCOM_GPIO_KEYPAD2),
+		.irq = ADNP_IRQ(2),
 	} , {
 		I2C_BOARD_INFO("gpio-adnp", 0x41),
 		.platform_data = &medcom_adnp_pdata,

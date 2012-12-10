@@ -20,7 +20,10 @@
 
 #define MEDCOM_GPIO_TPS6586X(_x_)	(TEGRA_NR_GPIOS + (_x_))
 #define MEDCOM_GPIO_WM8903(_x_)		(MEDCOM_GPIO_TPS6586X(4) + (_x_))
-#define MEDCOM_GPIO_ADNP(_x_)		(MEDCOM_GPIO_WM8903(23) + (_x_))
+
+#define ADNP_GPIO(_x_)			(MEDCOM_GPIO_WM8903(5) + (_x_))
+#define ADNP_GPIO_TO_IRQ(_x_)		(INT_BOARD_BASE + 32 + ((_x_) - ADNP_GPIO(0)))
+#define ADNP_IRQ(_x_)			ADNP_GPIO_TO_IRQ(ADNP_GPIO(_x_))
 
 #define TEGRA_GPIO_SD2_CD		TEGRA_GPIO_PI5
 #define TEGRA_GPIO_SD2_WP		TEGRA_GPIO_PH1
