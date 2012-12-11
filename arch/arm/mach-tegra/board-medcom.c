@@ -314,6 +314,7 @@ static struct adnp_platform_data medcom_adnp_pdata = {
 #define SX8634_DEFAULT_THRESHOLD	0x45
 
 static struct sx8634_platform_data medcom_keypad1_pdata = {
+	.reset_gpio = ADNP_GPIO(11),
 	.debounce = 3,
 	.caps = {
 		[1] = {
@@ -357,6 +358,7 @@ static struct sx8634_platform_data medcom_keypad1_pdata = {
 
 
 static struct sx8634_platform_data medcom_keypad2_pdata = {
+	.reset_gpio = ADNP_GPIO(10),
 	.debounce = 3,
 	.caps = {
 		[1] = {
