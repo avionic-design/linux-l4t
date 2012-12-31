@@ -173,8 +173,6 @@ static void tegra_stop_host(struct tegra_otg_data *tegra)
 
 	if (pdev) {
 		/* unregister host from otg */
-		kfree(pdev->dev.platform_data);
-		pdev->dev.platform_data = NULL;
 		platform_device_unregister(pdev);
 		tegra->pdev = NULL;
 	}
