@@ -3676,6 +3676,7 @@ void dhd_detach(dhd_pub_t *dhdp)
 #endif /* defined(CONFIG_HAS_EARLYSUSPEND) */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27))
+	dhd->pub.hang_was_sent = 1;
 	cancel_work_sync(&dhd->work_hang);
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27))  */
 
