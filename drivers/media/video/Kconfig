@@ -70,6 +70,7 @@ config VIDEOBUF2_DMA_SG
 config VIDEOBUF2_DMA_NVMAP
 	select VIDEOBUF2_CORE
 	select VIDEOBUF2_MEMOPS
+	select NVMAP_ALLOW_SYSMEM
 	tristate
 
 #
