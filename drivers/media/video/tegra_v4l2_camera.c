@@ -1058,10 +1058,9 @@ static void tegra_camera_init_buffer(struct tegra_camera_dev *pcdev,
  *  Videobuf operations
  */
 static int tegra_camera_videobuf_setup(struct vb2_queue *vq,
-				       const struct v4l2_format *fmt,
 				       unsigned int *num_buffers,
 				       unsigned int *num_planes,
-				       unsigned int sizes[],
+				       unsigned long sizes[],
 				       void *alloc_ctxs[])
 {
 	struct soc_camera_device *icd = container_of(vq,
@@ -1321,7 +1320,8 @@ static void tegra_camera_remove_device(struct soc_camera_device *icd)
 		icd->devnum);
 }
 
-static int tegra_camera_set_bus_param(struct soc_camera_device *icd)
+static int tegra_camera_set_bus_param(struct soc_camera_device *icd,
+					__u32 pixfmt)
 {
 	return 0;
 }
