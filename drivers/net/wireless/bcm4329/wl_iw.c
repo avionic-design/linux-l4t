@@ -4339,6 +4339,7 @@ wl_iw_get_essid(
 	if (!extra)
 		return -EINVAL;
 
+	memset(&ssid, 0, sizeof(ssid));
 	if ((error = dev_wlc_ioctl(dev, WLC_GET_SSID, &ssid, sizeof(ssid)))) {
 		WL_ERROR(("Error getting the SSID\n"));
 		return error;
