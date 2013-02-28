@@ -13,6 +13,7 @@
 #include <media/tvp5150.h>
 #include <media/v4l2-chip-ident.h>
 #include <media/v4l2-ctrls.h>
+#include <media/soc_camera.h>
 
 #include "tvp5150_reg.h"
 
@@ -1147,6 +1148,31 @@ static const struct v4l2_subdev_ops tvp5150_ops = {
 	.vbi = &tvp5150_vbi_ops,
 };
 
+static int tvp5150_set_bus_param(struct soc_camera_device *icd,
+				 unsigned long flags)
+{
+	return 0;
+}
+
+static unsigned long tvp5150_query_bus_param(struct soc_camera_device *icd)
+{
+	struct soc_camera_link *icl = to_soc_camera_link(icd);
+	unsigned long flags =
+		SOCAM_MASTER | SOCAM_PCLK_SAMPLE_RISING |
+		SOCAM_HSYNC_ACTIVE_HIGH | SOCAM_VSYNC_ACTIVE_HIGH |
+		SOCAM_DATA_ACTIVE_HIGH | SOCAM_DATAWIDTH_8;
+	return soc_camera_apply_sensor_flags(icl, flags);
+}
+
+static const struct v4l2_queryctrl tvp5150_controls[] = {
+};
+
+static struct soc_camera_ops tvp5150_camera_ops = {
+	.set_bus_param = tvp5150_set_bus_param,
+	.query_bus_param = tvp5150_query_bus_param,
+	.controls = tvp5150_controls,
+	.num_controls = ARRAY_SIZE(tvp5150_controls),
+};
 
 /****************************************************************************
 			I2C Client & Driver
@@ -1155,6 +1181,7 @@ static const struct v4l2_subdev_ops tvp5150_ops = {
 static int tvp5150_probe(struct i2c_client *c,
 			 const struct i2c_device_id *id)
 {
+	struct soc_camera_device *icd = c->dev.platform_data;
 	struct tvp5150 *core;
 	struct v4l2_subdev *sd;
 	int tvp5150_id[4];
@@ -1237,6 +1264,9 @@ static int tvp5150_probe(struct i2c_client *c,
 
 	if (debug > 1)
 		tvp5150_log_status(sd);
+
+	icd->ops = &tvp5150_camera_ops;
+
 	return 0;
 
 free_core:
