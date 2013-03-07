@@ -135,7 +135,8 @@ static int tegra_wm8903_hw_params(struct snd_pcm_substream *substream,
 	if ((params_channels(params) != 2) &&
 	    (machine_is_ventana() || machine_is_harmony() ||
 	    machine_is_kaen() || machine_is_aebl()) ||
-	    machine_is_medcom()) {
+	    (machine_is_medcom() || machine_is_plutux()))
+	{
 		i2s_daifmt |= SND_SOC_DAIFMT_DSP_A;
 	} else {
 		switch (pdata->i2s_param[HIFI_CODEC].i2s_mode) {
@@ -534,6 +535,13 @@ static const struct snd_soc_dapm_widget medcom_dapm_widgets[] = {
 	SND_SOC_DAPM_LINE("Line In", NULL),
 };
 
+static const struct snd_soc_dapm_widget plutux_dapm_widgets[] = {
+	SND_SOC_DAPM_SPK("Int Spk", tegra_wm8903_event_int_spk),
+	SND_SOC_DAPM_HP("Headphone Jack", tegra_wm8903_event_hp),
+	SND_SOC_DAPM_LINE("LineOut", NULL),
+	SND_SOC_DAPM_MIC("Mic Jack", NULL),
+	SND_SOC_DAPM_LINE("Line In", NULL),
+};
 
 static const struct snd_soc_dapm_widget tegra_wm8903_default_dapm_widgets[] = {
 	SND_SOC_DAPM_SPK("Int Spk", tegra_wm8903_event_int_spk),
@@ -621,6 +629,25 @@ static const struct snd_soc_dapm_route medcom_audio_map[] = {
 	{"DMICDAT", NULL, "Digital Mic"},
 };
 
+static const struct snd_soc_dapm_route plutux_audio_map[] = {
+	{"Headphone Jack", NULL, "HPOUTR"},
+	{"Headphone Jack", NULL, "HPOUTL"},
+	{"Int Spk", NULL, "LINEOUTL"},
+	{"Int Spk", NULL, "LINEOUTR"},
+	{"Int Spk", NULL, "ROP"},
+	{"Int Spk", NULL, "RON"},
+	{"Int Spk", NULL, "LOP"},
+	{"Int Spk", NULL, "LON"},
+	{"Mic Bias", NULL, "Mic Jack"},
+	{"IN1R", NULL, "Mic Bias"},
+	{"IN2R", NULL, "Mic Bias"},
+	{"IN3R", NULL, "Line In"},
+	{"IN1L", NULL, "Mic Bias"},
+	{"IN2L", NULL, "Mic Bias"},
+	{"IN3L", NULL, "Line In"},
+	{"DMICDAT", NULL, "Digital Mic"},
+};
+
 static const struct snd_kcontrol_new cardhu_controls[] = {
 	SOC_DAPM_PIN_SWITCH("Int Spk"),
 	SOC_DAPM_PIN_SWITCH("Headphone Jack"),
@@ -631,6 +658,13 @@ static const struct snd_kcontrol_new cardhu_controls[] = {
 };
 
 static const struct snd_kcontrol_new medcom_controls[] = {
+	SOC_DAPM_PIN_SWITCH("Int Spk"),
+	SOC_DAPM_PIN_SWITCH("Headphone Jack"),
+	SOC_DAPM_PIN_SWITCH("Mic Jack"),
+	SOC_DAPM_PIN_SWITCH("Line In"),
+};
+
+static const struct snd_kcontrol_new plutux_controls[] = {
 	SOC_DAPM_PIN_SWITCH("Int Spk"),
 	SOC_DAPM_PIN_SWITCH("Headphone Jack"),
 	SOC_DAPM_PIN_SWITCH("Mic Jack"),
@@ -737,16 +771,19 @@ static int tegra_wm8903_init(struct snd_soc_pcm_runtime *rtd)
 
 	/* FIXME: Calculate automatically based on DAPM routes? */
 	if (!machine_is_harmony() && !machine_is_ventana() &&
-	    !machine_is_cardhu() && !machine_is_medcom())
+	    !machine_is_cardhu() && !machine_is_medcom() &&
+	    !machine_is_plutux())
 		snd_soc_dapm_nc_pin(dapm, "IN1L");
 	if (!machine_is_seaboard() && !machine_is_aebl() &&
-	    !machine_is_cardhu() && !machine_is_medcom())
+	    !machine_is_cardhu() && !machine_is_medcom() &&
+	    !machine_is_plutux())
 		snd_soc_dapm_nc_pin(dapm, "IN1R");
-	if (!machine_is_medcom())
+	if (!machine_is_medcom() && !machine_is_plutux())
 		snd_soc_dapm_nc_pin(dapm, "IN2L");
-	if (!machine_is_kaen() && !machine_is_medcom())
+	if (!machine_is_kaen() && !machine_is_medcom() &&
+	    !machine_is_plutux())
 		snd_soc_dapm_nc_pin(dapm, "IN2R");
-	if (!machine_is_medcom()) {
+	if (!machine_is_medcom() && !machine_is_plutux()) {
 		snd_soc_dapm_nc_pin(dapm, "IN3L");
 		snd_soc_dapm_nc_pin(dapm, "IN3R");
 	}
@@ -756,7 +793,7 @@ static int tegra_wm8903_init(struct snd_soc_pcm_runtime *rtd)
 		snd_soc_dapm_nc_pin(dapm, "RON");
 		snd_soc_dapm_nc_pin(dapm, "ROP");
 		snd_soc_dapm_nc_pin(dapm, "LOP");
-	} else if (!machine_is_medcom()) {
+	} else if (!machine_is_medcom() && !machine_is_plutux()) {
 		snd_soc_dapm_nc_pin(dapm, "LINEOUTR");
 		snd_soc_dapm_nc_pin(dapm, "LINEOUTL");
 	}
@@ -934,6 +971,12 @@ static __devinit int tegra_wm8903_driver_probe(struct platform_device *pdev)
 
 		card->dapm_widgets = medcom_dapm_widgets;
 		card->num_dapm_widgets = ARRAY_SIZE(medcom_dapm_widgets);
+	} else if (machine_is_plutux()) {
+		card->controls = plutux_controls;
+		card->num_controls = ARRAY_SIZE(plutux_controls);
+
+		card->dapm_widgets = plutux_dapm_widgets;
+		card->num_dapm_widgets = ARRAY_SIZE(plutux_dapm_widgets);
 	} else {
 		card->controls = tegra_wm8903_default_controls;
 		card->num_controls = ARRAY_SIZE(tegra_wm8903_default_controls);
@@ -957,6 +1000,9 @@ static __devinit int tegra_wm8903_driver_probe(struct platform_device *pdev)
 	} else if (machine_is_medcom()) {
 		card->dapm_routes = medcom_audio_map;
 		card->num_dapm_routes = ARRAY_SIZE(medcom_audio_map);
+	} else if (machine_is_plutux()) {
+		card->dapm_routes = plutux_audio_map;
+		card->num_dapm_routes = ARRAY_SIZE(plutux_audio_map);
 	} else {
 		card->dapm_routes = aebl_audio_map;
 		card->num_dapm_routes = ARRAY_SIZE(aebl_audio_map);

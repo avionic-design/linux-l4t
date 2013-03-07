@@ -232,3 +232,7 @@ obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-power.o
 obj-${CONFIG_TEGRA_BB_XMM_POWER}        += baseband-xmm-power.o
 obj-${CONFIG_TEGRA_BB_XMM_POWER2}       += baseband-xmm-power2.o
 
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux.o
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-hdmi.o
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-pinmux.o
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-power.o
