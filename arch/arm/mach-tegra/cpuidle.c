@@ -48,8 +48,6 @@
 #include "timer.h"
 
 int tegra_lp2_exit_latency;
-static int tegra_lp2_power_off_time;
-static unsigned int tegra_lp2_min_residency;
 
 struct cpuidle_driver tegra_idle = {
 	.name = "tegra_idle",
@@ -86,6 +84,8 @@ static bool lp2_in_idle __read_mostly = false;
 #ifdef CONFIG_PM_SLEEP
 static bool lp2_in_idle_modifiable __read_mostly = true;
 static bool lp2_disabled_by_suspend;
+static int tegra_lp2_power_off_time;
+static unsigned int tegra_lp2_min_residency;
 
 void tegra_lp2_in_idle(bool enable)
 {
