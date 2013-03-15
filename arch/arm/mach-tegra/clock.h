@@ -70,6 +70,10 @@
 #include <mach/clk.h>
 #define MAX_SAME_LIMIT_SKU_IDS	16
 
+#ifdef CONFIG_DEBUG_FS
+#include <linux/dcache.h>
+#endif
+
 struct clk;
 
 struct clk_mux_sel {
