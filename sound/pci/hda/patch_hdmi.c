@@ -829,7 +829,7 @@ static int hdmi_pcm_open(struct hda_pcm_stream *hinfo,
 	per_pin = &spec->pins[pin_idx];
 	eld = &per_pin->sink_eld;
 
-#ifdef CONFIG_SND_HDA_PLATFORM_NVIDIA_TEGRA
+#if defined(CONFIG_SND_HDA_PLATFORM_NVIDIA_TEGRA) && !defined(CONFIG_ARCH_TEGRA_2x_SOC)
 	if ((codec->preset->id == 0x10de0020) &&
 	    (!eld->monitor_present || !eld->lpcm_sad_ready)) {
 		if (!eld->monitor_present) {
@@ -1109,7 +1109,8 @@ static int generic_hdmi_playback_pcm_prepare(struct hda_pcm_stream *hinfo,
 	int pin_idx = hinfo_to_pin_index(spec, hinfo);
 	hda_nid_t pin_nid = spec->pins[pin_idx].pin_nid;
 
-#if defined(CONFIG_SND_HDA_PLATFORM_NVIDIA_TEGRA) && defined(CONFIG_TEGRA_DC)
+#if defined(CONFIG_SND_HDA_PLATFORM_NVIDIA_TEGRA) && defined(CONFIG_TEGRA_DC) && \
+    !defined(CONFIG_ARCH_TEGRA_2x_SOC)
 	if (codec->preset->id == 0x10de0020) {
 		int err = 0;
 
