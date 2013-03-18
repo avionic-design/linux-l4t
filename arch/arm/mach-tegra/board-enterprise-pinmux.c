@@ -596,6 +596,7 @@ static __initdata struct pin_info_low_power_mode enterprise_gpio_pins_a03[] = {
 	PIN_GPIO_LPM("SPI1_MISO",     TEGRA_GPIO_PX7,  0, 0),
 	PIN_GPIO_LPM("SPI1_SCK",      TEGRA_GPIO_PX5,  0, 0),
 };
+
 /*******************************TAI pinmux (E1239) ************************/
 static __initdata struct tegra_pingroup_config tai_pinmux_common[] = {
 	/* SDMMC1 pinmux */
@@ -1026,7 +1027,6 @@ int __init enterprise_pinmux_init(void)
 		tegra_gpio_config(tai_gpio_table, ARRAY_SIZE(tai_gpio_table));
 		enterprise_set_unused_pin_gpio(tai_unused_gpio_pins_common,
 				ARRAY_SIZE(tai_unused_gpio_pins_common));
-
 	}
 
 	return 0;
