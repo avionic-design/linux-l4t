@@ -1256,7 +1256,6 @@ static void cardhu_panel_preinit(void)
 		/* Set height and width in mm. */
 		cardhu_disp1_out.height = 125;
 		cardhu_disp1_out.width = 223;
-
 		cardhu_disp1_pdata.fb = &cardhu_fb_data;
 	} else {
 		cardhu_disp1_out.flags = DC_CTRL_MODE;
