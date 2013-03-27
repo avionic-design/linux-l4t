@@ -946,7 +946,15 @@ static int tegra_camera_capture_frame(struct tegra_camera_dev *pcdev)
 		pcdev->active = NULL;
 
 	do_gettimeofday(&vb->v4l2_buf.timestamp);
-	vb->v4l2_buf.field = pcdev->field;
+	if (pcdev->field == V4L2_FIELD_ALTERNATE) {
+		u32 status = TC_VI_REG_RD(pcdev, TEGRA_VI_INTERRUPT_STATUS);
+
+		if (status & (1 << 20))
+			vb->v4l2_buf.field = V4L2_FIELD_BOTTOM;
+		else
+			vb->v4l2_buf.field = V4L2_FIELD_TOP;
+	} else
+		vb->v4l2_buf.field = pcdev->field;
 	vb->v4l2_buf.sequence = pcdev->sequence++;
 
 	vb2_buffer_done(vb, err < 0 ? VB2_BUF_STATE_ERROR : VB2_BUF_STATE_DONE);
