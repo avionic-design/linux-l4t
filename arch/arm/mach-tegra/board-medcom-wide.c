@@ -32,9 +32,10 @@
 #include <linux/gpio_keys.h>
 #include <linux/i2c.h>
 #include <linux/i2c-tegra.h>
+#include <linux/i2c/adnp.h>
+#include <linux/input/sx8634.h>
 #include <linux/memblock.h>
 #include <linux/delay.h>
-#include <linux/mfd/tps6586x.h>
 #include <linux/platform_data/tegra_usb.h>
 #include <linux/tegra_uart.h>
 
@@ -187,7 +188,7 @@ static struct platform_device medcom_wide_audio_device = {
 static struct tegra_i2c_platform_data medcom_wide_i2c1_platform_data = {
 	.adapter_nr = 0,
 	.bus_count = 1,
-	.bus_clk_rate = { 400000, 0 },
+	.bus_clk_rate = { 100000, 0 },
 };
 
 static const struct tegra_pingroup_config i2c2_ddc = {
@@ -235,10 +236,120 @@ static struct wm8903_platform_data medcom_wide_wm8903_pdata = {
 	},
 };
 
-static struct i2c_board_info __initdata wm8903_board_info = {
-	I2C_BOARD_INFO("wm8903", 0x1a),
-	.platform_data = &medcom_wide_wm8903_pdata,
-	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CDC_IRQ),
+static struct adnp_platform_data medcom_adnp_pdata = {
+	.gpio_base = ADNP_GPIO(0),
+	.nr_gpios = 64,
+	.irq_base = ADNP_GPIO_TO_IRQ(ADNP_GPIO(0)),
+	.names = NULL,
+};
+
+#define SX8634_DEFAULT_SENSITIVITY	0x07
+#define SX8634_DEFAULT_THRESHOLD	0x45
+
+static struct sx8634_platform_data medcom_wide_keypad1_pdata = {
+	.reset_gpio = ADNP_GPIO(11),
+	.debounce = 3,
+	.caps = {
+		[1] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_INFO,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[2] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_HELP,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[3] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_COFFEE,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[4] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_UNKNOWN,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[5] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_BRIGHTNESSDOWN,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[6] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_BRIGHTNESSUP,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+	},
+};
+
+static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
+	.reset_gpio = ADNP_GPIO(10),
+	.debounce = 3,
+	.caps = {
+		[1] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_DISPLAY_OFF,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[2] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_DOWN,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[3] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_UP,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[4] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_MUTE,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[5] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_VOLUMEUP,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+		[6] = {
+			.mode = SX8634_CAP_MODE_BUTTON,
+			.keycode = KEY_VOLUMEDOWN,
+			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
+			.threshold = SX8634_DEFAULT_THRESHOLD,
+		},
+	},
+};
+
+static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
+	{
+		I2C_BOARD_INFO("wm8903", 0x1a),
+		.platform_data = &medcom_wide_wm8903_pdata,
+		.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CDC_IRQ),
+	}, {
+		I2C_BOARD_INFO("gpio-adnp", 0x41),
+		.platform_data = &medcom_adnp_pdata,
+		.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CPLD_IRQ),
+	}, {
+		I2C_BOARD_INFO("sx8634", 0x2b),
+		.platform_data = &medcom_wide_keypad1_pdata,
+		.irq = ADNP_IRQ(3),
+	}, {
+		I2C_BOARD_INFO("sx8634", 0x2c),
+		.platform_data = &medcom_wide_keypad2_pdata,
+		.irq = ADNP_IRQ(2),
+	},
 };
 
 static void __init medcom_wide_i2c_init(void)
@@ -253,11 +364,36 @@ static void __init medcom_wide_i2c_init(void)
 	platform_device_register(&tegra_i2c_device3);
 	platform_device_register(&tegra_i2c_device4);
 
-	i2c_register_board_info(0, &wm8903_board_info, 1);
+	i2c_register_board_info(0, medcom_wide_i2c0_board_info,
+				ARRAY_SIZE(medcom_wide_i2c0_board_info));
 }
+
+static struct plat_serial8250_port modem_uart_platform_data[] = {
+	{
+		.membase	= IO_ADDRESS(TEGRA_UARTC_BASE),
+		.mapbase	= TEGRA_UARTC_BASE,
+		.irq		= INT_UARTC,
+		.flags		= UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE,
+		.type		= PORT_TEGRA,
+		.iotype		= UPIO_MEM,
+		.regshift	= 2,
+		.uartclk	= 216000000,
+	}, {
+		.flags		= 0
+	}
+};
+
+static struct platform_device modem_uartc_device = {
+	.name = "serial8250",
+	.id = PLAT8250_DEV_PLATFORM1,
+	.dev = {
+		.platform_data = modem_uart_platform_data,
+	},
+};
 
 static struct platform_device *medcom_wide_uart_devices[] __initdata = {
 	&tegra_uartd_device,
+	&modem_uartc_device,
 };
 
 static struct uart_clk_parent uart_parent_clk[] __initdata = {
@@ -271,7 +407,7 @@ static struct tegra_uart_platform_data medcom_wide_uart_pdata;
 static void __init uart_debug_init(void)
 {
 	struct plat_serial8250_port *port = debug_uartd_device.dev.platform_data;
-	unsigned long rate;
+	unsigned long rate = port->uartclk;
 	struct clk *c;
 
 	/* UARTD is the debug port. */
@@ -282,8 +418,6 @@ static void __init uart_debug_init(void)
 
 	/* Clock enable for the debug channel */
 	if (!IS_ERR_OR_NULL(debug_uart_clk)) {
-		rate = ((struct plat_serial8250_port *)(
-			debug_uartd_device.dev.platform_data))->uartclk;
 		pr_info("The debug console clock name is %s\n",
 			debug_uart_clk->name);
 		c = tegra_get_clock_by_name("pll_p");
@@ -329,8 +463,6 @@ static void __init medcom_wide_uart_init(void)
 }
 
 static struct platform_device *medcom_wide_devices[] __initdata = {
-	&tegra_sdhci_device1,
-	&tegra_sdhci_device2,
 	&tegra_sdhci_device4,
 	&tegra_i2s_device1,
 	&tegra_i2s_device2,
@@ -363,28 +495,17 @@ static void __init medcom_wide_fixup(struct machine_desc *desc,
 
 static __initdata struct tegra_clk_init_table medcom_wide_clk_init_table[] = {
 	/* name		parent		rate		enabled */
-	{ "uartd",	"pll_p",	216000000,	true  },
+	{ "uarta",	"pll_p",	216000000,	false },
+	{ "uartb",	"pll_p",	216000000,	false },
+	{ "uartc",	"pll_p",	216000000,	true  }, /* modem */
+	{ "uartd",	"pll_p",	216000000,	true  }, /* debug */
+	{ "uarte",	"pll_p",	216000000,	false },
 	{ "i2s1",	"pll_a_out0",	0,		false },
 	{ "spdif_out",	"pll_a_out0",	0,		false },
-	{ "sdmmc1",	"clk_m",	48000000,	true  },
-	{ "sdmmc2",	"clk_m",	48000000,	true  },
 	{ "sdmmc4",	"clk_m",	48000000,	true  },
 	{ "ndflash",	"pll_p",	108000000,	true  },
 	{ "pwm",	"clk_32k",	32768,		false },
 	{ NULL,		NULL,		0,		false },
-};
-
-
-static struct tegra_sdhci_platform_data sdhci_pdata1 = {
-	.cd_gpio = -1,
-	.wp_gpio = -1,
-	.power_gpio = -1,
-};
-
-static struct tegra_sdhci_platform_data sdhci_pdata2 = {
-	.cd_gpio = TEGRA_GPIO_SD2_CD,
-	.wp_gpio = TEGRA_GPIO_SD2_WP,
-	.power_gpio = TEGRA_GPIO_SD2_POWER,
 };
 
 static struct tegra_sdhci_platform_data sdhci_pdata4 = {
@@ -399,13 +520,9 @@ static void __init medcom_wide_init(void)
 	tegra_clk_init_from_table(medcom_wide_clk_init_table);
 
 	medcom_wide_pinmux_init();
-
 	medcom_wide_uart_init();
 
-	tegra_sdhci_device1.dev.platform_data = &sdhci_pdata1;
-	tegra_sdhci_device2.dev.platform_data = &sdhci_pdata2;
 	tegra_sdhci_device4.dev.platform_data = &sdhci_pdata4;
-
 	tegra_udc_device.dev.platform_data = &tegra_udc_pdata;
 	tegra_ehci3_device.dev.platform_data = &tegra_ehci3_utmi_pdata;
 
