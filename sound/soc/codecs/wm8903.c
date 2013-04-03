@@ -240,6 +240,42 @@ struct wm8903_priv {
 #endif
 };
 
+#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
+static ssize_t wm8903_reg_show(struct device *dev,
+                               struct device_attribute *attr, char *buf)
+{
+	struct i2c_client *i2c = to_i2c_client(dev);
+	int r, pos = 0;
+
+	for (r = 0 ; r < ARRAY_SIZE(wm8903_reg_defaults) ; r += 1) {
+		pos += sprintf(buf + pos, "R%03d = %04x\n", r,
+		               be16_to_cpu(i2c_smbus_read_word_data(i2c, r)));
+	}
+	return pos;
+}
+
+static ssize_t wm8903_reg_store(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	struct i2c_client *i2c = to_i2c_client(dev);
+	int r, reg, val;
+
+	r = sscanf(buf, "R%i=%i", &reg, &val);
+	if (r < 2)
+		return -EINVAL;
+
+	if (reg < 0 || reg >= ARRAY_SIZE(wm8903_reg_defaults) ||
+	    val < 0 || val >  0xFFFF)
+		return -EINVAL;
+
+	r = i2c_smbus_write_word_data(i2c, reg, cpu_to_be16(val));
+
+	return r < 0 ? r : count;
+}
+
+DEVICE_ATTR(codec_registers, S_IRUGO | S_IWUSR, wm8903_reg_show, wm8903_reg_store);
+#endif
 static int wm8903_volatile_register(struct snd_soc_codec *codec, unsigned int reg)
 {
 	switch (reg) {
@@ -261,6 +297,8 @@ static int wm8903_volatile_register(struct snd_soc_codec *codec, unsigned int re
 static void wm8903_reset(struct snd_soc_codec *codec)
 {
 	snd_soc_write(codec, WM8903_SW_RESET_AND_ID, 0);
+	snd_soc_write(codec, WM8903_MIC_BIAS_CONTROL_0, 0x0083);
+	snd_soc_write(codec, WM8903_POWER_MANAGEMENT_0, 0x0007);
 	memcpy(codec->reg_cache, wm8903_reg_defaults,
 	       sizeof(wm8903_reg_defaults));
 }
@@ -405,7 +443,7 @@ static int wm8903_class_w_put(struct snd_kcontrol *kcontrol,
 	ret = snd_soc_dapm_put_volsw(kcontrol, ucontrol);
 
 	/* If we've just disabled the last bypass path turn Class W on */
-	if (!ucontrol->value.integer.value[0]) {
+	if (!ucontrol->value.integer.value[0] && wm8903->class_w_users > 0) {
 		if (wm8903->class_w_users == 1) {
 			dev_dbg(codec->dev, "Enabling Class W\n");
 			snd_soc_write(codec, WM8903_CLASS_W_0, reg |
@@ -1036,11 +1074,13 @@ static const struct snd_soc_dapm_route wm8903_intercon[] = {
 	{ "Left Output Mixer", "Right Bypass Switch", "Right Input PGA" },
 	{ "Left Output Mixer", "DACL Switch", "DACL" },
 	{ "Left Output Mixer", "DACR Switch", "DACR" },
+	{ "Left Output Mixer", NULL, "CLK_DSP" },
 
 	{ "Right Output Mixer", "Left Bypass Switch", "Left Input PGA" },
 	{ "Right Output Mixer", "Right Bypass Switch", "Right Input PGA" },
 	{ "Right Output Mixer", "DACL Switch", "DACL" },
 	{ "Right Output Mixer", "DACR Switch", "DACR" },
+	{ "Right Output Mixer", NULL, "CLK_DSP" },
 
 	{ "Left Speaker Mixer", "Left Bypass Switch", "Left Input PGA" },
 	{ "Left Speaker Mixer", "Right Bypass Switch", "Right Input PGA" },
@@ -1645,6 +1685,14 @@ int wm8903_mic_detect(struct snd_soc_codec *codec, struct snd_soc_jack *jack,
 	} else {
 		snd_soc_update_bits(codec, WM8903_MIC_BIAS_CONTROL_0,
 				    WM8903_MICDET_ENA, 0);
+		/* if mic detection is disabled the mic_jack should be assumed
+		   to be connected all the time */
+		if (!det) {
+			snd_soc_update_bits(codec, WM8903_INTERRUPT_POLARITY_1,
+				WM8903_MICDET_INV, WM8903_MICDET_INV);
+			snd_soc_jack_report(wm8903->mic_jack, 
+				SND_JACK_MICROPHONE, SND_JACK_MICROPHONE);
+		}
 	}
 
 	return 0;
@@ -2086,6 +2134,11 @@ static __devinit int wm8903_i2c_probe(struct i2c_client *i2c,
 {
 	struct wm8903_priv *wm8903;
 	int ret;
+	ret = device_create_file(&i2c->dev, &dev_attr_codec_registers);
+	if (ret != 0) {
+		dev_err(&i2c->dev, "Failed to register reg file: %d\n", ret);
+		return ret;
+	}
 
 	wm8903 = kzalloc(sizeof(struct wm8903_priv), GFP_KERNEL);
 	if (wm8903 == NULL)
@@ -2103,6 +2156,7 @@ static __devinit int wm8903_i2c_probe(struct i2c_client *i2c,
 
 static __devexit int wm8903_i2c_remove(struct i2c_client *client)
 {
+	device_remove_file(&client->dev, &dev_attr_codec_registers);
 	snd_soc_unregister_codec(&client->dev);
 	kfree(i2c_get_clientdata(client));
 	return 0;
