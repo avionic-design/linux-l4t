@@ -530,6 +530,16 @@ config INPUT_CMA3000_I2C
 	  To compile this driver as a module, choose M here: the
 	  module will be called cma3000_d0x_i2c.
 
+config INPUT_SX8634
+	tristate "Semtech SX8634"
+	depends on I2C
+	default n
+	help
+	  Say Y here if you want to use the Semtech SX8634 controller.
+
+	  To compile this driver as a module, choose M here: the module will
+	  be called sx8634.
+
 config INPUT_XEN_KBDDEV_FRONTEND
 	tristate "Xen virtual keyboard and mouse support"
 	depends on XEN_FBDEV_FRONTEND
