@@ -36,8 +36,6 @@
 #include <mach/clk.h>
 #include <mach/io.h>
 
-static int wdt_heartbeat = 30;
-
 #if defined(CONFIG_ARCH_TEGRA_3x_SOC)
 #define TIMER_PTV			0
  #define TIMER_EN			(1 << 31)
@@ -58,6 +56,7 @@ static int wdt_heartbeat = 30;
 
 static void __iomem *wdt_timer  = IO_ADDRESS(TEGRA_TMR10_BASE);
 static void __iomem *wdt_source = IO_ADDRESS(TEGRA_WDT3_BASE);
+static int wdt_heartbeat = 30;
 
 static void tegra_wdt_reset_enable(void)
 {
