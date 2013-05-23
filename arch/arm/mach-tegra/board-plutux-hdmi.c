@@ -38,6 +38,96 @@
 
 #define PLUTUX_GPIO_HDMI_HPD	TEGRA_GPIO_PN7
 
+
+/*
+ * We add LVDS only because the l4t drivers seems to hardcode lvds as
+ * primary interface
+ */
+static int plutux_lvds_enable(void)
+{
+	return 0;
+}
+
+static int plutux_lvds_disable(void)
+{
+	return 0;
+}
+
+static struct resource plutux_lvds_resources[] = {
+	{
+		.name  = "irq",
+		.start = INT_DISPLAY_GENERAL,
+		.end   = INT_DISPLAY_GENERAL,
+		.flags = IORESOURCE_IRQ,
+	},{
+		.name  = "regs",
+		.start = TEGRA_DISPLAY_BASE,
+		.end   = TEGRA_DISPLAY_BASE + TEGRA_DISPLAY_SIZE - 1,
+		.flags = IORESOURCE_MEM,
+	},{
+		.name  = "fbmem",
+		.flags = IORESOURCE_MEM,
+	},
+};
+
+static struct tegra_dc_mode plutux_panel_modes[] = {
+	{
+		.pclk = 61715000,
+		.h_ref_to_sync = 4,
+		.v_ref_to_sync = 2,
+		.h_sync_width = 136,
+		.v_sync_width = 4,
+		.h_back_porch = 2,
+		.v_back_porch = 21,
+		.h_active = 1366,
+		.v_active = 768,
+		.h_front_porch = 36,
+		.v_front_porch = 10,
+	},
+};
+
+static struct tegra_fb_data plutux_lvds_fb_data = {
+	.win = 0,
+	.xres = 1366,
+	.yres = 768,
+	.bits_per_pixel = 16,
+	.flags = TEGRA_FB_FLIP_ON_PROBE,
+};
+
+static struct tegra_dc_out plutux_lvds_out = {
+	.type		= TEGRA_DC_OUT_RGB,
+
+	.align		= TEGRA_DC_ALIGN_MSB,
+	.order		= TEGRA_DC_ORDER_RED_BLUE,
+	.depth		= 18,
+	.dither		= TEGRA_DC_ORDERED_DITHER,
+
+	.modes		= plutux_panel_modes,
+	.n_modes	= ARRAY_SIZE(plutux_panel_modes),
+
+	.enable		= plutux_lvds_enable,
+	.disable	= plutux_lvds_disable,
+};
+
+static struct tegra_dc_platform_data plutux_lvds_pdata = {
+	.flags		= 0,
+	.default_out	= &plutux_lvds_out,
+	.fb		= &plutux_lvds_fb_data,
+};
+
+static struct nvhost_device plutux_lvds_device = {
+	.name		= "tegradc",
+	.id		= 0,
+	.resource	= plutux_lvds_resources,
+	.num_resources	= ARRAY_SIZE(plutux_lvds_resources),
+	.dev = {
+		.platform_data = &plutux_lvds_pdata,
+	},
+};
+
+/*
+ * HDMI is the primary display (also the only that can work)
+ */
 static int plutux_set_hdmi_power(bool enable)
 {
 	static struct {
@@ -79,39 +169,36 @@ static int plutux_hdmi_disable(void)
 	return plutux_set_hdmi_power(false);
 }
 
-static struct resource plutux_disp1_resources[] = {
+static struct resource plutux_hdmi_resources[] = {
 	{
-		.name = "irq",
-		.start = INT_DISPLAY_GENERAL,
-		.end = INT_DISPLAY_GENERAL,
+		.name  = "irq",
+		.start = INT_DISPLAY_B_GENERAL,
+		.end   = INT_DISPLAY_B_GENERAL,
 		.flags = IORESOURCE_IRQ,
-	},
-	{
-		.name = "regs",
-		.start = TEGRA_DISPLAY_BASE,
-		.end = TEGRA_DISPLAY_BASE + TEGRA_DISPLAY_SIZE - 1,
+	},{
+		.name  = "regs",
+		.start = TEGRA_DISPLAY2_BASE,
+		.end   = TEGRA_DISPLAY2_BASE + TEGRA_DISPLAY2_SIZE - 1,
 		.flags = IORESOURCE_MEM,
-	},
-	{
-		.name = "fbmem",
+	},{
+		.name  = "fbmem",
 		.flags = IORESOURCE_MEM,
-	},
-	{
-		.name	= "hdmi_regs",
-		.start	= TEGRA_HDMI_BASE,
-		.end	= TEGRA_HDMI_BASE + TEGRA_HDMI_SIZE - 1,
-		.flags	= IORESOURCE_MEM,
+	},{
+		.name  = "hdmi_regs",
+		.start = TEGRA_HDMI_BASE,
+		.end   = TEGRA_HDMI_BASE + TEGRA_HDMI_SIZE - 1,
+		.flags = IORESOURCE_MEM,
 	},
 };
 
-static struct tegra_fb_data plutux_fb_data = {
+static struct tegra_fb_data plutux_hdmi_fb_data = {
 	.win		= 0,
 	.xres		= 1280,
 	.yres		= 720,
 	.bits_per_pixel	= 16,
 };
 
-static struct tegra_dc_out plutux_disp1_out = {
+static struct tegra_dc_out plutux_hdmi_out = {
 	.type		= TEGRA_DC_OUT_HDMI,
 	.flags		= TEGRA_DC_OUT_HOTPLUG_HIGH,
 
@@ -125,19 +212,19 @@ static struct tegra_dc_out plutux_disp1_out = {
 	.disable	= plutux_hdmi_disable,
 };
 
-static struct tegra_dc_platform_data plutux_disp1_pdata = {
+static struct tegra_dc_platform_data plutux_hdmi_pdata = {
 	.flags = TEGRA_DC_FLAG_ENABLED,
-	.default_out = &plutux_disp1_out,
-	.fb = &plutux_fb_data,
+	.default_out = &plutux_hdmi_out,
+	.fb = &plutux_hdmi_fb_data,
 };
 
-static struct nvhost_device plutux_disp1_device = {
+static struct nvhost_device plutux_hdmi_device = {
 	.name = "tegradc",
-	.id = 0,
-	.resource = plutux_disp1_resources,
-	.num_resources = ARRAY_SIZE(plutux_disp1_resources),
+	.id = 1,
+	.resource = plutux_hdmi_resources,
+	.num_resources = ARRAY_SIZE(plutux_hdmi_resources),
 	.dev = {
-		.platform_data = &plutux_disp1_pdata,
+		.platform_data = &plutux_hdmi_pdata,
 	},
 };
 
@@ -218,14 +305,34 @@ int __init plutux_hdmi_init(void)
 	if (err)
 		return err;
 
-	res = nvhost_get_resource_byname(&plutux_disp1_device,
+	res = nvhost_get_resource_byname(&plutux_hdmi_device,
 					 IORESOURCE_MEM, "fbmem");
 	if (res) {
 		res->start = tegra_fb_start;
 		res->end = tegra_fb_start + tegra_fb_size - 1;
 	}
 
-	err = nvhost_device_register(&plutux_disp1_device);
+	res = nvhost_get_resource_byname(&plutux_lvds_device,
+					 IORESOURCE_MEM, "fbmem");
+	if (res) {
+		res->start = tegra_fb2_start;
+		res->end = tegra_fb2_start + tegra_fb2_size - 1;
+	}
+
+	/* Copy the bootloader fb to the fb. */
+	if (tegra_bootloader_fb_start) {
+		tegra_move_framebuffer(tegra_fb_start,
+			tegra_bootloader_fb_start,
+			min(tegra_fb_size, tegra_bootloader_fb_size));
+	}
+
+	/* not realy used */
+	err = nvhost_device_register(&plutux_lvds_device);
+	if (err)
+		return err;
+
+	/*  */
+	err = nvhost_device_register(&plutux_hdmi_device);
 	if (err)
 		return err;
 
