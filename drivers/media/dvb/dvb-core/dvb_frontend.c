@@ -2067,6 +2067,44 @@ static const struct file_operations dvb_frontend_fops = {
 	.llseek		= noop_llseek,
 };
 
+int dvb_frontend_suspend(struct dvb_frontend *fe)
+{
+	int ret = 0;
+
+	dev_dbg(fe->dvb->device, "%s: adap=%d fe=%d\n", __func__, fe->dvb->num,
+			fe->id);
+
+	if (fe->ops.tuner_ops.sleep)
+		ret = fe->ops.tuner_ops.sleep(fe);
+
+	if (fe->ops.sleep)
+		ret = fe->ops.sleep(fe);
+
+	return ret;
+}
+EXPORT_SYMBOL(dvb_frontend_suspend);
+
+int dvb_frontend_resume(struct dvb_frontend *fe)
+{
+	struct dvb_frontend_private *fepriv = fe->frontend_priv;
+	int ret = 0;
+
+	dev_dbg(fe->dvb->device, "%s: adap=%d fe=%d\n", __func__, fe->dvb->num,
+			fe->id);
+
+	if (fe->ops.init)
+		ret = fe->ops.init(fe);
+
+	if (fe->ops.tuner_ops.init)
+		ret = fe->ops.tuner_ops.init(fe);
+
+	fepriv->state = FESTATE_RETUNE;
+	dvb_frontend_wakeup(fe);
+
+	return ret;
+}
+EXPORT_SYMBOL(dvb_frontend_resume);
+
 int dvb_register_frontend(struct dvb_adapter* dvb,
 			  struct dvb_frontend* fe)
 {
