@@ -24,10 +24,14 @@
 
 static bool match_i2c(struct v4l2_subdev *sd, struct v4l2_async_subdev *asd)
 {
+#if IS_ENABLED(CONFIG_I2C)
 	struct i2c_client *client = i2c_verify_client(sd->dev);
 	return client &&
 		asd->match.i2c.adapter_id == client->adapter->nr &&
 		asd->match.i2c.address == client->addr;
+#else
+	return false;
+#endif
 }
 
 static bool match_devname(struct v4l2_subdev *sd,
