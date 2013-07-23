@@ -1,0 +1,300 @@
+/*
+ * arch/arm/mach-tegra/board-tec-ng.c
+ *
+ * Copyright (c) 2013, Avionic Design GmbH
+ * Copyright (c) 2013, Julian Scheel <julian@jusst.de>
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <linux/kernel.h>
+#include <linux/init.h>
+#include <linux/platform_device.h>
+#include <linux/clk.h>
+#include <linux/serial_8250.h>
+#include <linux/i2c.h>
+#include <linux/i2c-tegra.h>
+#include <linux/dma-mapping.h>
+#include <linux/gpio.h>
+#include <linux/platform_data/tegra_usb.h>
+#include <linux/tegra_uart.h>
+#include <linux/memblock.h>
+
+#include <mach/clk.h>
+#include <mach/iomap.h>
+#include <mach/irqs.h>
+#include <mach/pinmux.h>
+#include <mach/io.h>
+#include <mach/io_dpd.h>
+
+#include <asm/mach-types.h>
+#include <asm/mach/arch.h>
+#include <mach/usb_phy.h>
+
+#include "board-tec-ng.h"
+#include "board.h"
+#include "clock.h"
+#include "devices.h"
+#include "gpio-names.h"
+#include "pm.h"
+
+static __initdata struct tegra_clk_init_table tec_ng_clk_init_table[] = {
+	{ "pll_a",	NULL,		552960000,	true},
+	{ "pll_m",	NULL,		0,		false},
+	{ "pll_c",	NULL,		400000000,	true},
+	{ "pwm",	"pll_p",	3187500,	false},
+	{ NULL,		NULL,		0,		0},
+};
+
+static struct tegra_usb_platform_data tegra_ehci1_utmi_pdata = {
+	.port_otg = true,
+	.has_hostpc = true,
+	.phy_intf = TEGRA_USB_PHY_INTF_UTMI,
+	.op_mode = TEGRA_USB_OPMODE_HOST,
+	.u_data.host = {
+		.vbus_gpio = -1,
+		.hot_plug = true,
+		.remote_wakeup_supported = true,
+		.power_off_on_suspend = true,
+	},
+	.u_cfg.utmi = {
+		.hssync_start_delay = 0,
+		.elastic_limit = 16,
+		.idle_wait_delay = 17,
+		.term_range_adj = 6,
+		.xcvr_setup = 15,
+		.xcvr_lsfslew = 2,
+		.xcvr_lsrslew = 2,
+		.xcvr_setup_offset = 0,
+		.xcvr_use_fuses = 1,
+	},
+};
+
+static struct tegra_usb_otg_data tegra_otg_pdata = {
+	.ehci_device = &tegra_ehci1_device,
+	.ehci_pdata = &tegra_ehci1_utmi_pdata,
+};
+
+static struct tegra_usb_platform_data tegra_ehci3_utmi_pdata = {
+	.port_otg = false,
+	.has_hostpc = true,
+	.phy_intf = TEGRA_USB_PHY_INTF_UTMI,
+	.op_mode = TEGRA_USB_OPMODE_HOST,
+	.u_data.host = {
+		.vbus_gpio = -1,
+		.vbus_reg = "vdd_vbus_typea_usb",
+		.hot_plug = true,
+		.remote_wakeup_supported = true,
+		.power_off_on_suspend = true,
+	},
+	.u_cfg.utmi = {
+		.hssync_start_delay = 0,
+		.elastic_limit = 16,
+		.idle_wait_delay = 17,
+		.term_range_adj = 6,
+		.xcvr_setup = 8,
+		.xcvr_lsfslew = 2,
+		.xcvr_lsrslew = 2,
+		.xcvr_setup_offset = 0,
+		.xcvr_use_fuses = 1,
+	},
+};
+
+static void tec_ng_usb_init(void)
+{
+	tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
+	platform_device_register(&tegra_otg_device);
+
+	tegra_ehci3_device.dev.platform_data = &tegra_ehci3_utmi_pdata;
+	platform_device_register(&tegra_ehci3_device);
+}
+
+static struct tegra_i2c_platform_data tec_ng_i2c0_gen1_platform_data = {
+	.adapter_nr = 0,
+	.bus_count = 1,
+	.is_clkon_always = true,
+	.bus_clk_rate = { 100000, 0 },
+	.scl_gpio = { TEGRA_GPIO_PC4, 0 },
+	.sda_gpio = { TEGRA_GPIO_PC5, 0 },
+	.arb_recovery = arb_lost_recovery,
+};
+
+static struct tegra_i2c_platform_data tec_ng_i2c1_gen2_platform_data = {
+	.adapter_nr = 1,
+	.bus_count = 1,
+	.bus_clk_rate = { 100000, 0 },
+	.scl_gpio = { TEGRA_GPIO_PT5, 0 },
+	.sda_gpio = { TEGRA_GPIO_PT6, 0 },
+	.arb_recovery = arb_lost_recovery,
+};
+
+static struct tegra_i2c_platform_data tec_ng_i2c2_cam_platform_data = {
+	.adapter_nr = 2,
+	.bus_count = 1,
+	.bus_clk_rate = { 100000, 0 },
+	.scl_gpio = { TEGRA_GPIO_PBB1, 0 },
+	.sda_gpio = { TEGRA_GPIO_PBB2, 0 },
+	.arb_recovery = arb_lost_recovery,
+};
+
+static struct tegra_i2c_platform_data tec_ng_i2c3_ddc_platform_data = {
+	.adapter_nr = 3,
+	.bus_count = 1,
+	.bus_clk_rate = { 100000, 0 },
+	.scl_gpio = { TEGRA_GPIO_PV4, 0 },
+	.sda_gpio = { TEGRA_GPIO_PV5, 0 },
+	.arb_recovery = arb_lost_recovery,
+};
+
+static struct tegra_i2c_platform_data tec_ng_i2c4_pwr_platform_data = {
+	.adapter_nr = 4,
+	.bus_count = 1,
+	.bus_clk_rate = { 100000, 0 },
+	.scl_gpio = { TEGRA_GPIO_PZ6, 0 },
+	.sda_gpio = { TEGRA_GPIO_PZ7, 0 },
+	.arb_recovery = arb_lost_recovery,
+};
+
+static void tec_ng_i2c_init(void)
+{
+	tegra_i2c_device1.dev.platform_data = &tec_ng_i2c0_gen1_platform_data;
+	tegra_i2c_device2.dev.platform_data = &tec_ng_i2c1_gen2_platform_data;
+	tegra_i2c_device3.dev.platform_data = &tec_ng_i2c2_cam_platform_data;
+	tegra_i2c_device4.dev.platform_data = &tec_ng_i2c3_ddc_platform_data;
+	tegra_i2c_device5.dev.platform_data = &tec_ng_i2c4_pwr_platform_data;
+
+	platform_device_register(&tegra_i2c_device1);
+	platform_device_register(&tegra_i2c_device2);
+	platform_device_register(&tegra_i2c_device3);
+	platform_device_register(&tegra_i2c_device4);
+	platform_device_register(&tegra_i2c_device5);
+}
+
+static struct platform_device *tec_ng_uart_devices[] __initdata = {
+	&tegra_uarta_device,
+	&tegra_uartb_device,
+	&tegra_uartc_device,
+	&debug_uartd_device,
+};
+
+static struct uart_clk_parent uart_parent_clk[] = {
+	[0] = { .name = "clk_m" },
+	[1] = { .name = "pll_p" },
+	[2] = { .name = "pll_m" },
+};
+
+static struct tegra_uart_platform_data tec_ng_uart_pdata;
+
+static void __init tec_ng_uart_debug_init(void)
+{
+	debug_uart_clk = clk_get_sys("serial8250.0", "uartd");
+	debug_uart_port_base = ((struct plat_serial8250_port *)(
+				debug_uartd_device.dev.platform_data))->mapbase;
+}
+
+static void __init tec_ng_uart_init(void)
+{
+	struct clk *c;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(uart_parent_clk); i++) {
+		c = tegra_get_clock_by_name(uart_parent_clk[i].name);
+		if (IS_ERR_OR_NULL(c)) {
+			pr_err("Not able to get the clock for %s\n",
+					uart_parent_clk[i].name);
+			continue;
+		}
+		uart_parent_clk[i].parent_clk = c;
+		uart_parent_clk[i].fixed_clk_rate = clk_get_rate(c);
+	}
+	tec_ng_uart_pdata.parent_clk_list = uart_parent_clk;
+	tec_ng_uart_pdata.parent_clk_count = ARRAY_SIZE(uart_parent_clk);
+
+	tegra_uarta_device.dev.platform_data = &tec_ng_uart_pdata;
+	tegra_uartb_device.dev.platform_data = &tec_ng_uart_pdata;
+	tegra_uartc_device.dev.platform_data = &tec_ng_uart_pdata;
+	tegra_uartd_device.dev.platform_data = &tec_ng_uart_pdata;
+
+	tec_ng_uart_debug_init();
+	if (!IS_ERR_OR_NULL(debug_uart_clk)) {
+		pr_info("The debug console clock name is %s\n",
+				debug_uart_clk->name);
+		c = tegra_get_clock_by_name("pll_p");
+		if (IS_ERR_OR_NULL(c))
+			pr_err("Not getting the parent clock pll_p\n");
+		else
+			clk_set_parent(debug_uart_clk, c);
+
+		clk_enable(debug_uart_clk);
+		clk_set_rate(debug_uart_clk, clk_get_rate(c));
+	} else {
+		pr_err("Could not get the clock %s for debug console\n",
+				debug_uart_clk->name);
+	}
+
+	platform_add_devices(tec_ng_uart_devices,
+			ARRAY_SIZE(tec_ng_uart_devices));
+}
+
+static struct platform_device *tec_ng_devices[] __initdata = {
+	&tegra_pmu_device,
+	&tegra_udc_device,
+	&tegra_cec_device,
+#ifdef CONFIG_SATA_AHCI_TEGRA
+	&tegra_sata_device,
+#endif
+};
+
+static void __init tec_ng_init(void)
+{
+	tegra_io_dpd_init();
+	tegra_clk_init_from_table(tec_ng_clk_init_table);
+	tec_ng_pinmux_init();
+	tec_ng_i2c_init();
+	tec_ng_usb_init();
+	tec_ng_uart_init();
+
+	platform_add_devices(tec_ng_devices, ARRAY_SIZE(tec_ng_devices));
+	tegra_ram_console_debug_init();
+	tec_ng_regulator_init();
+	tec_ng_sdhci_init();
+
+	tegra_release_bootloader_fb();
+}
+
+static void __init tec_ng_reserve(void)
+{
+#if defined(CONFIG_NVMAP_CONVERT_CARVEOUT_TO_IOVMM)
+	tegra_reserve(0, SZ_8M + SZ_1M, SZ_16M);
+#else
+	tegra_reserve(SZ_128M, SZ_8M, SZ_8M);
+#endif
+	tegra_ram_console_debug_reserve(SZ_1M);
+}
+
+static const char *tec_ng_dt_board_compat[] = {
+	"avionic-design,tec_ng",
+	NULL
+};
+
+MACHINE_START(TEC_NG, "tec_ng")
+	.boot_params	= 0x80000100,
+	.map_io         = tegra_map_common_io,
+	.reserve        = tec_ng_reserve,
+	.init_early	= tegra_init_early,
+	.init_irq	= tegra_init_irq,
+	.timer		= &tegra_timer,
+	.init_machine	= tec_ng_init,
+	.dt_compat	= tec_ng_dt_board_compat,
+MACHINE_END
