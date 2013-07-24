@@ -109,23 +109,23 @@ static struct tegra_usb_platform_data tegra_ehci3_utmi_pdata = {
 };
 
 static struct tegra_nand_chip_parms nand_chip_parms[] = {
-	/* Hynix H5PS1GB3EFR */
+	/* Hynix HY27UF084G2B */
 	[0] = {
 		.vendor_id = 0xAD,
 		.device_id = 0xDC,
 		.read_id_fourth_byte = 0x95,
-		.capacity  = 512,
+		.capacity = 512,
 		.timing = {
 			.trp = 12,
-			.trh = 10,
+			.trh = 1,
 			.twp = 12,
-			.twh = 10,
-			.tcs = 20,
-			.twhr = 80,
-			.tcr_tar_trr = 20,
-			.twb = 100,
-			.trp_resp = 20,
-			.tadl = 70,
+			.twh = 0,
+			.tcs = 24,
+			.twhr = 58,
+			.tcr_tar_trr = 0,
+			.twb = 116,
+			.trp_resp = 24,
+			.tadl = 24,
 		},
 	},
 };

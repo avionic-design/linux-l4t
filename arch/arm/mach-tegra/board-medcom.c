@@ -135,44 +135,25 @@ static struct tegra_usb_platform_data tegra_ehci3_utmi_pdata = {
 };
 
 static struct tegra_nand_chip_parms nand_chip_parms[] = {
-	/* Samsung K5E2G1GACM */
+	/* Hynix HY27UF084G2B */
 	[0] = {
-	       .vendor_id = 0xEC,
-	       .device_id = 0xAA,
-	       .read_id_fourth_byte = 0x15,
-	       .capacity  = 256,
-	       .timing = {
-			  .trp = 21,
-			  .trh = 15,
-			  .twp = 21,
-			  .twh = 15,
-			  .tcs = 31,
-			  .twhr = 60,
-			  .tcr_tar_trr = 20,
-			  .twb = 100,
-			  .trp_resp = 30,
-			  .tadl = 100,
-			  },
-	       },
-	/* Hynix H5PS1GB3EFR */
-	[1] = {
-	       .vendor_id = 0xAD,
-	       .device_id = 0xDC,
-	       .read_id_fourth_byte = 0x95,
-	       .capacity  = 512,
-	       .timing = {
-			  .trp = 12,
-			  .trh = 10,
-			  .twp = 12,
-			  .twh = 10,
-			  .tcs = 20,
-			  .twhr = 80,
-			  .tcr_tar_trr = 20,
-			  .twb = 100,
-			  .trp_resp = 20,
-			  .tadl = 70,
-			  },
-	       },
+		.vendor_id = 0xAD,
+		.device_id = 0xDC,
+		.read_id_fourth_byte = 0x95,
+		.capacity = 512,
+		.timing = {
+			.trp = 12,
+			.trh = 1,
+			.twp = 12,
+			.twh = 0,
+			.tcs = 24,
+			.twhr = 58,
+			.tcr_tar_trr = 0,
+			.twb = 116,
+			.trp_resp = 24,
+			.tadl = 24,
+		},
+	},
 };
 
 struct tegra_nand_platform medcom_nand_data = {
