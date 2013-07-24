@@ -155,6 +155,6 @@ static inline void dpcm_path_put(struct snd_soc_dapm_widget_list **list)
 /* internal use only */
 int soc_dpcm_be_digital_mute(struct snd_soc_pcm_runtime *fe, int mute);
 int soc_dpcm_debugfs_add(struct snd_soc_pcm_runtime *rtd);
-int soc_dpcm_runtime_update(struct snd_soc_dapm_widget *);
+int soc_dpcm_runtime_update(struct snd_soc_card *);
 
 #endif
