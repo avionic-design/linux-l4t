@@ -1458,7 +1458,7 @@ static void dapm_seq_run(struct snd_soc_dapm_context *dapm,
 
 static void dapm_widget_update(struct snd_soc_dapm_context *dapm)
 {
-	struct snd_soc_dapm_update *update = dapm->update;
+	struct snd_soc_dapm_update *update = dapm->card->update;
 	struct snd_soc_dapm_widget_list *wlist;
 	struct snd_soc_dapm_widget *w = NULL;
 	unsigned int wi;
@@ -1997,9 +1997,9 @@ int snd_soc_dapm_mux_update_power(struct snd_soc_dapm_context *dapm,
 	int ret;
 
 	mutex_lock_nested(&card->dapm_mutex, SND_SOC_DAPM_CLASS_RUNTIME);
-	dapm->update = update;
+	card->update = update;
 	ret = soc_dapm_mux_update_power(dapm, kcontrol, mux, e);
-	dapm->update = NULL;
+	card->update = NULL;
 	mutex_unlock(&card->dapm_mutex);
 	if (ret > 0)
 		soc_dpcm_runtime_update(widget);
@@ -2040,9 +2040,9 @@ int snd_soc_dapm_mixer_update_power(struct snd_soc_dapm_context *dapm,
 	int ret;
 
 	mutex_lock_nested(&card->dapm_mutex, SND_SOC_DAPM_CLASS_RUNTIME);
-	dapm->update = update;
+	card->update = update;
 	ret = soc_dapm_mixer_update_power(dapm, kcontrol, connect);
-	dapm->update = NULL;
+	card->update = NULL;
 	mutex_unlock(&card->dapm_mutex);
 	if (ret > 0)
 		soc_dpcm_runtime_update(widget);
@@ -2733,11 +2733,11 @@ int snd_soc_dapm_put_volsw(struct snd_kcontrol *kcontrol,
 		update.mask = mask;
 		update.val = val;
 
-		widget->dapm->update = &update;
+		card->update = &update;
 
 		soc_dapm_mixer_update_power(widget->dapm, kcontrol, connect);
 
-		widget->dapm->update = NULL;
+		card->update = NULL;
 	}
 
 	mutex_unlock(&card->dapm_mutex);
@@ -2815,11 +2815,11 @@ int snd_soc_dapm_put_enum_double(struct snd_kcontrol *kcontrol,
 		update.reg = e->reg;
 		update.mask = mask;
 		update.val = val;
-		widget->dapm->update = &update;
+		card->update = &update;
 
 		soc_dapm_mux_update_power(widget->dapm, kcontrol, mux, e);
 
-		widget->dapm->update = NULL;
+		card->update = NULL;
 	}
 
 	mutex_unlock(&card->dapm_mutex);
@@ -2968,11 +2968,11 @@ int snd_soc_dapm_put_value_enum_double(struct snd_kcontrol *kcontrol,
 		update.reg = e->reg;
 		update.mask = mask;
 		update.val = val;
-		widget->dapm->update = &update;
+		card->update = &update;
 
 		soc_dapm_mux_update_power(widget->dapm, kcontrol, mux, e);
 
-		widget->dapm->update = NULL;
+		card->update = NULL;
 	}
 
 	mutex_unlock(&card->dapm_mutex);
