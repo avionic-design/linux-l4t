@@ -39,6 +39,7 @@
 #include <mach/pinmux.h>
 #include <mach/io.h>
 #include <mach/io_dpd.h>
+#include <mach/pci.h>
 #include <mach/thermal.h>
 #include <mach/tegra_wm8903_pdata.h>
 #include <mach/tegra_asoc_pdata.h>
@@ -419,6 +420,26 @@ static struct platform_device tec_ng_audio_wm8903_device = {
 	},
 };
 
+#ifdef CONFIG_TEGRA_PCI
+static struct tegra_pci_platform_data tec_ng_pci_platform_data = {
+	.port_status = {
+		1,
+		1,
+		0
+	},
+	.use_dock_detect = 0,
+	.gpio = 0,
+};
+#endif
+
+static void tec_ng_pci_init(void)
+{
+#ifdef CONFIG_TEGRA_PCI
+	tegra_pci_device.dev.platform_data = &tec_ng_pci_platform_data;
+	platform_device_register(&tegra_pci_device);
+#endif
+}
+
 static struct platform_device *tec_ng_devices[] __initdata = {
 	&tegra_pmu_device,
 	&tegra_rtc_device,
@@ -456,6 +477,7 @@ static void __init tec_ng_init(void)
 	tec_ng_sensors_init();
 	tec_ng_sdhci_init();
 	tec_ng_panel_init();
+	tec_ng_pci_init();
 
 	tegra_release_bootloader_fb();
 }

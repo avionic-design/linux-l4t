@@ -65,6 +65,9 @@ static struct regulator_consumer_supply tps6591x_ldo1_supply[] = {
 	REGULATOR_SUPPLY("vdd_sata", NULL), /* FIXME: moved to switcher output 1
 					       on rev 01 */
 	REGULATOR_SUPPLY("avdd_sata_pll", NULL),
+	REGULATOR_SUPPLY("avdd_pexb", NULL),
+	REGULATOR_SUPPLY("vdd_pexb", NULL),
+	REGULATOR_SUPPLY("avdd_plle", NULL),
 };
 
 static struct regulator_consumer_supply tps6591x_ldo2_supply[] = {
@@ -277,6 +280,7 @@ static struct regulator_consumer_supply fixed_reg_en_3v3_fuse_supply[] = {
 static struct regulator_consumer_supply fixed_reg_en_3v3_emmc_supply[] = {
 };
 static struct regulator_consumer_supply fixed_reg_en_3v3_pex_hvdd_supply[] = {
+	REGULATOR_SUPPLY("hvdd_pex", NULL),
 };
 static struct regulator_consumer_supply fixed_reg_en_3v3_sata_hvdd_supply[] = {
 	REGULATOR_SUPPLY("hvdd_sata", NULL),
