@@ -57,6 +57,7 @@ static struct regulator_consumer_supply tps6591x_vio_supply[] = {
 	REGULATOR_SUPPLY("vddio_sdmmc", "sdhci-tegra.3"),
 	REGULATOR_SUPPLY("vmmc", "sdhci-tegra.3"),
 	REGULATOR_SUPPLY("avdd_usb_pll", NULL),
+	REGULATOR_SUPPLY("avdd_hdmi_pll", NULL),
 };
 
 static struct regulator_consumer_supply tps6591x_ldo1_supply[] = {
@@ -267,6 +268,7 @@ static struct regulator_consumer_supply fixed_reg_en_3v3_sys_supply[] = {
 	REGULATOR_SUPPLY("avdd_usb", "tegra-ehci.0"),
 	REGULATOR_SUPPLY("avdd_usb", "tegra-ehci.1"),
 	REGULATOR_SUPPLY("avdd_usb", "tegra-ehci.2"),
+	REGULATOR_SUPPLY("avdd_hdmi", NULL),
 };
 static struct regulator_consumer_supply fixed_reg_en_vdd_bl_supply[] = {
 };

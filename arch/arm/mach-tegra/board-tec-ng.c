@@ -455,6 +455,7 @@ static void __init tec_ng_init(void)
 	tec_ng_suspend_init();
 	tec_ng_sensors_init();
 	tec_ng_sdhci_init();
+	tec_ng_panel_init();
 
 	tegra_release_bootloader_fb();
 }
