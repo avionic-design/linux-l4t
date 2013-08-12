@@ -247,8 +247,29 @@ static void __init tec_ng_uart_init(void)
 			ARRAY_SIZE(tec_ng_uart_devices));
 }
 
+static struct resource tegra_rtc_resources[] = {
+	[0] = {
+		.start = TEGRA_RTC_BASE,
+		.end = TEGRA_RTC_BASE + TEGRA_RTC_SIZE - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = INT_RTC,
+		.end = INT_RTC,
+		.flags = IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device tegra_rtc_device = {
+	.name = "tegra_rtc",
+	.id   = -1,
+	.resource = tegra_rtc_resources,
+	.num_resources = ARRAY_SIZE(tegra_rtc_resources),
+};
+
 static struct platform_device *tec_ng_devices[] __initdata = {
 	&tegra_pmu_device,
+	&tegra_rtc_device,
 	&tegra_udc_device,
 	&tegra_cec_device,
 #ifdef CONFIG_SATA_AHCI_TEGRA
