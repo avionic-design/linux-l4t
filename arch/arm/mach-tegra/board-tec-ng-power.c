@@ -32,6 +32,7 @@
 #include <mach/iomap.h>
 #include <mach/irqs.h>
 #include <mach/pinmux.h>
+#include <mach/edp.h>
 
 #include "gpio-names.h"
 #include "board.h"
@@ -354,3 +355,19 @@ int __init tec_ng_fixed_regulator_init(void)
 	return platform_add_devices(fixed_reg_devs, ARRAY_SIZE(fixed_reg_devs));
 }
 subsys_initcall_sync(tec_ng_fixed_regulator_init);
+
+int __init tec_ng_edp_init(void)
+{
+#ifdef CONFIG_TEGRA_EDP_LIMITS
+	unsigned int regulator_mA;
+
+	regulator_mA = get_maximum_cpu_current_supported();
+	if (!regulator_mA) {
+		regulator_mA = 6000; /* regular T30/s */
+	}
+	pr_info("%s: CPU regulator %d mA\n", __func__, regulator_mA);
+
+	tegra_init_cpu_edp_limits(regulator_mA);
+#endif
+	return 0;
+}

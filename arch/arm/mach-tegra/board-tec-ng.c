@@ -374,6 +374,7 @@ static void __init tec_ng_init(void)
 	tec_ng_pinmux_init();
 	tec_ng_i2c_init();
 	tec_ng_usb_init();
+	tec_ng_edp_init();
 	tec_ng_uart_init();
 
 	platform_add_devices(tec_ng_devices, ARRAY_SIZE(tec_ng_devices));
