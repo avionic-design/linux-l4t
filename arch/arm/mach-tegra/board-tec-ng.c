@@ -380,6 +380,7 @@ static void __init tec_ng_init(void)
 	platform_add_devices(tec_ng_devices, ARRAY_SIZE(tec_ng_devices));
 	tegra_ram_console_debug_init();
 	tec_ng_regulator_init();
+	tec_ng_suspend_init();
 	tec_ng_sensors_init();
 	tec_ng_sdhci_init();
 

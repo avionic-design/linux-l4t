@@ -356,6 +356,22 @@ int __init tec_ng_fixed_regulator_init(void)
 }
 subsys_initcall_sync(tec_ng_fixed_regulator_init);
 
+static struct tegra_suspend_platform_data tec_ng_suspend_data = {
+	.cpu_timer	= 2000,
+	.cpu_off_timer	= 0,
+	.suspend_mode	= TEGRA_SUSPEND_NONE,
+	.core_timer	= 0x7e7e,
+	.core_off_timer = 0,
+	.corereq_high	= false,
+	.sysclkreq_high	= true,
+};
+
+int __init tec_ng_suspend_init(void)
+{
+	tegra_init_suspend(&tec_ng_suspend_data);
+	return 0;
+}
+
 int __init tec_ng_edp_init(void)
 {
 #ifdef CONFIG_TEGRA_EDP_LIMITS

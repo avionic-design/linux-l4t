@@ -64,6 +64,7 @@ int tec_ng_sdhci_init(void);
 int tec_ng_pinmux_init(void);
 int tec_ng_panel_init(void);
 int tec_ng_edp_init(void);
+int tec_ng_suspend_init(void);
 int tec_ng_sensors_init(void);
 
 #endif
