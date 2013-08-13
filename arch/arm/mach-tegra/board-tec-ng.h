@@ -56,10 +56,14 @@
 #define TPS6591X_IRQ_BASE		TEGRA_NR_IRQS
 #define TPS6591X_IRQ_END		(TPS6591X_IRQ_BASE + 18)
 
+/* Thermal diode offset is taken from board-cardhu.h */
+#define TDIODE_OFFSET	(10000)	/* in millicelsius */
+
 int tec_ng_regulator_init(void);
 int tec_ng_sdhci_init(void);
 int tec_ng_pinmux_init(void);
 int tec_ng_panel_init(void);
 int tec_ng_edp_init(void);
+int tec_ng_sensors_init(void);
 
 #endif

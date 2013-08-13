@@ -179,6 +179,7 @@ obj-${CONFIG_MACH_TEC_NG}               += board-tec-ng.o
 obj-${CONFIG_MACH_TEC_NG}               += board-tec-ng-pinmux.o
 obj-${CONFIG_MACH_TEC_NG}               += board-tec-ng-power.o
 obj-${CONFIG_MACH_TEC_NG}               += board-tec-ng-sdhci.o
+obj-${CONFIG_MACH_TEC_NG}               += board-tec-ng-sensors.o
 
 obj-${CONFIG_MACH_KAI}                  += board-touch-kai-synaptics-spi.o
 obj-y                                   += board-touch-raydium_spi.o
