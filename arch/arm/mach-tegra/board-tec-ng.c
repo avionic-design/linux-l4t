@@ -142,6 +142,19 @@ static __initdata struct tegra_clk_init_table tec_ng_clk_init_table[] = {
 	{ "pll_m",	NULL,		0,		false},
 	{ "pll_c",	NULL,		400000000,	true},
 	{ "pwm",	"pll_p",	3187500,	false},
+
+	/* All the AHUB clients clocks must be running otherwise the AHUB
+	 * just freezes the whole chip when it's accessed. As the current clock
+	 * API doesn't allow us to represent that properly we just enable
+	 * (and re-parent) them here. The L4T u-boot contains some code
+	 * that does this but mainline u-boot doesn't.
+	 */
+	{ "i2s0",	"pll_a_out0",	0,		true},
+	{ "i2s1",	"pll_a_out0",	0,		true},
+	{ "i2s2",	"pll_a_out0",	0,		true},
+	{ "i2s3",	"pll_a_out0",	0,		true},
+	{ "i2s4",	"pll_a_out0",	0,		true},
+	{ "spdif_out",	"pll_a_out0",	0,		true},
 	{ NULL,		NULL,		0,		0},
 };
 
