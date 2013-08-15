@@ -31,6 +31,8 @@
 #include <linux/tegra_uart.h>
 #include <linux/memblock.h>
 
+#include <sound/wm8903.h>
+
 #include <mach/clk.h>
 #include <mach/iomap.h>
 #include <mach/irqs.h>
@@ -38,6 +40,8 @@
 #include <mach/io.h>
 #include <mach/io_dpd.h>
 #include <mach/thermal.h>
+#include <mach/tegra_wm8903_pdata.h>
+#include <mach/tegra_asoc_pdata.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -267,6 +271,27 @@ static struct tegra_i2c_platform_data tec_ng_i2c4_pwr_platform_data = {
 	.arb_recovery = arb_lost_recovery,
 };
 
+static struct wm8903_platform_data tec_ng_wm8903_pdata = {
+	.irq_active_low = 0,
+	.micdet_cfg = 0,
+	.micdet_delay = 100,
+	.gpio_base = TEC_NG_GPIO_WM8903(0),
+	.gpio_cfg = {
+		WM8903_GPn_FN_DMIC_LR_CLK_OUTPUT << WM8903_GP1_FN_SHIFT,
+		WM8903_GPn_FN_DMIC_LR_CLK_OUTPUT << WM8903_GP2_FN_SHIFT |
+			WM8903_GP2_DIR_MASK,
+		0,
+		WM8903_GPIO_NO_CONFIG,
+		WM8903_GPIO_NO_CONFIG,
+	},
+};
+
+static struct i2c_board_info __initdata tec_ng_codec_wm8903_info = {
+	I2C_BOARD_INFO("wm8903", 0x1a),
+	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CDC_IRQ),
+	.platform_data = &tec_ng_wm8903_pdata,
+};
+
 static void tec_ng_i2c_init(void)
 {
 	tegra_i2c_device1.dev.platform_data = &tec_ng_i2c0_gen1_platform_data;
@@ -280,6 +305,8 @@ static void tec_ng_i2c_init(void)
 	platform_device_register(&tegra_i2c_device3);
 	platform_device_register(&tegra_i2c_device4);
 	platform_device_register(&tegra_i2c_device5);
+
+	i2c_register_board_info(0, &tec_ng_codec_wm8903_info, 1);
 }
 
 static struct platform_device *tec_ng_uart_devices[] __initdata = {
@@ -368,6 +395,30 @@ static struct platform_device tegra_rtc_device = {
 	.num_resources = ARRAY_SIZE(tegra_rtc_resources),
 };
 
+static struct tegra_asoc_platform_data tec_ng_audio_wm8903_pdata = {
+	.gpio_spkr_en		= TEGRA_GPIO_SPKR_EN,
+	.gpio_hp_det		= TEGRA_GPIO_HP_DET,
+	.gpio_hp_mute		= -1,
+	.gpio_int_mic_en	= -1,
+	.gpio_ext_mic_en	= -1,
+	.i2s_param[HIFI_CODEC]	= {
+		.audio_port_id	= 0,
+		.is_i2s_master	= 1,
+		.i2s_mode	= TEGRA_DAIFMT_I2S,
+	},
+	.i2s_param[BASEBAND]	= {
+		.audio_port_id	= -1,
+	},
+};
+
+static struct platform_device tec_ng_audio_wm8903_device = {
+	.name	= "tegra-snd-wm8903",
+	.id	= 0,
+	.dev	= {
+		.platform_data = &tec_ng_audio_wm8903_pdata,
+	},
+};
+
 static struct platform_device *tec_ng_devices[] __initdata = {
 	&tegra_pmu_device,
 	&tegra_rtc_device,
@@ -376,6 +427,14 @@ static struct platform_device *tec_ng_devices[] __initdata = {
 #ifdef CONFIG_SATA_AHCI_TEGRA
 	&tegra_sata_device,
 #endif
+	&tegra_ahub_device,
+	&tegra_dam_device0,
+	&tegra_dam_device1,
+	&tegra_i2s_device1,
+	&tegra_spdif_device,
+	&spdif_dit_device,
+	&tegra_pcm_device,
+	&tec_ng_audio_wm8903_device,
 };
 
 static void __init tec_ng_init(void)

@@ -186,6 +186,7 @@ config MACH_CARDHU
 config MACH_TEC_NG
        bool "Tamonten Evaluation Carrier NG (TEC-NG) Board"
        depends on ARCH_TEGRA_3x_SOC
+       select MACH_HAS_SND_SOC_TEGRA_WM8903 if SND_SOC
        help
          Support for Avionic Design Tamonten Evaluation Carrier developtment
          platform.
