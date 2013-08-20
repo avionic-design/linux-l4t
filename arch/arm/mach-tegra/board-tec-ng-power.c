@@ -362,7 +362,7 @@ static struct tegra_suspend_platform_data tec_ng_suspend_data = {
 	.suspend_mode	= TEGRA_SUSPEND_NONE,
 	.core_timer	= 0x7e7e,
 	.core_off_timer = 0,
-	.corereq_high	= false,
+	.corereq_high	= true,
 	.sysclkreq_high	= true,
 };
 
