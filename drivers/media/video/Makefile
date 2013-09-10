@@ -10,6 +10,8 @@ stkwebcam-objs	:=	stk-webcam.o stk-sensor.o
 
 omap2cam-objs	:=	omap24xxcam.o omap24xxcam-dma.o
 
+mt9v126cam-objs	:=	mt9v126.o mt9v126_dewarp.o mt9v126_patches.o
+
 videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
 			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o
 
@@ -78,6 +80,7 @@ obj-$(CONFIG_SOC_CAMERA_MT9M111)	+= mt9m111.o
 obj-$(CONFIG_SOC_CAMERA_MT9T031)	+= mt9t031.o
 obj-$(CONFIG_SOC_CAMERA_MT9T112)	+= mt9t112.o
 obj-$(CONFIG_SOC_CAMERA_MT9V022)	+= mt9v022.o
+obj-$(CONFIG_SOC_CAMERA_MT9V126)	+= mt9v126cam.o
 obj-$(CONFIG_SOC_CAMERA_OV2640)		+= ov2640.o
 obj-$(CONFIG_SOC_CAMERA_OV5640)		+= ov5640.o
 obj-$(CONFIG_SOC_CAMERA_OV5642)		+= ov5642.o
