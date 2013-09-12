@@ -993,6 +993,7 @@ static int tegra3_cpu_cmplx_clk_set_rate(struct clk *c, unsigned long rate)
 	return ret;
 }
 
+#ifdef CONFIG_TEGRA_CLUSTER_CONTROL
 static int tegra3_cpu_cmplx_clk_set_parent(struct clk *c, struct clk *p)
 {
 	int ret;
@@ -1088,6 +1089,7 @@ static int tegra3_cpu_cmplx_clk_set_parent(struct clk *c, struct clk *p)
 	clk_disable(cpu_mode_sclk);
 	return 0;
 }
+#endif
 
 static long tegra3_cpu_cmplx_round_rate(struct clk *c,
 	unsigned long rate)
@@ -1104,7 +1106,9 @@ static struct clk_ops tegra_cpu_cmplx_ops = {
 	.enable   = tegra3_cpu_cmplx_clk_enable,
 	.disable  = tegra3_cpu_cmplx_clk_disable,
 	.set_rate = tegra3_cpu_cmplx_clk_set_rate,
+#ifdef CONFIG_TEGRA_CLUSTER_CONTROL
 	.set_parent = tegra3_cpu_cmplx_clk_set_parent,
+#endif
 	.round_rate = tegra3_cpu_cmplx_round_rate,
 };
 
