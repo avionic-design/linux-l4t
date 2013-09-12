@@ -435,7 +435,7 @@ config TEGRA_CLOCK_DEBUG_WRITE
 	default n
 
 config TEGRA_CLUSTER_CONTROL
-	bool
+	bool "Enable cluster control"
 	depends on ARCH_TEGRA_HAS_DUAL_CPU_CLUSTERS
 	default y if PM_SLEEP
 
