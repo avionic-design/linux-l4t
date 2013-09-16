@@ -740,7 +740,7 @@ static int tegra_camera_capture_start(struct tegra_camera_dev *pcdev,
 	else
 		err = nvhost_syncpt_wait_timeout_ext(pcdev->ndev,
 			TEGRA_VI_SYNCPT_VI,
-			pcdev->syncpt_csi,
+			pcdev->syncpt_vi,
 			TEGRA_SYNCPT_VI_WAIT_TIMEOUT,
 			NULL);
 
