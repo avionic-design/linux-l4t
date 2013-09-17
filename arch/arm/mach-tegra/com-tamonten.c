@@ -385,6 +385,7 @@ void __init tamonten_init(void)
 	tamonten_i2c_init();
 	tamonten_regulator_init();
 	tamonten_suspend_init();
+	tamonten_pcie_init();
 }
 
 void __init tamonten_reserve(void)

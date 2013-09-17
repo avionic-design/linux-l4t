@@ -43,6 +43,7 @@ struct meminfo;
 void tamonten_pinmux_init(void);
 int tamonten_regulator_init(void);
 int tamonten_suspend_init(void);
+int tamonten_pcie_init(void);
 
 void tamonten_fixup(struct machine_desc *desc,
 		    struct tag *tags, char **cmdline,
