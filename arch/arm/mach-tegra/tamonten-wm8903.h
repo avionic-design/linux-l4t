@@ -1,7 +1,6 @@
 /*
- * arch/arm/mach-tegra/board-medcom-wide.h
+ * arch/arm/mach-tegra/tamonten-wm8903.h
  *
- * Copyright (C) 2010 Google, Inc.
  * Copyright (C) 2013 Avionic Design GmbH
  *
  * This software is licensed under the terms of the GNU General Public
@@ -15,18 +14,14 @@
  *
  */
 
-#ifndef _MACH_TEGRA_BOARD_MEDCOM_WIDE_H
-#define _MACH_TEGRA_BOARD_MEDCOM_WIDE_H
+#ifndef _MACH_TEGRA_TAMONTEN_WM8903_H
+#define _MACH_TEGRA_TAMONTEN_WM8903_H
 
-#include "com-tamonten.h"
-#include "tamonten-wm8903.h"
+#define BOARD_GPIO_WM8903(_x_)	(TAMONTEN_GPIO_LAST + (_x_))
+#define BOARD_GPIO_WM8903_LAST	BOARD_GPIO_WM8903(5)
 
-#define ADNP_GPIO(_x_)			(BOARD_GPIO_WM8903_LAST + (_x_))
-#define ADNP_GPIO_TO_IRQ(_x_)		(INT_BOARD_BASE + 32 + ((_x_) - ADNP_GPIO(0)))
-#define ADNP_IRQ(_x_)			ADNP_GPIO_TO_IRQ(ADNP_GPIO(_x_))
+#define BOARD_GPIO_SPKR_EN	BOARD_GPIO_WM8903(2)
 
-#define TEGRA_GPIO_CPLD_IRQ		TEGRA_GPIO_PU0
-
-int medcom_wide_panel_init(void);
+void tamonten_wm8903_init(void);
 
 #endif

@@ -27,61 +27,14 @@
 #include <linux/i2c/adnp.h>
 #include <linux/input/sx8634.h>
 
-#include <sound/wm8903.h>
-
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/time.h>
 #include <asm/setup.h>
 
-#include <mach/tegra_asoc_pdata.h>
-
 #include "board.h"
 #include "board-medcom-wide.h"
 #include "gpio-names.h"
-
-static struct tegra_asoc_platform_data medcom_wide_audio_pdata = {
-	.gpio_spkr_en = TEGRA_GPIO_SPKR_EN,
-	.gpio_hp_det = COM_GPIO_HP_DET,
-	.gpio_hp_mute = -1,
-	.gpio_int_mic_en = COM_GPIO_INT_MIC_EN,
-	.gpio_ext_mic_en = COM_GPIO_EXT_MIC_EN,
-	.i2s_param[HIFI_CODEC] = {
-		.audio_port_id = 0,
-		.is_i2s_master = 1,
-		.i2s_mode = TEGRA_DAIFMT_I2S,
-	},
-	.i2s_param[BASEBAND] = {
-		.audio_port_id = -1,
-	},
-	.i2s_param[BT_SCO] = {
-		.audio_port_id = 3,
-		.is_i2s_master = 1,
-		.i2s_mode = TEGRA_DAIFMT_DSP_A,
-	},
-};
-
-static struct platform_device medcom_wide_audio_device = {
-	.name = "tegra-snd-wm8903",
-	.id = 0,
-	.dev = {
-		.platform_data = &medcom_wide_audio_pdata,
-	},
-};
-
-static struct wm8903_platform_data medcom_wide_wm8903_pdata = {
-	.irq_active_low = 0,
-	.micdet_cfg = 0,
-	.micdet_delay = 100,
-	.gpio_base = MEDCOM_WIDE_GPIO_WM8903(0),
-	.gpio_cfg = {
-		WM8903_GPIO_NO_CONFIG,
-		WM8903_GPIO_NO_CONFIG,
-		0,
-		WM8903_GPIO_NO_CONFIG,
-		WM8903_GPIO_NO_CONFIG,
-	},
-};
 
 static struct adnp_platform_data medcom_adnp_pdata = {
 	.gpio_base = ADNP_GPIO(0),
@@ -181,10 +134,6 @@ static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
 
 static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
 	{
-		I2C_BOARD_INFO("wm8903", 0x1a),
-		.platform_data = &medcom_wide_wm8903_pdata,
-		.irq = TEGRA_GPIO_TO_IRQ(COM_GPIO_CDC_IRQ),
-	}, {
 		I2C_BOARD_INFO("gpio-adnp", 0x41),
 		.platform_data = &medcom_adnp_pdata,
 		.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CPLD_IRQ),
@@ -222,16 +171,11 @@ static void __init medcom_wide_i2c_init(void)
 				ARRAY_SIZE(medcom_wide_dvc_board_info));
 }
 
-static struct platform_device *medcom_wide_devices[] __initdata = {
-	&medcom_wide_audio_device,
-};
-
 static void __init medcom_wide_init(void)
 {
 	tamonten_init();
+	tamonten_wm8903_init();
 
-	platform_add_devices(medcom_wide_devices,
-			     ARRAY_SIZE(medcom_wide_devices));
 	medcom_wide_i2c_init();
 	medcom_wide_panel_init();
 }

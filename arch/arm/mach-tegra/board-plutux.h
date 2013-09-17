@@ -19,10 +19,7 @@
 #define _MACH_TEGRA_BOARD_PLUTUX_H
 
 #include "com-tamonten.h"
-
-#define PLUTUX_GPIO_WM8903(_x_)	(TAMONTEN_GPIO_LAST + (_x_))
-
-#define TEGRA_GPIO_SPKR_EN	PLUTUX_GPIO_WM8903(2)
+#include "tamonten-wm8903.h"
 
 int plutux_hdmi_init(void);
 

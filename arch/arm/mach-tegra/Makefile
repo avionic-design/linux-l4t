@@ -231,6 +231,8 @@ obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten.o
 obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-pinmux.o
 obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-power.o
 
+obj-$(CONFIG_TAMONTEN_WM8903)           += tamonten-wm8903.o
+
 obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide.o
 obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-panel.o
 
