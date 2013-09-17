@@ -227,15 +227,15 @@ obj-${CONFIG_MACH_KAI}                  += board-kai-sdhci.o
 obj-${CONFIG_MACH_KAI}                  += board-kai-sensors.o
 obj-y                                   += eeprom-wifi-mac.o
 
+obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten.o
+obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-pinmux.o
+obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-power.o
+
 obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide.o
 obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-panel.o
-obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-pinmux.o
-obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-power.o
 
 obj-${CONFIG_TEGRA_BB_XMM_POWER}        += baseband-xmm-power.o
 obj-${CONFIG_TEGRA_BB_XMM_POWER2}       += baseband-xmm-power2.o
 
 obj-$(CONFIG_MACH_PLUTUX)               += board-plutux.o
 obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-hdmi.o
-obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-pinmux.o
-obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-power.o

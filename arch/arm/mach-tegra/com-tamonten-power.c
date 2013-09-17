@@ -29,7 +29,7 @@
 #include <mach/iomap.h>
 #include <mach/irqs.h>
 
-#include "board-plutux.h"
+#include "com-tamonten.h"
 #include "pm.h"
 
 #define PMC_CTRL		0x0
@@ -257,11 +257,11 @@ static struct tps6586x_platform_data tps_platform = {
 	.irq_base = TEGRA_NR_IRQS,
 	.num_subdevs = ARRAY_SIZE(tps_devs),
 	.subdevs = tps_devs,
-	.gpio_base = PLUTUX_GPIO_TPS6586X(0),
+	.gpio_base = TAMONTEN_GPIO_TPS6586X(0),
 	.use_power_off = true,
 };
 
-static struct i2c_board_info plutux_regulators[] __initdata = {
+static struct i2c_board_info tamonten_regulators[] __initdata = {
 	{
 		I2C_BOARD_INFO("tps6586x", 0x34),
 		.irq = INT_EXTERNAL_PMU,
@@ -269,19 +269,19 @@ static struct i2c_board_info plutux_regulators[] __initdata = {
 	},
 };
 
-static void plutux_board_suspend(int lp_state, enum suspend_stage stg)
+static void tamonten_board_suspend(int lp_state, enum suspend_stage stg)
 {
 	if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_SUSPEND_BEFORE_CPU))
 		tegra_console_uart_suspend();
 }
 
-static void plutux_board_resume(int lp_state, enum resume_stage stg)
+static void tamonten_board_resume(int lp_state, enum resume_stage stg)
 {
 	if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_RESUME_AFTER_CPU))
 		tegra_console_uart_resume();
 }
 
-static struct tegra_suspend_platform_data plutux_suspend_data = {
+static struct tegra_suspend_platform_data tamonten_suspend_data = {
 	/*
 	 * Check power on time and crystal oscillator start time
 	 * for appropriate settings.
@@ -293,17 +293,17 @@ static struct tegra_suspend_platform_data plutux_suspend_data = {
 	.core_off_timer = 0x7f,
 	.corereq_high = false,
 	.sysclkreq_high = true,
-	.board_suspend = plutux_board_suspend,
-	.board_resume = plutux_board_resume,
+	.board_suspend = tamonten_board_suspend,
+	.board_resume = tamonten_board_resume,
 };
 
-int __init plutux_suspend_init(void)
+int __init tamonten_suspend_init(void)
 {
-	tegra_init_suspend(&plutux_suspend_data);
+	tegra_init_suspend(&tamonten_suspend_data);
 	return 0;
 }
 
-int __init plutux_regulator_init(void)
+int __init tamonten_regulator_init(void)
 {
 	void __iomem *pmc = IO_ADDRESS(TEGRA_PMC_BASE);
 	u32 pmc_ctrl;
@@ -315,7 +315,7 @@ int __init plutux_regulator_init(void)
 	pmc_ctrl = readl(pmc + PMC_CTRL);
 	writel(pmc_ctrl | PMC_CTRL_INTR_LOW, pmc + PMC_CTRL);
 
-	i2c_register_board_info(4, plutux_regulators, 1);
+	i2c_register_board_info(4, tamonten_regulators, 1);
 
 	return 0;
 }

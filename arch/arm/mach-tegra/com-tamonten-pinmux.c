@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/board-medcom-wide-pinmux.c
+ * arch/arm/mach-tegra/com-tamonten-pinmux.c
  *
  * Copyright (C) 2010 Google, Inc.
  * Copyright (C) 2013 Avionic Design GmbH
@@ -21,7 +21,7 @@
 #include <mach/pinmux.h>
 
 #include "gpio-names.h"
-#include "board-medcom-wide.h"
+#include "com-tamonten.h"
 
 #define DEFAULT_DRIVE(_name)					\
 	{							\
@@ -35,11 +35,11 @@
 		.slew_falling = TEGRA_SLEW_SLOWEST,		\
 	}
 
-static struct tegra_drive_pingroup_config medcom_wide_drive_pinmux[] __initdata = {
+static struct tegra_drive_pingroup_config tamonten_drive_pinmux[] __initdata = {
 	DEFAULT_DRIVE(SDIO1),
 };
 
-static struct tegra_pingroup_config medcom_wide_pinmux[] __initdata = {
+static struct tegra_pingroup_config tamonten_pinmux[] __initdata = {
 	{ TEGRA_PINGROUP_ATA,   TEGRA_MUX_IDE,           TEGRA_PUPD_NORMAL,    TEGRA_TRI_NORMAL   },
 	{ TEGRA_PINGROUP_ATB,   TEGRA_MUX_SDIO4,         TEGRA_PUPD_NORMAL,    TEGRA_TRI_NORMAL   },
 	{ TEGRA_PINGROUP_ATC,   TEGRA_MUX_NAND,          TEGRA_PUPD_NORMAL,    TEGRA_TRI_NORMAL   },
@@ -70,8 +70,8 @@ static struct tegra_pingroup_config medcom_wide_pinmux[] __initdata = {
 	{ TEGRA_PINGROUP_GPV,   TEGRA_MUX_PCIE,          TEGRA_PUPD_NORMAL,    TEGRA_TRI_TRISTATE },
 	{ TEGRA_PINGROUP_HDINT, TEGRA_MUX_HDMI,          TEGRA_PUPD_PULL_UP,   TEGRA_TRI_TRISTATE },
 	{ TEGRA_PINGROUP_I2CP,  TEGRA_MUX_I2C,           TEGRA_PUPD_NORMAL,    TEGRA_TRI_NORMAL   },
-	{ TEGRA_PINGROUP_IRRX,  TEGRA_MUX_UARTA,         TEGRA_PUPD_PULL_UP,   TEGRA_TRI_TRISTATE },
-	{ TEGRA_PINGROUP_IRTX,  TEGRA_MUX_UARTA,         TEGRA_PUPD_PULL_UP,   TEGRA_TRI_TRISTATE },
+	{ TEGRA_PINGROUP_IRRX,  TEGRA_MUX_UARTB,         TEGRA_PUPD_PULL_UP,   TEGRA_TRI_NORMAL   },
+	{ TEGRA_PINGROUP_IRTX,  TEGRA_MUX_UARTB,         TEGRA_PUPD_PULL_UP,   TEGRA_TRI_NORMAL   },
 	{ TEGRA_PINGROUP_KBCA,  TEGRA_MUX_KBC,           TEGRA_PUPD_PULL_UP,   TEGRA_TRI_NORMAL   },
 	{ TEGRA_PINGROUP_KBCB,  TEGRA_MUX_KBC,           TEGRA_PUPD_PULL_UP,   TEGRA_TRI_NORMAL   },
 	{ TEGRA_PINGROUP_KBCC,  TEGRA_MUX_KBC,           TEGRA_PUPD_PULL_UP,   TEGRA_TRI_NORMAL   },
@@ -159,23 +159,19 @@ static struct tegra_pingroup_config medcom_wide_pinmux[] __initdata = {
 };
 
 static struct tegra_gpio_table gpio_table[] = {
-	{ .gpio = TEGRA_GPIO_SD2_CD,		.enable = true },
-	{ .gpio = TEGRA_GPIO_SD2_WP,		.enable = true },
-	{ .gpio = TEGRA_GPIO_SD2_POWER,		.enable = true },
-	{ .gpio = TEGRA_GPIO_SD4_CD,		.enable = true },
-	{ .gpio = TEGRA_GPIO_SD4_WP,		.enable = true },
-	{ .gpio = TEGRA_GPIO_SD4_POWER,		.enable = true },
-	{ .gpio = TEGRA_GPIO_CDC_IRQ,		.enable = true },
-	{ .gpio = TEGRA_GPIO_HP_DET,		.enable = true },
-	{ .gpio = TEGRA_GPIO_INT_MIC_EN,	.enable = true },
-	{ .gpio = TEGRA_GPIO_EXT_MIC_EN,	.enable = true },
+	{ .gpio = COM_GPIO_SD_CD,		.enable = true },
+	{ .gpio = COM_GPIO_SD_WP,		.enable = true },
+	{ .gpio = COM_GPIO_SD_POWER,		.enable = true },
+	{ .gpio = COM_GPIO_CDC_IRQ,		.enable = true },
+	{ .gpio = COM_GPIO_HP_DET,		.enable = true },
+	{ .gpio = COM_GPIO_EXT_MIC_EN,		.enable = true },
 };
 
-void __init medcom_wide_pinmux_init(void)
+void __init tamonten_pinmux_init(void)
 {
-	tegra_pinmux_config_table(medcom_wide_pinmux,
-				  ARRAY_SIZE(medcom_wide_pinmux));
-	tegra_drive_pinmux_config_table(medcom_wide_drive_pinmux,
-					ARRAY_SIZE(medcom_wide_drive_pinmux));
+	tegra_pinmux_config_table(tamonten_pinmux,
+				  ARRAY_SIZE(tamonten_pinmux));
+	tegra_drive_pinmux_config_table(tamonten_drive_pinmux,
+					ARRAY_SIZE(tamonten_drive_pinmux));
 	tegra_gpio_config(gpio_table, ARRAY_SIZE(gpio_table));
 }
