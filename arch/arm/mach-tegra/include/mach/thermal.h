@@ -121,10 +121,10 @@ int tegra_thermal_device_register(struct tegra_thermal_device *device);
 int tegra_thermal_exit(void);
 #else
 static inline int tegra_thermal_init(struct tegra_thermal_data *data,
-					struct balanced_throttle throttle_list,
-					int throttle_list_size);
+					struct balanced_throttle *throttle_list,
+					int throttle_list_size)
 { return 0; }
-static int tegra_thermal_device_register(struct tegra_thermal_device *device)
+static inline int tegra_thermal_device_register(struct tegra_thermal_device *device)
 { return 0; }
 static inline int tegra_thermal_exit(void)
 { return 0; }
