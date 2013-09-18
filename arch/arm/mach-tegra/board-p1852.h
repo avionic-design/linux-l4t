@@ -104,6 +104,11 @@ int p1852_pinmux_set_i2s4_master(void);
 int p1852_panel_init(void);
 int p1852_gpio_init(void);
 int p1852_pins_state_init(void);
+#ifdef CONFIG_VIDEO_TEGRA
+int p1852_sensors_init(void);
+#endif
+
+int p1852_get_skuid(void);
 
 int p1852_get_skuid(void);
 

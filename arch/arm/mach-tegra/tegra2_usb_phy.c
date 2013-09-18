@@ -629,6 +629,8 @@ static int utmi_phy_irq(struct tegra_usb_phy *phy)
 		} else if (!phy->phy_clk_on) {
 			return IRQ_NONE;
 		}
+	} else if (!phy->phy_clk_on) {
+			return IRQ_NONE;
 	}
 
 	return IRQ_HANDLED;

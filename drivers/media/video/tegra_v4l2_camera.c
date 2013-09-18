@@ -1207,7 +1207,6 @@ static int tegra_camera_videobuf_init(struct vb2_buffer *vb)
 {
 	/* This is for locking debugging only */
 	INIT_LIST_HEAD(&to_tegra_vb(vb)->queue);
-
 	return 0;
 }
 
@@ -1386,7 +1385,6 @@ static int tegra_camera_set_fmt(struct soc_camera_device *icd,
 	struct device *dev = icd->parent;
 	struct soc_camera_host *ici = to_soc_camera_host(dev);
 	struct tegra_camera_dev *pcdev = ici->priv;
-
 	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
 	const struct soc_camera_format_xlate *xlate = NULL;
 	struct v4l2_pix_format *pix = &f->fmt.pix;

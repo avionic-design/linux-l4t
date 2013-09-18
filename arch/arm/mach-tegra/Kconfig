@@ -226,6 +226,24 @@ config MACH_KAI
        help
          Support for NVIDIA KAI development platform
 
+config MACH_MEDCOM_WIDE
+	bool "Medcom-Wide board"
+	depends on ARCH_TEGRA_2x_SOC
+	select MACH_HAS_SND_SOC_TEGRA_WM8903 if SND_SOC
+	help
+	  Support for Avionic Design Medcom-Wide boards
+
+config MACH_PLUTUX
+	bool "Plutux board"
+	depends on ARCH_TEGRA_2x_SOC
+	select MACH_HAS_SND_SOC_TEGRA_WM8903 if SND_SOC
+	select TEGRA_GRHOST
+	select TEGRA_DC
+	help
+	  Support for Avionic Design Plutux box.
+	  The board has only HDMI as display, so the platform will select
+	  the requirements for HDMI.
+
 choice
        prompt "Tegra platform type"
        default TEGRA_SILICON_PLATFORM

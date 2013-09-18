@@ -27,13 +27,14 @@
 #include <linux/videodev2.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-chip-ident.h>
+#include <media/soc_camera.h>
 #include <linux/mutex.h>
 
 #define DRIVER_NAME "adv7180"
 
 #define ADV7180_INPUT_CONTROL_REG			0x00
 #define ADV7180_INPUT_CONTROL_AD_PAL_BG_NTSC_J_SECAM	0x00
-#define ADV7180_INPUT_CONTROL_AD_PAL_BG_NTSC_J_SECAM_PED 0x10
+#define ADV7180_INPUT_CONTROL_AD_PAL_BG_NTSC_M_SECAM	0x10
 #define ADV7180_INPUT_CONTROL_AD_PAL_N_NTSC_J_SECAM	0x20
 #define ADV7180_INPUT_CONTROL_AD_PAL_N_NTSC_M_SECAM	0x30
 #define ADV7180_INPUT_CONTROL_NTSC_J			0x40
@@ -71,7 +72,7 @@
 #define ADV7180_STATUS1_AUTOD_SECAM_525	0x70
 
 #define ADV7180_IDENT_REG 0x11
-#define ADV7180_ID_7180 0x18
+#define ADV7180_ID_7180 0x1C
 
 #define ADV7180_ICONF1_ADI		0x40
 #define ADV7180_ICONF1_ACTIVE_LOW	0x01
@@ -249,19 +250,95 @@ out:
 	return ret;
 }
 
+static int adv7180_set_bus_param(struct soc_camera_device *icd,
+				 unsigned long flags)
+{
+	return 0;
+}
+
+/* Request bus settings on camera side */
+static unsigned long adv7180_query_bus_param(struct soc_camera_device *icd)
+{
+	struct soc_camera_link *icl = to_soc_camera_link(icd);
+
+	unsigned long flags = SOCAM_PCLK_SAMPLE_RISING | SOCAM_MASTER |
+		SOCAM_VSYNC_ACTIVE_HIGH | SOCAM_HSYNC_ACTIVE_HIGH |
+		SOCAM_DATA_ACTIVE_HIGH | SOCAM_DATAWIDTH_8;
+
+	return soc_camera_apply_sensor_flags(icl, flags);
+}
+
+static enum v4l2_mbus_pixelcode adv7180_codes[] = {
+	V4L2_MBUS_FMT_YUYV8_2X8,
+};
+
+static int adv7180_s_fmt(struct v4l2_subdev *sd,
+			 struct v4l2_mbus_framefmt *mf)
+{
+	enum v4l2_colorspace cspace;
+	enum v4l2_mbus_pixelcode code = mf->code;
+//	struct i2c_client *client = v4l2_get_subdevdata(sd);
+//	u8 status1;
+
+//	status1 = i2c_smbus_read_byte_data(client, ADV7180_STATUS1_REG);
+//	printk(KERN_ERR "*********************************** status1 = 0x%02x\n", status1);
+
+	switch (code) {
+	case V4L2_MBUS_FMT_YUYV8_2X8:
+		cspace = V4L2_COLORSPACE_SRGB;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	mf->code        = code;
+	mf->colorspace  = cspace;
+
+	return adv7180_s_std(sd, V4L2_STD_ALL);
+}
+
+static int adv7180_try_fmt(struct v4l2_subdev *sd,
+                          struct v4l2_mbus_framefmt *mf)
+{
+	mf->field = V4L2_FIELD_NONE;
+	mf->code = V4L2_MBUS_FMT_YUYV8_2X8;
+	mf->colorspace = V4L2_COLORSPACE_SRGB;
+
+	return 0;
+}
+
+static int adv7180_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
+                           enum v4l2_mbus_pixelcode *code)
+{
+	if (index >= ARRAY_SIZE(adv7180_codes))
+		return -EINVAL;
+
+	*code = adv7180_codes[index];
+
+	return 0;
+}
+
+static struct soc_camera_ops adv7180_ops = {
+	.set_bus_param		= adv7180_set_bus_param,
+	.query_bus_param	= adv7180_query_bus_param,
+};
+
 static const struct v4l2_subdev_video_ops adv7180_video_ops = {
-	.querystd = adv7180_querystd,
-	.g_input_status = adv7180_g_input_status,
+	.s_mbus_fmt		= adv7180_s_fmt,
+	.try_mbus_fmt		= adv7180_try_fmt,
+	.enum_mbus_fmt		= adv7180_enum_fmt,
+	.querystd		= adv7180_querystd,
+	.g_input_status		= adv7180_g_input_status,
 };
 
 static const struct v4l2_subdev_core_ops adv7180_core_ops = {
-	.g_chip_ident = adv7180_g_chip_ident,
-	.s_std = adv7180_s_std,
+	.g_chip_ident		= adv7180_g_chip_ident,
+	.s_std			= adv7180_s_std,
 };
 
-static const struct v4l2_subdev_ops adv7180_ops = {
-	.core = &adv7180_core_ops,
-	.video = &adv7180_video_ops,
+static const struct v4l2_subdev_ops adv7180_subdev_ops = {
+	.core			= &adv7180_core_ops,
+	.video			= &adv7180_video_ops,
 };
 
 static void adv7180_work(struct work_struct *work)
@@ -306,7 +383,9 @@ static __devinit int adv7180_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
 	struct adv7180_state *state;
+	struct soc_camera_device *icd = client->dev.platform_data;
 	struct v4l2_subdev *sd;
+	u8 ident;
 	int ret;
 
 	/* Check if the adapter supports the needed features */
@@ -322,12 +401,17 @@ static __devinit int adv7180_probe(struct i2c_client *client,
 		goto err;
 	}
 
+	ident = i2c_smbus_read_byte_data(client, ADV7180_IDENT_REG);
+	WARN_ON(ident != ADV7180_ID_7180);
+	v4l_info(client, "ident reg is 0x%02x\n", ident);
+
 	state->irq = client->irq;
 	INIT_WORK(&state->work, adv7180_work);
 	mutex_init(&state->mutex);
 	state->autodetect = true;
 	sd = &state->sd;
-	v4l2_i2c_subdev_init(sd, client, &adv7180_ops);
+	v4l2_i2c_subdev_init(sd, client, &adv7180_subdev_ops);
+	icd->ops = &adv7180_ops;
 
 	/* Initialize adv7180 */
 	/* Enable autodetection */

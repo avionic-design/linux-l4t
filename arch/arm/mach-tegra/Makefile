@@ -130,7 +130,7 @@ obj-${CONFIG_MACH_SEABOARD}             += board-seaboard.o
 obj-${CONFIG_MACH_SEABOARD}             += board-seaboard-pinmux.o
 
 obj-${CONFIG_MACH_TEGRA_DT}             += board-dt.o
-obj-${CONFIG_MACH_TEGRA_DT}             += board-harmony-pinmux.o
+obj-${CONFIG_MACH_TEGRA_DT}             += board-harmony-pinmux.o board-seaboard-pinmux.o
 
 obj-${CONFIG_MACH_TRIMSLICE}            += board-trimslice.o
 obj-${CONFIG_MACH_TRIMSLICE}            += board-trimslice-pinmux.o
@@ -171,7 +171,11 @@ obj-${CONFIG_MACH_CARDHU}               += board-cardhu-power.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-pm298-power-rails.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-pm299-power-rails.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-sdhci.o
+ifeq ($(CONFIG_VIDEO_TEGRA),y)
+obj-${CONFIG_MACH_CARDHU}               += board-cardhu-v4l2.o
+else
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-sensors.o
+endif
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-memory.o
 obj-${CONFIG_MACH_CARDHU}               += board-cardhu-powermon.o
 
@@ -185,10 +189,18 @@ obj-${CONFIG_MACH_TEC_NG}               += board-tec-ng-sensors.o
 obj-${CONFIG_MACH_KAI}                  += board-touch-kai-synaptics-spi.o
 obj-y                                   += board-touch-raydium_spi.o
 
-obj-${CONFIG_MACH_P1852}               += board-p1852.o
-obj-${CONFIG_MACH_P1852}               += board-p1852-panel.o
-obj-${CONFIG_MACH_P1852}               += board-p1852-pinmux.o
-obj-${CONFIG_MACH_P1852}               += board-p1852-sdhci.o
+obj-${CONFIG_MACH_P1852}		+= board-p1852.o
+obj-${CONFIG_MACH_P1852}		+= board-p1852-panel.o
+obj-${CONFIG_MACH_P1852}		+= board-p1852-pinmux.o
+obj-${CONFIG_MACH_P1852}		+= board-p1852-sdhci.o
+ifeq ($(CONFIG_VIDEO_TEGRA),y)
+obj-${CONFIG_MACH_P1852}		+= board-p1852-v4l2.o
+endif
+
+obj-${CONFIG_MACH_E1853}               += board-e1853.o
+obj-${CONFIG_MACH_E1853}               += board-e1853-panel.o
+obj-${CONFIG_MACH_E1853}               += board-e1853-pinmux.o
+obj-${CONFIG_MACH_E1853}               += board-e1853-sdhci.o
 
 obj-${CONFIG_MACH_E1853}               += board-e1853.o
 obj-${CONFIG_MACH_E1853}               += board-e1853-panel.o
@@ -215,6 +227,15 @@ obj-${CONFIG_MACH_KAI}                  += board-kai-sdhci.o
 obj-${CONFIG_MACH_KAI}                  += board-kai-sensors.o
 obj-y                                   += eeprom-wifi-mac.o
 
+obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide.o
+obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-panel.o
+obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-pinmux.o
+obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide-power.o
+
 obj-${CONFIG_TEGRA_BB_XMM_POWER}        += baseband-xmm-power.o
 obj-${CONFIG_TEGRA_BB_XMM_POWER2}       += baseband-xmm-power2.o
 
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux.o
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-hdmi.o
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-pinmux.o
+obj-$(CONFIG_MACH_PLUTUX)               += board-plutux-power.o

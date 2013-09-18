@@ -102,6 +102,10 @@ extern int wm8903_mic_detect(struct snd_soc_codec *codec,
 #define WM8903_INTERRUPT_STATUS_1_MASK          0x7A
 #define WM8903_INTERRUPT_POLARITY_1             0x7B
 #define WM8903_INTERRUPT_CONTROL                0x7E
+#define WM8903_FLL_CONTROL_1                    0x80
+#define WM8903_FLL_CONTROL_2                    0x81
+#define WM8903_FLL_CONTROL_3                    0x82
+#define WM8903_FLL_CONTROL_4                    0x83
 #define WM8903_CLOCK_RATE_TEST_4                0xA4
 #define WM8903_ANALOGUE_OUTPUT_BIAS_0           0xAC
 
@@ -1206,6 +1210,26 @@ extern int wm8903_mic_detect(struct snd_soc_codec *codec,
 #define WM8903_IRQ_POL_MASK                     0x0001  /* IRQ_POL */
 #define WM8903_IRQ_POL_SHIFT                         0  /* IRQ_POL */
 #define WM8903_IRQ_POL_WIDTH                         1  /* IRQ_POL */
+
+/*
+ * R128 (0x80) - FLL Control 1
+ */
+#define WM8903_FLL_ENA                          0x0001  /* FLL_ENA */
+#define WM8903_FLL_ENA_MASK                     0x0001  /* FLL_ENA */
+#define WM8903_FLL_ENA_SHIFT                         0  /* FLL_ENA */
+#define WM8903_FLL_ENA_WIDTH                         1  /* FLL_ENA */
+
+#define WM8903_FLL_FRAC                         0x0004  /* FLL_FRAC */
+#define WM8903_FLL_FRAC_MASK                    0x0004  /* FLL_FRAC */
+#define WM8903_FLL_FRAC_SHIFT                        2  /* FLL_FRAC */
+#define WM8903_FLL_FRAC_WIDTH                        1  /* FLL_FRAC */
+
+/*
+ * R129 (0x81) - FLL Control 2
+ */
+#define WM8903_FLL_CLK_SRC_MASK                 0x1800  /* FLL_CLK_SRC - [12:11] */
+#define WM8903_FLL_CLK_SRC_SHIFT                    11  /* FLL_CLK_SRC - [12:11] */
+#define WM8903_FLL_CLK_SRC_WIDTH                     2  /* FLL_CLK_SRC - [12:11] */
 
 /*
  * R164 (0xA4) - Clock Rate Test 4

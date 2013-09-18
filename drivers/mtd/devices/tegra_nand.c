@@ -1517,6 +1517,9 @@ static int tegra_nand_scan(struct mtd_info *mtd, int maxchips)
 	mtd->block_isbad = tegra_nand_block_isbad;
 	mtd->block_markbad = tegra_nand_block_markbad;
 
+	/* required for ubi support */
+	mtd->writebufsize = mtd->writesize;
+
 	set_chip_timing(info, vendor_id, dev_id, dev_parms);
 
 	return 0;

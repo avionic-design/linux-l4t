@@ -1026,7 +1026,6 @@ int __init enterprise_pinmux_init(void)
 		tegra_gpio_config(tai_gpio_table, ARRAY_SIZE(tai_gpio_table));
 		enterprise_set_unused_pin_gpio(tai_unused_gpio_pins_common,
 				ARRAY_SIZE(tai_unused_gpio_pins_common));
-
 	}
 
 	return 0;

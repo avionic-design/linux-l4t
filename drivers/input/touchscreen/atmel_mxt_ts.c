@@ -1650,6 +1650,7 @@ static int __devinit mxt_probe(struct i2c_client *client,
 	input_dev->dev.parent = &client->dev;
 	input_dev->open = mxt_input_open;
 	input_dev->close = mxt_input_close;
+	input_dev->hint_events_per_packet = 256U;
 
 	data->client = client;
 	data->input_dev = input_dev;
