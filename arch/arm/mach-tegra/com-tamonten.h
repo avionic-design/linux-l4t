@@ -21,6 +21,8 @@
 struct machine_desc;
 struct tag;
 struct meminfo;
+struct tegra_dc_platform_data;
+struct device;
 
 #define TAMONTEN_GPIO_TPS6586X(_x_)	(TEGRA_NR_GPIOS + (_x_))
 #define TAMONTEN_GPIO_LAST		TAMONTEN_GPIO_TPS6586X(4)
@@ -33,6 +35,14 @@ struct meminfo;
 #define COM_GPIO_HP_DET			TEGRA_GPIO_PW2
 #define COM_GPIO_EXT_MIC_EN		TEGRA_GPIO_PX1
 
+#define COM_GPIO_BACKLIGHT_ENABLE	TEGRA_GPIO_PB5
+#define COM_GPIO_BACKLIGHT_PWM		TEGRA_GPIO_PB4
+#define COM_GPIO_BACKLIGHT_VDD		TEGRA_GPIO_PW0
+#define COM_GPIO_PANEL_ENABLE		TEGRA_GPIO_PC6
+#define COM_GPIO_LVDS_SHUTDOWN		TEGRA_GPIO_PB2
+
+#define COM_GPIO_HDMI_HPD		TEGRA_GPIO_PN7
+
 /* fixed voltage regulator enable/mode gpios */
 #define TPS_GPIO_EN_1V5			TAMONTEN_GPIO_TPS6586X(0)
 #define TPS_GPIO_EN_1V2			TAMONTEN_GPIO_TPS6586X(1)
@@ -43,6 +53,15 @@ void tamonten_pinmux_init(void);
 int tamonten_regulator_init(void);
 int tamonten_suspend_init(void);
 int tamonten_pcie_init(void);
+
+void tamonten_hdmi_init(void);
+extern struct tegra_dc_platform_data tamonten_hdmi_disp_pdata;
+
+void tamonten_lvds_init(struct device *fb_device);
+extern struct tegra_dc_platform_data tamonten_lvds_disp_pdata;
+
+int tamonten_display_init(struct tegra_dc_platform_data *disp1_pdata,
+			  struct tegra_dc_platform_data *disp2_pdata);
 
 void tamonten_fixup(struct machine_desc *desc,
 		    struct tag *tags, char **cmdline,
