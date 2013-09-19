@@ -1470,6 +1470,25 @@ static void stv0367ter_set_ts_mode(struct stv0367_state *state,
 	}
 }
 
+static void stv0367ter_set_ts_swap(struct stv0367_state *state,
+					enum stv0367_ts_swap swap_ts)
+{
+
+	if (state == NULL)
+		return;
+
+	switch (swap_ts) {
+	default:
+		/*for removing warning :default we can assume in parallel mode*/
+	case STV0367_NO_SWAP:
+		stv0367_writebits(state, F367TER_TSFIFO_PERMDATA, 0);
+		break;
+	case STV0367_SWAP:
+		stv0367_writebits(state, F367TER_TSFIFO_PERMDATA, 1);
+		break;
+	}
+}
+
 static void stv0367ter_set_clk_pol(struct stv0367_state *state,
 					enum stv0367_clk_pol clock)
 {
@@ -1568,6 +1587,7 @@ int stv0367ter_init(struct dvb_frontend *fe)
 
 	/*Set TS1 and TS2 to serial or parallel mode */
 	stv0367ter_set_ts_mode(state, state->config->ts_mode);
+	stv0367ter_set_ts_swap(state, state->config->ts_swap);
 	stv0367ter_set_clk_pol(state, state->config->clk_pol);
 
 	state->chip_id = stv0367_readreg(state, R367TER_ID);
@@ -2809,7 +2829,14 @@ int stv0367cab_init(struct dvb_frontend *fe)
 
 	stv0367_writebits(state, F367CAB_CT_NBST, 0x00);
 
-	stv0367_writebits(state, F367CAB_TS_SWAP, 0x01);
+	switch (state->config->ts_swap) {
+	case STV0367_SWAP:
+		stv0367_writebits(state, F367CAB_TS_SWAP, 0x01);
+		break;
+	case STV0367_NO_SWAP:
+		stv0367_writebits(state, F367CAB_TS_SWAP, 0x00);
+		break;
+	}
 
 	stv0367_writebits(state, F367CAB_FIFO_BYPASS, 0x00);
 

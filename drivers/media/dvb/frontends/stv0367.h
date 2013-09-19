@@ -35,6 +35,7 @@ struct stv0367_config {
 	u32 if_khz;/*4500*/
 	int if_iq_mode;
 	int ts_mode;
+	int ts_swap;
 	int clk_pol;
 };
 

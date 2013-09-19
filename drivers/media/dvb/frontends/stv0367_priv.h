@@ -79,6 +79,11 @@ enum stv0367_ts_mode {
 	STV0367_DVBCI_CLOCK
 };
 
+enum stv0367_ts_swap {
+	STV0367_NO_SWAP,
+	STV0367_SWAP
+};
+
 enum stv0367_clk_pol {
 	STV0367_CLOCKPOLARITY_DEFAULT,
 	STV0367_RISINGEDGE_CLOCK,
