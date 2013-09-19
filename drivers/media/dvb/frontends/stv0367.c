@@ -2873,7 +2873,7 @@ int stv0367cab_init(struct dvb_frontend *fe)
 	switch (state->config->ts_mode) {
 	case STV0367_DVBCI_CLOCK:
 		dprintk("Setting TSMode = STV0367_DVBCI_CLOCK\n");
-		stv0367_writebits(state, F367CAB_OUTFORMAT, 0x03);
+		stv0367_writebits(state, F367CAB_OUTFORMAT, 0x02);
 		break;
 	case STV0367_SERIAL_PUNCT_CLOCK:
 	case STV0367_SERIAL_CONT_CLOCK:
