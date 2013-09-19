@@ -2828,6 +2828,33 @@ int stv0367cab_init(struct dvb_frontend *fe)
 		stv0367_writereg(state, def0367cab[i].addr,
 						def0367cab[i].value);
 
+	switch (state->config->xtal) {
+		/*set internal freq to 53.125MHz */
+	case 16000000:
+		printk("FE_STV0367TER_SetCLKgen for 16Mhz\n");
+		stv0367_writereg(state, R367CAB_PLLMDIV, 0x08);
+		stv0367_writereg(state, R367CAB_PLLNDIV, 0x70);
+		stv0367_writereg(state, R367CAB_PLLSETUP, 0x18);
+		break;
+	case 25000000:
+		stv0367_writereg(state, R367CAB_PLLMDIV, 0xa);
+		stv0367_writereg(state, R367CAB_PLLNDIV, 0x55);
+		stv0367_writereg(state, R367CAB_PLLSETUP, 0x18);
+		break;
+	default:
+	case 27000000:
+		dprintk("FE_STV0367TER_SetCLKgen for 27Mhz\n");
+		stv0367_writereg(state, R367CAB_PLLMDIV, 0x1);
+		stv0367_writereg(state, R367CAB_PLLNDIV, 0x8);
+		stv0367_writereg(state, R367CAB_PLLSETUP, 0x18);
+		break;
+	case 30000000:
+		stv0367_writereg(state, R367CAB_PLLMDIV, 0xc);
+		stv0367_writereg(state, R367CAB_PLLNDIV, 0x55);
+		stv0367_writereg(state, R367CAB_PLLSETUP, 0x18);
+		break;
+	}
+
 	switch (state->config->adc_mode) {
 	case STV0367_ADC_10V:
 		stv0367_writebits(state, F367CAB_INMODE0, 0x00);
