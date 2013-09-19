@@ -110,8 +110,6 @@ int p1852_sensors_init(void);
 
 int p1852_get_skuid(void);
 
-int p1852_get_skuid(void);
-
 #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT
 #define TOUCH_GPIO_IRQ_ATMEL_T9 TEGRA_GPIO_PEE1
 #define TOUCH_GPIO_RST_ATMEL_T9 TEGRA_GPIO_PW2
