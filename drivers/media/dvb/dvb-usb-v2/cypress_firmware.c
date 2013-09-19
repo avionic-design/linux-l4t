@@ -12,6 +12,7 @@
 #include <linux/slab.h>
 #include <linux/usb.h>
 #include <linux/firmware.h>
+#include <linux/ihex.h>
 #include "cypress_firmware.h"
 
 struct usb_cypress_controller {
@@ -141,6 +142,77 @@ err_kfree:
 	return ret;
 }
 EXPORT_SYMBOL(cypress_load_firmware);
+
+int cypress_load_ihex_firmware(struct usb_device *udev,
+		const struct firmware *fw, int type)
+{
+	const struct ihex_binrec *record;
+	uint8_t reset;
+	int ret;
+
+	ret = ihex_validate_fw(fw);
+	if (ret) {
+		dev_err(&udev->dev, "Firmware is not valid iHEX.\n");
+		return ret;
+	}
+
+	/* stop the CPU */
+	reset = 1;
+	ret = usb_cypress_writemem(udev, cypress[type].cs_reg, &reset, 1);
+	if (ret != 1) {
+		dev_err(&udev->dev, "%s: CPU stop failed=%d\n",
+				KBUILD_MODNAME, ret);
+		if (ret >= 0)
+			ret = -EIO;
+		goto err;
+	}
+
+	/* write firmware to memory */
+	record = (const struct ihex_binrec *)fw->data;
+	for (; record; record = ihex_next_binrec(record)) {
+		if (be32_to_cpu(record->addr) > 0x3fff) {
+			dev_err(&udev->dev, "%s: error while transferring " \
+					"firmware: address out of range\n",
+					KBUILD_MODNAME);
+			ret = -EINVAL;
+			goto err;
+		}
+
+		ret = usb_cypress_writemem(udev, be32_to_cpu(record->addr),
+				(unsigned char*)record->data,
+				be16_to_cpu(record->len));
+		if (ret < 0) {
+			dev_err(&udev->dev, "usb_cypress_writemem failed:%d\n",
+				ret);
+			goto err;
+		} else if (ret != be16_to_cpu(record->len)) {
+			dev_err(&udev->dev, "%s: error while transferring " \
+					"firmware (transferred size=%d, " \
+					"block size=%d)\n",
+					KBUILD_MODNAME, ret,
+					be16_to_cpu(record->len));
+			ret = -EIO;
+			goto err;
+		}
+	}
+
+	/* start the CPU */
+	reset = 0;
+	ret = usb_cypress_writemem(udev, cypress[type].cs_reg, &reset, 1);
+	if (ret != 1) {
+		dev_err(&udev->dev, "%s: CPU start failed=%d\n",
+				KBUILD_MODNAME, ret);
+		if (ret >= 0)
+			ret = -EIO;
+		goto err;
+	}
+
+	ret = 0;
+	dev_info(&udev->dev, "firmware successfully loaded\n");
+err:
+	return ret;
+}
+EXPORT_SYMBOL(cypress_load_ihex_firmware);
 
 MODULE_AUTHOR("Antti Palosaari <crope@iki.fi>");
 MODULE_DESCRIPTION("Cypress firmware download");

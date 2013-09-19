@@ -24,5 +24,7 @@ struct hexline {
 };
 
 int cypress_load_firmware(struct usb_device *, const struct firmware *, int);
+int cypress_load_ihex_firmware(struct usb_device *udev,
+		const struct firmware *fw, int type);
 
 #endif
