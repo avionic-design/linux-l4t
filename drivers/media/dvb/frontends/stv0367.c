@@ -123,7 +123,7 @@ static struct st_register def0367ter[STV0367TER_NBREGS] = {
 	{R367TER_AGC1MIN,	0x00},
 	{R367TER_AGCR,		0xbc},
 	{R367TER_AGC2TH,	0x00},
-	{R367TER_AGC12C,	0x00},
+	{R367TER_AGC12C,	0x01},
 	{R367TER_AGCCTRL1,	0x85},
 	{R367TER_AGCCTRL2,	0x1f},
 	{R367TER_AGC1VAL1,	0x00},
@@ -139,7 +139,7 @@ static struct st_register def0367ter[STV0367TER_NBREGS] = {
 	{R367TER_INC_DEROT2,	0x55},
 	{R367TER_PPM_CPAMP_DIR,	0x2c},
 	{R367TER_PPM_CPAMP_INV,	0x00},
-	{R367TER_FREESTFE_1,	0x00},
+	{R367TER_FREESTFE_1,	0x03},
 	{R367TER_FREESTFE_2,	0x1c},
 	{R367TER_DCOFFSET,	0x00},
 	{R367TER_EN_PROCESS,	0x05},
@@ -584,7 +584,7 @@ static struct st_register def0367cab[STV0367CAB_NBREGS] = {
 	{R367CAB_DAC1R,		0x00},
 	{R367CAB_IOCFG2,	0x00},
 	{R367CAB_SDFR,		0x00},
-	{R367CAB_AUX_CLK,	0x00},
+	{R367CAB_AUX_CLK,	0x0a},
 	{R367CAB_FREESYS1,	0x00},
 	{R367CAB_FREESYS2,	0x00},
 	{R367CAB_FREESYS3,	0x00},
@@ -2807,7 +2807,7 @@ int stv0367cab_init(struct dvb_frontend *fe)
 
 	stv0367_writebits(state, F367CAB_SYNC_STRIP, 0x00);
 
-	stv0367_writebits(state, F367CAB_CT_NBST, 0x01);
+	stv0367_writebits(state, F367CAB_CT_NBST, 0x00);
 
 	stv0367_writebits(state, F367CAB_TS_SWAP, 0x01);
 
