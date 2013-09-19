@@ -222,7 +222,7 @@ static int tda18212_set_params(struct dvb_frontend *fe,
 	if (ret)
 		goto error;
 
-	buf[0] = 0x02;
+	buf[0] = priv->cfg->if_level;
 	buf[1] = bw_params[i][1];
 	buf[2] = 0x03; /* default value */
 	buf[3] = DIV_ROUND_CLOSEST(if_khz, 50);

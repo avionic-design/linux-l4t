@@ -23,6 +23,17 @@
 
 #include "dvb_frontend.h"
 
+enum tda18212_if_level {
+	TDA18212_IF_2_0V = 0,
+	TDA18212_IF_1_25V,
+	TDA18212_IF_1_0V,
+	TDA18212_IF_0_8V,
+	TDA18212_IF_0_85V,
+	TDA18212_IF_0_7V,
+	TDA18212_IF_0_6V,
+	TDA18212_IF_0_5V,
+};
+
 struct tda18212_config {
 	u8 i2c_address;
 
@@ -34,6 +45,8 @@ struct tda18212_config {
 	u16 if_dvbt2_7;
 	u16 if_dvbt2_8;
 	u16 if_dvbc;
+
+	enum tda18212_if_level if_level;
 };
 
 #if defined(CONFIG_MEDIA_TUNER_TDA18212) || \
