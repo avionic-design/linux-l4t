@@ -29,6 +29,12 @@
 #include <linux/dvb/frontend.h>
 #include "dvb_frontend.h"
 
+enum stv0367_adc_voltage {
+	STV0367_ADC_10V,
+	STV0367_ADC_16V,
+	STV0367_ADC_20V
+};
+
 struct stv0367_config {
 	u8 demod_address;
 	u32 xtal;
@@ -37,6 +43,7 @@ struct stv0367_config {
 	int ts_mode;
 	int ts_swap;
 	int clk_pol;
+	enum stv0367_adc_voltage adc_mode;
 };
 
 #if defined(CONFIG_DVB_STV0367) || (defined(CONFIG_DVB_STV0367_MODULE) \

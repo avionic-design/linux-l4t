@@ -1512,6 +1512,28 @@ static void stv0367ter_set_clk_pol(struct stv0367_state *state,
 	}
 }
 
+static void stv0367ter_set_adc_mode(struct stv0367_state *state,
+					enum stv0367_adc_voltage adc_mode)
+{
+	if (state == NULL)
+		return;
+
+	switch (adc_mode) {
+	case STV0367_ADC_10V:
+		stv0367_writebits(state, F367TER_INMODE0, 0x00);
+		stv0367_writebits(state, F367TER_INMODE1, 0x00);
+		break;
+	case STV0367_ADC_16V:
+		stv0367_writebits(state, F367TER_INMODE0, 0x01);
+		stv0367_writebits(state, F367TER_INMODE1, 0x00);
+		break;
+	case STV0367_ADC_20V:
+		stv0367_writebits(state, F367TER_INMODE0, 0x01);
+		stv0367_writebits(state, F367TER_INMODE1, 0x01);
+		break;
+	}
+}
+
 #if 0
 static void stv0367ter_core_sw(struct stv0367_state *state)
 {
@@ -1589,6 +1611,7 @@ int stv0367ter_init(struct dvb_frontend *fe)
 	stv0367ter_set_ts_mode(state, state->config->ts_mode);
 	stv0367ter_set_ts_swap(state, state->config->ts_swap);
 	stv0367ter_set_clk_pol(state, state->config->clk_pol);
+	stv0367ter_set_adc_mode(state, state->config->adc_mode);
 
 	state->chip_id = stv0367_readreg(state, R367TER_ID);
 	ter_state->first_lock = 0;
@@ -2799,6 +2822,21 @@ int stv0367cab_init(struct dvb_frontend *fe)
 	for (i = 0; i < STV0367CAB_NBREGS; i++)
 		stv0367_writereg(state, def0367cab[i].addr,
 						def0367cab[i].value);
+
+	switch (state->config->adc_mode) {
+	case STV0367_ADC_10V:
+		stv0367_writebits(state, F367CAB_INMODE0, 0x00);
+		stv0367_writebits(state, F367CAB_INMODE1, 0x00);
+		break;
+	case STV0367_ADC_16V:
+		stv0367_writebits(state, F367CAB_INMODE0, 0x01);
+		stv0367_writebits(state, F367CAB_INMODE1, 0x00);
+		break;
+	case STV0367_ADC_20V:
+		stv0367_writebits(state, F367CAB_INMODE0, 0x01);
+		stv0367_writebits(state, F367CAB_INMODE1, 0x01);
+		break;
+	}
 
 	switch (state->config->ts_mode) {
 	case STV0367_DVBCI_CLOCK:
