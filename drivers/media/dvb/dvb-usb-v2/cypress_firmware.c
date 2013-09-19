@@ -33,8 +33,22 @@ static const struct usb_cypress_controller cypress[] = {
 static int usb_cypress_writemem(struct usb_device *udev, u16 addr, u8 *data,
 		u8 len)
 {
-	return usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
-			0xa0, USB_TYPE_VENDOR, addr, 0x00, data, len, 5000);
+	unsigned char *transfer_buffer;
+	int result;
+
+	transfer_buffer = kmemdup(data, len, GFP_KERNEL | GFP_DMA);
+	if (!transfer_buffer) {
+		dev_err(&udev->dev, "%s - kmalloc(%d) failed.\n",
+							__func__, len);
+		return -ENOMEM;
+	}
+
+	result = usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+				 0xa0, USB_TYPE_VENDOR, addr, 0x00,
+				 transfer_buffer, len, 5000);
+	kfree(transfer_buffer);
+
+	return result;
 }
 
 static int cypress_get_hexline(const struct firmware *fw,
