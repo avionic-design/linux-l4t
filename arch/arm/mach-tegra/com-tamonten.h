@@ -31,7 +31,6 @@ struct meminfo;
 
 #define COM_GPIO_CDC_IRQ		TEGRA_GPIO_PX3
 #define COM_GPIO_HP_DET			TEGRA_GPIO_PW2
-#define COM_GPIO_INT_MIC_EN		TEGRA_GPIO_PX0
 #define COM_GPIO_EXT_MIC_EN		TEGRA_GPIO_PX1
 
 /* fixed voltage regulator enable/mode gpios */
