@@ -253,6 +253,14 @@ config TAMONTEN_WM8903
 	  Support for the WM8903 audio codec found on many Tamonten base
 	  boards.
 
+config TAMONTEN_TSC2007
+	bool
+	select INPUT_TOUCHSCREEN
+	select TOUCHSCREEN_TSC2007
+	help
+	  Support for the TSC2007 touchscreen sensor found on some Tamonten
+	  base boards.
+
 config MACH_MEDCOM_WIDE
 	bool "Medcom-Wide board"
 	depends on COM_TAMONTEN
