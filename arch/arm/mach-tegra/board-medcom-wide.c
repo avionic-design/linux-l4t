@@ -136,7 +136,7 @@ static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
 	{
 		I2C_BOARD_INFO("gpio-adnp", 0x41),
 		.platform_data = &medcom_adnp_pdata,
-		.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CPLD_IRQ),
+		.irq = MEDCOM_WIDE_IRQ_CPLD,
 	}, {
 		I2C_BOARD_INFO("sx8634", 0x2b),
 		.platform_data = &medcom_wide_keypad1_pdata,

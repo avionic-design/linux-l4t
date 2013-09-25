@@ -25,7 +25,8 @@
 #define ADNP_GPIO_TO_IRQ(_x_)		(INT_BOARD_BASE + 32 + ((_x_) - ADNP_GPIO(0)))
 #define ADNP_IRQ(_x_)			ADNP_GPIO_TO_IRQ(ADNP_GPIO(_x_))
 
-#define TEGRA_GPIO_CPLD_IRQ		TEGRA_GPIO_PU0
+#define MEDCOM_WIDE_GPIO_CPLD_IRQ	COM_GPIO_0
+#define MEDCOM_WIDE_IRQ_CPLD		COM_GPIO_TO_IRQ(MEDCOM_WIDE_GPIO_CPLD_IRQ)
 
 int medcom_wide_panel_init(void);
 
