@@ -20,7 +20,6 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/nct1008.h>
 #include <linux/input.h>
 #include <linux/gpio.h>
 #include <linux/i2c.h>
@@ -148,27 +147,10 @@ static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
 	},
 };
 
-static struct nct1008_platform_data medcom_wide_nct1008_pdata = {
-	.supported_hwrev = true,
-	.ext_range = false,
-	.conv_rate = 0x08,
-	.offset = 0,
-};
-
-static struct i2c_board_info __initdata medcom_wide_dvc_board_info[] = {
-	{
-		I2C_BOARD_INFO("nct1008", 0x4c),
-		.platform_data = &medcom_wide_nct1008_pdata,
-	}
-};
-
 static void __init medcom_wide_i2c_init(void)
 {
 	i2c_register_board_info(0, medcom_wide_i2c0_board_info,
 				ARRAY_SIZE(medcom_wide_i2c0_board_info));
-
-	i2c_register_board_info(4, medcom_wide_dvc_board_info,
-				ARRAY_SIZE(medcom_wide_dvc_board_info));
 }
 
 static void __init medcom_wide_init(void)

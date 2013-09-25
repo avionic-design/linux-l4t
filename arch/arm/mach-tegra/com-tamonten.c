@@ -32,6 +32,7 @@
 #include <linux/memblock.h>
 #include <linux/platform_data/tegra_usb.h>
 #include <linux/tegra_uart.h>
+#include <linux/nct1008.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -52,6 +53,8 @@
 #include "devices.h"
 #include "gpio-names.h"
 #include "pm.h"
+
+#define TAMONTEN_GPIO_TEMP_ALERT	TEGRA_GPIO_PN6
 
 static struct tegra_usb_platform_data tegra_udc_pdata = {
 	.port_otg = false,
@@ -186,6 +189,21 @@ static struct tegra_i2c_platform_data tamonten_dvc_platform_data = {
 	.is_dvc = true,
 };
 
+static struct nct1008_platform_data tamonten_nct1008_pdata = {
+	.supported_hwrev = true,
+	.ext_range = false,
+	.conv_rate = 0x08,
+	.offset = 0,
+};
+
+static struct i2c_board_info __initdata tamonten_dvc_board_info[] = {
+	{
+		I2C_BOARD_INFO("nct1008", 0x4c),
+		.platform_data = &tamonten_nct1008_pdata,
+		.irq = TEGRA_GPIO_TO_IRQ(TAMONTEN_GPIO_TEMP_ALERT)
+	},
+};
+
 static void __init tamonten_i2c_init(void)
 {
 	tegra_i2c_device1.dev.platform_data = &tamonten_i2c1_platform_data;
@@ -197,6 +215,9 @@ static void __init tamonten_i2c_init(void)
 	platform_device_register(&tegra_i2c_device2);
 	platform_device_register(&tegra_i2c_device3);
 	platform_device_register(&tegra_i2c_device4);
+
+	i2c_register_board_info(4, tamonten_dvc_board_info,
+				ARRAY_SIZE(tamonten_dvc_board_info));
 }
 
 static struct plat_serial8250_port uart3_platform_data[] = {
