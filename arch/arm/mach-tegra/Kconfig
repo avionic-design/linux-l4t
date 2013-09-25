@@ -248,7 +248,8 @@ config COM_TAMONTEN_HDMI
 
 config TAMONTEN_WM8903
 	bool
-	select MACH_HAS_SND_SOC_TEGRA_WM8903 if SND_SOC
+	select MACH_HAS_SND_SOC_TEGRA_WM8903
+	select SND_SOC_TEGRA_WM8903
 	help
 	  Support for the WM8903 audio codec found on many Tamonten base
 	  boards.
@@ -265,7 +266,7 @@ config MACH_MEDCOM_WIDE
 	bool "Medcom-Wide board"
 	depends on COM_TAMONTEN
 	select COM_TAMONTEN_LVDS
-	select TAMONTEN_WM8903
+	select TAMONTEN_WM8903 if SND_SOC
 	help
 	  Support for Avionic Design Medcom-Wide boards
 
@@ -273,7 +274,7 @@ config MACH_PLUTUX
 	bool "Plutux board"
 	depends on COM_TAMONTEN
 	select COM_TAMONTEN_HDMI
-	select TAMONTEN_WM8903
+	select TAMONTEN_WM8903 if SND_SOC
 	help
 	  Support for Avionic Design Plutux box.
 	  The board has only HDMI as display, so the platform will select
