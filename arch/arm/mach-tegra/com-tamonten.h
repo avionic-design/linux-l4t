@@ -27,6 +27,8 @@ struct device;
 #define TAMONTEN_GPIO_TPS6586X(_x_)	(TEGRA_NR_GPIOS + (_x_))
 #define TAMONTEN_GPIO_LAST		TAMONTEN_GPIO_TPS6586X(4)
 
+#define COM_GPIO_TO_IRQ(_x_)		TEGRA_GPIO_TO_IRQ(_x_)
+
 #define COM_GPIO_0			TEGRA_GPIO_PU0
 #define COM_GPIO_1			TEGRA_GPIO_PU1
 
