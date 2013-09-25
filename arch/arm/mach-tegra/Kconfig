@@ -230,6 +230,9 @@ config COM_TAMONTEN
 	bool "Tamonten COM"
 	select ARCH_TEGRA_2x_SOC
 	select TEGRA_SILICON_PLATFORM
+	select I2C_TEGRA
+	select MFD_TPS6586X
+	select REGULATOR_TPS6586X
 
 config COM_TAMONTEN_LVDS
 	bool "LVDS support on Tamonten"
