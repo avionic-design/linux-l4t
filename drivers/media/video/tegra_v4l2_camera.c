@@ -285,6 +285,8 @@ struct tegra_camera_dev {
 	struct vb2_alloc_ctx		*alloc_ctx;
 	enum v4l2_field			field;
 	int				sequence;
+	enum v4l2_mbus_type		mbus_type;
+	unsigned long			mbus_flags;
 
 	struct work_struct		work;
 	struct mutex			work_mutex;
@@ -1323,6 +1325,51 @@ static void tegra_camera_remove_device(struct soc_camera_device *icd)
 static int tegra_camera_set_bus_param(struct soc_camera_device *icd,
 					__u32 pixfmt)
 {
+	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
+	struct tegra_camera_dev *pcdev = ici->priv;
+	unsigned long cam_flags, host_flags;
+	struct v4l2_mbus_config mc;
+	int err, port = pcdev->pdata->port;
+
+	/* Try to get the bus config, if it fails assume some default */
+	err = v4l2_subdev_call(sd, video, g_mbus_config, &mc);
+	if (err) {
+		dev_warn(icd->parent,
+			 "Failed to get media bus config, using default\n");
+		if (pcdev->pdata->port == TEGRA_CAMERA_PORT_VIP)
+			pcdev->mbus_type = V4L2_MBUS_BT656;
+		else
+			pcdev->mbus_type = V4L2_MBUS_CSI2;
+	} else
+		pcdev->mbus_type = mc.type;
+
+	/* Check that the bus type is supported by the port */
+	if ((port == TEGRA_CAMERA_PORT_VIP &&
+	     pcdev->mbus_type != V4L2_MBUS_PARALLEL &&
+	     pcdev->mbus_type != V4L2_MBUS_BT656) ||
+	    ((port == TEGRA_CAMERA_PORT_CSI_A ||
+	      port == TEGRA_CAMERA_PORT_CSI_B) &&
+	     pcdev->mbus_type != V4L2_MBUS_CSI2)) {
+		dev_err(icd->parent, "Bus type unsupported by port\n");
+		return -EINVAL;
+	}
+
+	/* Compute the common flags */
+	cam_flags = icd->ops->query_bus_param(icd);
+	host_flags = SOCAM_MASTER |
+		SOCAM_HSYNC_ACTIVE_HIGH |
+		SOCAM_VSYNC_ACTIVE_HIGH |
+		SOCAM_PCLK_SAMPLE_RISING |
+		SOCAM_DATA_ACTIVE_HIGH |
+		SOCAM_DATAWIDTH_8;
+
+	pcdev->mbus_flags = soc_camera_bus_param_compatible(
+		cam_flags, host_flags);
+	if (!pcdev->mbus_flags) {
+		dev_err(icd->parent, "No compatible bus format found\n");
+		return -EINVAL;
+	}
 	return 0;
 }
 
