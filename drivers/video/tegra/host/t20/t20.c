@@ -174,7 +174,7 @@ static struct resource vi_resources[] = {
 };
 
 static struct nvhost_device tegra_vi01_device = {
-	.name		= "vi",
+	.name		= "vi01",
 	.resource = vi_resources,
 	.num_resources = ARRAY_SIZE(vi_resources),
 	.id		= -1,
