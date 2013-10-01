@@ -553,10 +553,10 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 
 	/* VIP H_ACTIVE and V_ACTIVE */
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_H_ACTIVE,
-		(icd->user_width << 16) |
+		(roundup(icd->user_width + TEGRA_VIP_H_ACTIVE_START, 2) << 16) |
 		TEGRA_VIP_H_ACTIVE_START);
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_V_ACTIVE,
-		(icd->user_height << 16) |
+		((icd->user_height + TEGRA_VIP_V_ACTIVE_START) << 16) |
 		TEGRA_VIP_V_ACTIVE_START);
 
 	/*
