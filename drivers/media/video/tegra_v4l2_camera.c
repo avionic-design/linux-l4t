@@ -539,12 +539,13 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 					     int input_format,
 					     int yuv_input_format)
 {
+	int field_detect = (pcdev->field == V4L2_FIELD_ALTERNATE);
 	struct soc_camera_device *icd = pcdev->icd;
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_CORE_CONTROL, 0x00000000);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_INPUT_CONTROL,
-		(1 << 27) | /* field detect */
+		(field_detect << 27) | /* field detect */
 		(1 << 25) | /* hsync/vsync decoded from data (BT.656) */
 		(yuv_input_format << 8) |
 		(1 << 1) | /* VIP_INPUT_ENABLE */
