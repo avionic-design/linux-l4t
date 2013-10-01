@@ -539,14 +539,17 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 					     int input_format,
 					     int yuv_input_format)
 {
-	int field_detect = (pcdev->field == V4L2_FIELD_ALTERNATE);
+	int bt656 = (pcdev->mbus_type == V4L2_MBUS_BT656);
 	struct soc_camera_device *icd = pcdev->icd;
+	unsigned h_active_start = bt656 ? TEGRA_VIP_H_ACTIVE_START : 0;
+	unsigned v_active_start = bt656 ? TEGRA_VIP_V_ACTIVE_START : 0;
+	int field_detect = (pcdev->field == V4L2_FIELD_ALTERNATE);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_CORE_CONTROL, 0x00000000);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_INPUT_CONTROL,
 		(field_detect << 27) | /* field detect */
-		(1 << 25) | /* hsync/vsync decoded from data (BT.656) */
+		(bt656 << 25) | /* hsync/vsync decoded from data (BT.656) */
 		(yuv_input_format << 8) |
 		(1 << 1) | /* VIP_INPUT_ENABLE */
 		(input_format << 2));
@@ -556,17 +559,19 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 
 	/* VIP H_ACTIVE and V_ACTIVE */
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_H_ACTIVE,
-		(roundup(icd->user_width + TEGRA_VIP_H_ACTIVE_START, 2) << 16) |
-		TEGRA_VIP_H_ACTIVE_START);
+		(roundup(icd->user_width + h_active_start, 2) << 16) |
+		h_active_start);
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_V_ACTIVE,
-		((icd->user_height + TEGRA_VIP_V_ACTIVE_START) << 16) |
-		TEGRA_VIP_V_ACTIVE_START);
+		((icd->user_height + v_active_start) << 16) |
+		v_active_start);
 
 	/*
 	 * For VIP, D9..D2 is mapped to the video decoder's P7..P0.
-	 * Disable/mask out the other Dn wires.
+	 * Disable/mask out the other Dn wires. When not in BT656
+	 * mode we also need the V/H sync.
 	 */
-	TC_VI_REG_WT(pcdev, TEGRA_VI_PIN_INPUT_ENABLE, 0x000003fc);
+	TC_VI_REG_WT(pcdev, TEGRA_VI_PIN_INPUT_ENABLE,
+		     0x000003fc | (bt656 ? 0 : 0x6000));
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_DATA_INPUT_CONTROL, 0x000003fc);
 	TC_VI_REG_WT(pcdev, TEGRA_VI_PIN_INVERSION, 0x00000000);
 
