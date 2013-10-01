@@ -26,11 +26,15 @@
 #include <linux/i2c/adnp.h>
 #include <linux/input/sx8634.h>
 
+#include <media/soc_camera.h>
+#include <media/tegra_v4l2_camera.h>
+
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/time.h>
 #include <asm/setup.h>
 
+#include "devices.h"
 #include "board.h"
 #include "board-medcom-wide.h"
 #include "gpio-names.h"
@@ -154,12 +158,50 @@ static void __init medcom_wide_i2c_init(void)
 				ARRAY_SIZE(medcom_wide_i2c0_board_info));
 }
 
+#ifdef CONFIG_VIDEO_TEGRA
+static struct i2c_board_info medcom_wide_camera_bus_board_info[] = {
+	{
+		I2C_BOARD_INFO("tvp5150", 0x5d),
+	},
+};
+
+static struct soc_camera_link medcom_wide_camera_iclink = {
+	.bus_id = -1,
+	.i2c_adapter_id = 0,
+	.board_info = medcom_wide_camera_bus_board_info,
+};
+
+static struct platform_device medcom_wide_soc_camera = {
+	.name = "soc-camera-pdrv",
+	.id = 0,
+	.dev = {
+		.platform_data = &medcom_wide_camera_iclink,
+	},
+};
+
+static struct tegra_camera_platform_data medcom_wide_camera_platform_data = {
+	.flip_v = 0,
+	.flip_h = 0,
+	.port = TEGRA_CAMERA_PORT_VIP,
+};
+
+static void __init medcom_wide_camera_init(void)
+{
+	tegra_camera_device.dev.platform_data = &medcom_wide_camera_platform_data;
+	nvhost_device_register(&tegra_camera_device);
+	platform_device_register(&medcom_wide_soc_camera);
+}
+#else
+static void __init medcom_wide_camera_init(void) {}
+#endif /* CONFIG_VIDEO_TEGRA */
+
 static void __init medcom_wide_init(void)
 {
 	tamonten_init();
 	tamonten_wm8903_init();
 
 	medcom_wide_i2c_init();
+	medcom_wide_camera_init();
 	medcom_wide_panel_init();
 }
 
