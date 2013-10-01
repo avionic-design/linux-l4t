@@ -343,6 +343,31 @@ static const struct soc_mbus_pixelfmt tegra_camera_formats[] = {
 	},
 };
 
+/* All the formats supported have the same stride size */
+static int pix_bytes_per_line(unsigned int width)
+{
+	return roundup(width, 2) * 2;
+}
+
+static int pix_format_set_size(struct v4l2_pix_format *pix, u32 fourcc)
+{
+	switch(fourcc) {
+	case V4L2_PIX_FMT_UYVY:
+	case V4L2_PIX_FMT_VYUY:
+	case V4L2_PIX_FMT_YUYV:
+	case V4L2_PIX_FMT_YVYU:
+		pix->bytesperline = pix_bytes_per_line(pix->width);
+		pix->sizeimage = pix->height * pix->bytesperline;
+		break;
+	case V4L2_PIX_FMT_YUV420:
+	case V4L2_PIX_FMT_YVU420:
+		pix->bytesperline = 0;
+		pix->sizeimage = pix->width * pix->height * 3 / 2;
+		break;
+	}
+	return -EINVAL;
+}
+
 static struct tegra_buffer *to_tegra_vb(struct vb2_buffer *vb)
 {
 	return container_of(vb, struct tegra_buffer, vb);
@@ -593,8 +618,9 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 	int yuv_output_format = 0x0;
 	int output_format = 0x3; /* Default to YUV422 */
 	int port = pcdev->pdata->port;
-	int bytes_per_line = soc_mbus_bytes_per_line(icd->user_width,
-						icd->current_fmt->host_fmt);
+	int stride_l = pix_bytes_per_line(icd->user_width);
+	int stride_c = (output_fourcc == V4L2_PIX_FMT_YUV420 ||
+			output_fourcc == V4L2_PIX_FMT_YVU420);
 
 	switch (input_code) {
 	case V4L2_MBUS_FMT_UYVY8_2X8:
@@ -680,7 +706,7 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 		(icd->user_height << 16) | icd->user_width);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_BUFFER_STRIDE_FIRST,
-		(icd->user_height * bytes_per_line));
+		(stride_c << 30) | stride_l);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_ENABLE, 0x00000000);
 }
@@ -998,8 +1024,7 @@ static void tegra_camera_init_buffer(struct tegra_camera_dev *pcdev,
 				     struct tegra_buffer *buf)
 {
 	struct soc_camera_device *icd = pcdev->icd;
-	int bytes_per_line = soc_mbus_bytes_per_line(icd->user_width,
-						icd->current_fmt->host_fmt);
+	int bytes_per_line;
 
 	switch (icd->current_fmt->host_fmt->fourcc) {
 	case V4L2_PIX_FMT_UYVY:
@@ -1008,6 +1033,7 @@ static void tegra_camera_init_buffer(struct tegra_camera_dev *pcdev,
 	case V4L2_PIX_FMT_YVYU:
 		buf->buffer_addr = vb2_dma_nvmap_plane_paddr(&buf->vb, 0);
 		buf->start_addr = buf->buffer_addr;
+		bytes_per_line = pix_bytes_per_line(icd->user_width);
 
 		if (pcdev->pdata->flip_v)
 			buf->start_addr += bytes_per_line *
@@ -1501,11 +1527,11 @@ static int tegra_camera_try_fmt(struct soc_camera_device *icd,
 		return -EINVAL;
 	}
 
-	pix->bytesperline = soc_mbus_bytes_per_line(pix->width,
-						    xlate->host_fmt);
-	if (pix->bytesperline < 0)
-		return pix->bytesperline;
-	pix->sizeimage = pix->height * pix->bytesperline;
+	ret = pix_format_set_size(pix, xlate->host_fmt->fourcc);
+	if (ret) {
+		dev_warn(icd->parent, "Unsupported output format %x\n", pixfmt);
+		return ret;
+	}
 
 	/* limit to sensor capabilities */
 	mf.width	= pix->width;
@@ -1525,9 +1551,11 @@ static int tegra_camera_try_fmt(struct soc_camera_device *icd,
 	 * width and height could have been changed, therefore update the
 	 * bytesperline and sizeimage here.
 	 */
-	pix->bytesperline = soc_mbus_bytes_per_line(pix->width,
-						    xlate->host_fmt);
-	pix->sizeimage = pix->height * pix->bytesperline;
+	ret = pix_format_set_size(pix, xlate->host_fmt->fourcc);
+	if (ret) {
+		dev_warn(icd->parent, "Unsupported output format %x\n", pixfmt);
+		return ret;
+	}
 
 	switch (mf.field) {
 	case V4L2_FIELD_ANY:
