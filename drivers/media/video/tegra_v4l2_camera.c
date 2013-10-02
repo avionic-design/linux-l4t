@@ -358,12 +358,12 @@ static int pix_format_set_size(struct v4l2_pix_format *pix, u32 fourcc)
 	case V4L2_PIX_FMT_YVYU:
 		pix->bytesperline = pix_bytes_per_line(pix->width);
 		pix->sizeimage = pix->height * pix->bytesperline;
-		break;
+		return 0;
 	case V4L2_PIX_FMT_YUV420:
 	case V4L2_PIX_FMT_YVU420:
 		pix->bytesperline = 0;
 		pix->sizeimage = pix->width * pix->height * 3 / 2;
-		break;
+		return 0;
 	}
 	return -EINVAL;
 }
