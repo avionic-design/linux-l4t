@@ -343,29 +343,51 @@ static const struct soc_mbus_pixelfmt tegra_camera_formats[] = {
 	},
 };
 
-/* All the formats supported have the same stride size */
-static int pix_bytes_per_line(unsigned int width)
-{
-	return roundup(width, 2) * 2;
-}
-
-static int pix_format_set_size(struct v4l2_pix_format *pix, u32 fourcc)
+static int pix_bytes_per_line(unsigned int width, u32 fourcc)
 {
 	switch(fourcc) {
 	case V4L2_PIX_FMT_UYVY:
 	case V4L2_PIX_FMT_VYUY:
 	case V4L2_PIX_FMT_YUYV:
 	case V4L2_PIX_FMT_YVYU:
-		pix->bytesperline = pix_bytes_per_line(pix->width);
-		pix->sizeimage = pix->height * pix->bytesperline;
-		return 0;
+		return roundup(width, 2) * 2;
 	case V4L2_PIX_FMT_YUV420:
 	case V4L2_PIX_FMT_YVU420:
-		pix->bytesperline = 0;
-		pix->sizeimage = pix->width * pix->height * 3 / 2;
-		return 0;
+		return roundup(width, 2);
 	}
 	return -EINVAL;
+}
+
+static int pix_size(unsigned int width, unsigned int height, u32 fourcc)
+{
+	switch(fourcc) {
+	case V4L2_PIX_FMT_UYVY:
+	case V4L2_PIX_FMT_VYUY:
+	case V4L2_PIX_FMT_YUYV:
+	case V4L2_PIX_FMT_YVYU:
+		return roundup(width, 2) * 2 * height;
+	case V4L2_PIX_FMT_YUV420:
+	case V4L2_PIX_FMT_YVU420:
+		return roundup(width, 2) * height * 3 / 2;
+	}
+	return -EINVAL;
+}
+
+static int pix_format_set_size(struct v4l2_pix_format *pix, u32 fourcc)
+{
+	int bytesperline, sizeimage;
+
+	bytesperline = pix_bytes_per_line(pix->width, fourcc);
+	if (bytesperline < 0)
+		return bytesperline;
+
+	sizeimage = pix_size(pix->width, pix->height, fourcc);
+	if (sizeimage < 0)
+		return sizeimage;
+
+	pix->bytesperline = bytesperline;
+	pix->sizeimage = sizeimage;
+	return 0;
 }
 
 static struct tegra_buffer *to_tegra_vb(struct vb2_buffer *vb)
@@ -618,7 +640,7 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 	int yuv_output_format = 0x0;
 	int output_format = 0x3; /* Default to YUV422 */
 	int port = pcdev->pdata->port;
-	int stride_l = pix_bytes_per_line(icd->user_width);
+	int stride_l = pix_bytes_per_line(icd->user_width, output_fourcc);
 	int stride_c = (output_fourcc == V4L2_PIX_FMT_YUV420 ||
 			output_fourcc == V4L2_PIX_FMT_YVU420);
 
@@ -1041,7 +1063,8 @@ static void tegra_camera_init_buffer(struct tegra_camera_dev *pcdev,
 	case V4L2_PIX_FMT_YVYU:
 		buf->buffer_addr = vb2_dma_nvmap_plane_paddr(&buf->vb, 0);
 		buf->start_addr = buf->buffer_addr;
-		bytes_per_line = pix_bytes_per_line(icd->user_width);
+		bytes_per_line = pix_bytes_per_line(icd->user_width,
+					icd->current_fmt->host_fmt->fourcc);
 
 		if (pcdev->pdata->flip_v)
 			buf->start_addr += bytes_per_line *
@@ -1111,18 +1134,18 @@ static int tegra_camera_videobuf_setup(struct vb2_queue *vq,
 						     vb2_vidq);
 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
 	struct tegra_camera_dev *pcdev = ici->priv;
-	int bytes_per_line = soc_mbus_bytes_per_line(icd->user_width,
-						icd->current_fmt->host_fmt);
+	int size = pix_size(icd->user_width, icd->user_height,
+			icd->current_fmt->host_fmt->fourcc);
 
 	dev_dbg(icd->parent, "In tegra_camera_videobuf_setup()\n");
 
-	if (bytes_per_line < 0)
-		return bytes_per_line;
+	if (size < 0)
+		return size;
 
 	*num_planes = 1;
 
 	pcdev->sequence = 0;
-	sizes[0] = bytes_per_line * icd->user_height;
+	sizes[0] = size;
 	alloc_ctxs[0] = pcdev->alloc_ctx;
 
 	if (!*num_buffers)
@@ -1146,14 +1169,13 @@ static int tegra_camera_videobuf_prepare(struct vb2_buffer *vb)
 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
 	struct tegra_camera_dev *pcdev = ici->priv;
 	struct tegra_buffer *buf;
-	int bytes_per_line = soc_mbus_bytes_per_line(icd->user_width,
-						icd->current_fmt->host_fmt);
-	unsigned long size;
+	int size = pix_size(icd->user_width, icd->user_height,
+			icd->current_fmt->host_fmt->fourcc);
 
 	dev_dbg(icd->parent, "In tegra_camera_videobuf_prepare()\n");
 
-	if (bytes_per_line < 0)
-		return bytes_per_line;
+	if (size < 0)
+		return size;
 
 	buf = to_tegra_vb(vb);
 
@@ -1171,10 +1193,8 @@ static int tegra_camera_videobuf_prepare(struct vb2_buffer *vb)
 
 	BUG_ON(NULL == icd->current_fmt);
 
-	size = icd->user_height * bytes_per_line;
-
 	if (vb2_plane_size(vb, 0) < size) {
-		dev_err(icd->parent, "Buffer too small (%lu < %lu)\n",
+		dev_err(icd->parent, "Buffer too small (%lu < %d)\n",
 			vb2_plane_size(vb, 0), size);
 		return -ENOBUFS;
 	}
