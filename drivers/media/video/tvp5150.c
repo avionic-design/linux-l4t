@@ -833,6 +833,18 @@ static v4l2_std_id tvp5150_read_std(struct v4l2_subdev *sd)
 	}
 }
 
+static int tvp5150_g_std(struct v4l2_subdev *sd, v4l2_std_id *norm)
+{
+	struct tvp5150 *decoder = to_tvp5150(sd);
+	v4l2_std_id std = decoder->norm;
+
+	if (std == V4L2_STD_ALL)
+		std = tvp5150_read_std(sd);
+
+	*norm = std;
+	return 0;
+}
+
 static int tvp5150_enum_mbus_fmt(struct v4l2_subdev *sd, unsigned index,
 						enum v4l2_mbus_pixelcode *code)
 {
@@ -1123,6 +1135,7 @@ static const struct v4l2_subdev_core_ops tvp5150_core_ops = {
 	.queryctrl = v4l2_subdev_queryctrl,
 	.querymenu = v4l2_subdev_querymenu,
 	.s_std = tvp5150_s_std,
+	.g_std = tvp5150_g_std,
 	.reset = tvp5150_reset,
 	.g_chip_ident = tvp5150_g_chip_ident,
 #ifdef CONFIG_VIDEO_ADV_DEBUG
