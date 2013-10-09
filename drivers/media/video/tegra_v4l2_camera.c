@@ -415,6 +415,44 @@ static void tegra_camera_incr_syncpts(struct tegra_camera_dev *pcdev)
 				   TEGRA_VI_SYNCPT_VI);
 }
 
+static void tegra_camera_set_active_area(struct tegra_camera_dev *pcdev)
+{
+	struct soc_camera_device *icd = pcdev->icd;
+	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
+	int interlaced = (pcdev->field != V4L2_FIELD_NONE);
+	int height = icd->user_height >> interlaced;
+	int v_active_start, h_active_start;
+	v4l2_std_id std;
+	int err;
+
+	err = v4l2_subdev_call(sd, core, g_std, &std);
+	if (err) {
+		dev_warn(&pcdev->ndev->dev,
+			"Failed to get subdevice standard\n");
+		std = V4L2_STD_UNKNOWN;
+	}
+
+	if (std & V4L2_STD_625_50) {
+		/* PAL */
+		h_active_start = 144;
+		v_active_start = 22;
+	} else if (std & V4L2_STD_525_60) {
+		/* NTSC */
+		h_active_start = 138;
+		v_active_start = 19;
+	} else {
+		h_active_start = 0;
+		v_active_start = 0;
+	}
+
+	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_H_ACTIVE,
+		(roundup(icd->user_width + h_active_start, 2) << 16) |
+		h_active_start);
+	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_V_ACTIVE,
+		((height + v_active_start) << 16) |
+		v_active_start);
+}
+
 static void tegra_camera_capture_setup_csi_a(struct tegra_camera_dev *pcdev,
 					     int input_format,
 					     int yuv_input_format)
@@ -433,10 +471,7 @@ static void tegra_camera_capture_setup_csi_a(struct tegra_camera_dev *pcdev,
 	TC_VI_REG_WT(pcdev, TEGRA_VI_V_DOWNSCALE_CONTROL, 0x00000004);
 
 	/* CSI-A H_ACTIVE and V_ACTIVE */
-	TC_VI_REG_WT(pcdev, TEGRA_VI_CSI_PPA_H_ACTIVE,
-		     (icd->user_width << 16));
-	TC_VI_REG_WT(pcdev, TEGRA_VI_CSI_PPA_V_ACTIVE,
-		     (icd->user_height << 16));
+	tegra_camera_set_active_area(pcdev);
 
 	/* CSI A */
 	TC_VI_REG_WT(pcdev, TEGRA_CSI_VI_INPUT_STREAM_CONTROL, 0x00000000);
@@ -516,10 +551,7 @@ static void tegra_camera_capture_setup_csi_b(struct tegra_camera_dev *pcdev,
 	TC_VI_REG_WT(pcdev, TEGRA_VI_V_DOWNSCALE_CONTROL, 0x00000008);
 
 	/* CSI-B H_ACTIVE and V_ACTIVE */
-	TC_VI_REG_WT(pcdev, TEGRA_VI_CSI_PPB_H_ACTIVE,
-		(icd->user_width << 16));
-	TC_VI_REG_WT(pcdev, TEGRA_VI_CSI_PPB_V_ACTIVE,
-		(icd->user_height << 16));
+	tegra_camera_set_active_area(pcdev);
 
 	/* CSI B */
 	TC_VI_REG_WT(pcdev, TEGRA_CSI_VI_INPUT_STREAM_CONTROL, 0x00000000);
@@ -587,9 +619,6 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 					     int yuv_input_format)
 {
 	int bt656 = (pcdev->mbus_type == V4L2_MBUS_BT656);
-	struct soc_camera_device *icd = pcdev->icd;
-	unsigned h_active_start = bt656 ? TEGRA_VIP_H_ACTIVE_START : 0;
-	unsigned v_active_start = bt656 ? TEGRA_VIP_V_ACTIVE_START : 0;
 	int field_detect = (pcdev->field == V4L2_FIELD_ALTERNATE);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_CORE_CONTROL, 0x00000000);
@@ -605,12 +634,7 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 	TC_VI_REG_WT(pcdev, TEGRA_VI_V_DOWNSCALE_CONTROL, 0x00000000);
 
 	/* VIP H_ACTIVE and V_ACTIVE */
-	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_H_ACTIVE,
-		(roundup(icd->user_width + h_active_start, 2) << 16) |
-		h_active_start);
-	TC_VI_REG_WT(pcdev, TEGRA_VI_VIP_V_ACTIVE,
-		((icd->user_height + v_active_start) << 16) |
-		v_active_start);
+	tegra_camera_set_active_area(pcdev);
 
 	/*
 	 * For VIP, D9..D2 is mapped to the video decoder's P7..P0.
