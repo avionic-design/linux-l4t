@@ -268,7 +268,7 @@ config TAMONTEN_TSC2007
 
 config MACH_MEDCOM_WIDE
 	bool "Medcom-Wide board"
-	depends on COM_TAMONTEN
+	depends on COM_TAMONTEN || COM_TAMONTEN_NG
 	select COM_TAMONTEN_LVDS
 	select TAMONTEN_WM8903 if SND_SOC
 	help
@@ -276,7 +276,7 @@ config MACH_MEDCOM_WIDE
 
 config MACH_PLUTUX
 	bool "Plutux board"
-	depends on COM_TAMONTEN
+	depends on COM_TAMONTEN || COM_TAMONTEN_NG
 	select COM_TAMONTEN_HDMI
 	select TAMONTEN_WM8903 if SND_SOC
 	help
@@ -286,7 +286,7 @@ config MACH_PLUTUX
 
 config MACH_TEC_NG
 	bool "Tamonten Evaluation Carrier NG (TEC-NG) Board"
-	depends on COM_TAMONTEN_NG
+	depends on COM_TAMONTEN || COM_TAMONTEN_NG
 	select COM_TAMONTEN_HDMI
 	select COM_TAMONTEN_LVDS
 	select TAMONTEN_WM8903 if SND_SOC
