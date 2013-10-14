@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/board-tec-ng-pinmux.c
+ * arch/arm/mach-tegra/com-tamonten-ng-pinmux.c
  *
  * Copyright (C) 2011-2012, NVIDIA Corporation
  * Copyright (C) 2013, Avionic Design GmbH
@@ -20,9 +20,7 @@
 #include <linux/init.h>
 #include <mach/pinmux.h>
 #include "board.h"
-#include "board-tec-ng.h"
-#include "gpio-names.h"
-
+#include "com-tamonten.h"
 
 #define DEFAULT_DRIVE(_name)					\
 	{							\
@@ -66,7 +64,7 @@
 
 /* !!!FIXME!!!! TODO POPULATE THIS TABLE */
 #if 0
-static __initdata struct tegra_drive_pingroup_config tec_ng_drive_pinmux[] = {
+static __initdata struct tegra_drive_pingroup_config tamonten_ng_drive_pinmux[] = {
 	/* DEFAULT_DRIVE(<pin_group>), */
 	/* SET_DRIVE(ATA, DISABLE, DISABLE, DIV_1, 31, 31, FAST, FAST) */
 	SET_DRIVE(DAP2, 	DISABLE, ENABLE, DIV_1, 31, 31, FASTEST, FASTEST),
@@ -154,7 +152,7 @@ static __initdata struct tegra_drive_pingroup_config tec_ng_drive_pinmux[] = {
 	}
 
 
-static __initdata struct tegra_pingroup_config tec_ng_pinmux_common[] = {
+static __initdata struct tegra_pingroup_config tamonten_ng_pinmux_common[] = {
 
 	/* NAND, GMI - p9 */
 	DEFAULT_PINMUX(GMI_AD0,         NAND,            NORMAL,    NORMAL,     INPUT),
@@ -343,7 +341,7 @@ static __initdata struct tegra_pingroup_config tec_ng_pinmux_common[] = {
 };
 
 
-static __initdata struct tegra_pingroup_config tec_ng_unused_pins_lowpower[] = {
+static __initdata struct tegra_pingroup_config tamonten_ng_unused_pins_lowpower[] = {
 		/* TODO */
 };
 
@@ -356,7 +354,7 @@ static __initdata struct tegra_pingroup_config tec_ng_unused_pins_lowpower[] = {
 	}
 
 
-static struct gpio_init_pin_info init_gpio_mode_tec_ng[] = {
+static struct gpio_init_pin_info init_gpio_mode_tamonten_ng[] = {
 
 	/* NAND GMI recycle - p9 */
 	GPIO_INIT_PIN_MODE(TEGRA_GPIO_PH0, false, 0), /* LCD_BL_PWM */
@@ -423,14 +421,14 @@ static struct gpio_init_pin_info init_gpio_mode_tec_ng[] = {
 };
 
 
-static void __init tec_ng_gpio_init_configure(void)
+static void __init tamonten_ng_gpio_init_configure(void)
 {
 	int len;
 	int i;
 	struct gpio_init_pin_info *pins_info;
 
-	len = ARRAY_SIZE(init_gpio_mode_tec_ng);
-	pins_info = init_gpio_mode_tec_ng;
+	len = ARRAY_SIZE(init_gpio_mode_tamonten_ng);
+	pins_info = init_gpio_mode_tamonten_ng;
 
 	for (i = 0; i < len; ++i) {
 		tegra_gpio_init_configure(pins_info->gpio_nr,
@@ -439,16 +437,16 @@ static void __init tec_ng_gpio_init_configure(void)
 	}
 }
 
-int __init tec_ng_pinmux_init(void)
+int __init tamonten_ng_pinmux_init(void)
 {
 	/* init all used as gpios */
-	tec_ng_gpio_init_configure();
+	tamonten_ng_gpio_init_configure();
 
 	/* init all used as SFIO */
-	tegra_pinmux_config_table(tec_ng_pinmux_common, ARRAY_SIZE(tec_ng_pinmux_common));
+	tegra_pinmux_config_table(tamonten_ng_pinmux_common, ARRAY_SIZE(tamonten_ng_pinmux_common));
 
 	/* low power unused ones */
-	tegra_pinmux_config_table(tec_ng_unused_pins_lowpower, ARRAY_SIZE(tec_ng_unused_pins_lowpower));
+	tegra_pinmux_config_table(tamonten_ng_unused_pins_lowpower, ARRAY_SIZE(tamonten_ng_unused_pins_lowpower));
 
 	return 0;
 }
@@ -501,7 +499,7 @@ static void set_unused_pin_gpio(struct gpio_init_pin_info *lpm_pin_info,
 
 /* Initialize the pins to desired state as per power/asic/system-eng
  * recomendation */
-int __init tec_ng_pins_state_late_init(void)
+int __init tamonten_ng_pins_state_late_init(void)
 {
 	set_unused_pin_gpio(&pin_gpio_anyway[0], ARRAY_SIZE(pin_gpio_anyway));
 

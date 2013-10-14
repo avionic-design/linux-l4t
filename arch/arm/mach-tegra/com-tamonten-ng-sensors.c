@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/board-tec-ng-sensors.c
+ * arch/arm/mach-tegra/com-tamonten-ng-sensors.c
  *
  * Copyright (c) 2013, Avionic Design GmbH
  * Copyright (c) 2013, Julian Scheel <julian@jusst.de>
@@ -23,8 +23,7 @@
 #include <linux/slab.h>
 #include <mach/thermal.h>
 
-#include "gpio-names.h"
-#include "board-tec-ng.h"
+#include "com-tamonten.h"
 
 static int nct_get_temp(void *_data, long *temp)
 {
@@ -109,7 +108,7 @@ static void nct1008_probe_callback(struct nct1008_data *data)
 #endif
 }
 
-static struct nct1008_platform_data tec_ng_nct1008_pdata = {
+static struct nct1008_platform_data tamonten_ng_nct1008_pdata = {
 	.supported_hwrev = true,
 	.ext_range = true,
 	.conv_rate = 0x08,
@@ -117,20 +116,20 @@ static struct nct1008_platform_data tec_ng_nct1008_pdata = {
 	.probe_callback = nct1008_probe_callback,
 };
 
-static struct i2c_board_info tec_ng_i2c4_nct1008_board_info[] = {
+static struct i2c_board_info tamonten_ng_i2c4_nct1008_board_info[] = {
 	{
 		I2C_BOARD_INFO("nct1008", 0x4c),
-		.platform_data = &tec_ng_nct1008_pdata,
+		.platform_data = &tamonten_ng_nct1008_pdata,
 		.irq = -1,
 	}
 };
 
-static int tec_ng_nct1008_init(void)
+static int tamonten_ng_nct1008_init(void)
 {
 	int nct1008_port = TEGRA_GPIO_PCC2;
 	int ret = 0;
 
-	tec_ng_i2c4_nct1008_board_info[0].irq = TEGRA_GPIO_TO_IRQ(nct1008_port);
+	tamonten_ng_i2c4_nct1008_board_info[0].irq = TEGRA_GPIO_TO_IRQ(nct1008_port);
 
 	ret = gpio_request(nct1008_port, "temp_alert");
 	if (ret < 0)
@@ -143,13 +142,14 @@ static int tec_ng_nct1008_init(void)
 	return ret;
 }
 
-int __init tec_ng_sensors_init(void)
+int __init tamonten_ng_sensors_init(void)
 {
 	int ret;
-	ret = tec_ng_nct1008_init();
+	ret = tamonten_ng_nct1008_init();
 
-	i2c_register_board_info(4, tec_ng_i2c4_nct1008_board_info,
-			ARRAY_SIZE(tec_ng_i2c4_nct1008_board_info));
+	i2c_register_board_info(
+		COM_I2C_BUS_PWR, tamonten_ng_i2c4_nct1008_board_info,
+		ARRAY_SIZE(tamonten_ng_i2c4_nct1008_board_info));
 
 	return ret;
 }

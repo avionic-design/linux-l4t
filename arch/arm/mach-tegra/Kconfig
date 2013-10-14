@@ -183,14 +183,6 @@ config MACH_CARDHU
        help
          Support for NVIDIA Cardhu development platform
 
-config MACH_TEC_NG
-       bool "Tamonten Evaluation Carrier NG (TEC-NG) Board"
-       depends on ARCH_TEGRA_3x_SOC
-       select MACH_HAS_SND_SOC_TEGRA_WM8903 if SND_SOC
-       help
-         Support for Avionic Design Tamonten Evaluation Carrier developtment
-         platform.
-
 config MACH_P1852
        bool "P1852 board"
        depends on ARCH_TEGRA_3x_SOC
@@ -228,11 +220,22 @@ config MACH_KAI
 
 config COM_TAMONTEN
 	bool "Tamonten COM"
+	depends on !COM_TAMONTEN_NG
 	select ARCH_TEGRA_2x_SOC
 	select TEGRA_SILICON_PLATFORM
 	select I2C_TEGRA
 	select MFD_TPS6586X
 	select REGULATOR_TPS6586X
+
+config COM_TAMONTEN_NG
+	bool "Tamonten NG COM"
+	select ARCH_TEGRA_3x_SOC
+	select TEGRA_SILICON_PLATFORM
+	select I2C_TEGRA
+	select MFD_TPS65910
+	select REGULATOR_TPS65910
+	help
+	  Support for Avionic Design TEC NG COM module
 
 config COM_TAMONTEN_DISPLAY
 	bool "Display support on Tamonten"
@@ -280,6 +283,16 @@ config MACH_PLUTUX
 	  Support for Avionic Design Plutux box.
 	  The board has only HDMI as display, so the platform will select
 	  the requirements for HDMI.
+
+config MACH_TEC_NG
+	bool "Tamonten Evaluation Carrier NG (TEC-NG) Board"
+	depends on COM_TAMONTEN_NG
+	select COM_TAMONTEN_HDMI
+	select COM_TAMONTEN_LVDS
+	select TAMONTEN_WM8903 if SND_SOC
+	help
+	  Support for Avionic Design Tamonten Evaluation Carrier developtment
+	  platform.
 
 choice
        prompt "Tegra platform type"

@@ -50,6 +50,8 @@ struct device;
 
 #define COM_PWM_BACKLIGHT		0
 
+#ifdef CONFIG_COM_TAMONTEN
+
 #define TAMONTEN_PMU_GPIO_COUNT		4
 #define TAMONTEN_PMU_IRQ_COUNT		0
 
@@ -97,6 +99,56 @@ struct device;
 void tamonten_pinmux_init(void);
 int tamonten_regulator_init(void);
 int tamonten_suspend_init(void);
+
+#else
+#include <linux/mfd/tps6591x.h>
+
+#define TAMONTEN_PMU_GPIO_COUNT		TPS6591X_GPIO_NR
+#define TAMONTEN_PMU_IRQ_COUNT		(18)
+
+#define TAMONTEN_BOOT_PARAMS		0x80000100
+
+#define COM_PWM_BACKLIGHT		0
+
+#define COM_GPIO_0			TEGRA_GPIO_PU5
+#define COM_GPIO_1			TEGRA_GPIO_PU6
+
+#define COM_GPIO_ALIVE			TEGRA_GPIO_PV2
+
+#define COM_GPIO_WAKEUP			TEGRA_GPIO_PV3
+#define COM_GPIO_SATA_nDET		TEGRA_GPIO_PP0
+
+#define COM_GPIO_SD_CD			TEGRA_GPIO_PI5
+#define COM_GPIO_SD_WP			TEGRA_GPIO_PI3
+
+#define COM_GPIO_CDC_IRQ		TEGRA_GPIO_PW3
+#define COM_GPIO_HP_DET			TEGRA_GPIO_PW2
+#define COM_GPIO_EXT_MIC_EN		TEGRA_GPIO_PX1
+
+#define COM_GPIO_BACKLIGHT_ENABLE	TEGRA_GPIO_PH2
+#define COM_GPIO_BACKLIGHT_PWM		TEGRA_GPIO_PH0
+#define COM_GPIO_BACKLIGHT_VDD		TEGRA_GPIO_PH2
+
+#define COM_GPIO_LVDS_SHUTDOWN		TEGRA_GPIO_PB2
+
+#define COM_GPIO_HDMI_HPD		TEGRA_GPIO_PN7
+
+#define COM_GPIO_nRST_PERIPHERALS	TEGRA_GPIO_PI4
+#define COM_GPIO_DBG_IRQ		TEGRA_GPIO_PC1
+#define COM_GPIO_TS_IRQ			TEGRA_GPIO_PH4
+
+/* Thermal diode offset is taken from board-cardhu.h */
+#define TDIODE_OFFSET	(10000)	/* in millicelsius */
+
+int tamonten_ng_regulator_init(void);
+int tamonten_ng_sdhci_init(void);
+int tamonten_ng_pinmux_init(void);
+int tamonten_ng_edp_init(void);
+int tamonten_ng_suspend_init(void);
+int tamonten_ng_sensors_init(void);
+
+#endif
+
 int tamonten_pcie_init(void);
 
 void tamonten_fixup(struct machine_desc *desc,

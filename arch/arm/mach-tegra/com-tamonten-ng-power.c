@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/board-tec-ng-power.c
+ * arch/arm/mach-tegra/com-tamonten-ng-power.c
  *
  * Copyright (C) 2011-2012, NVIDIA Corporation
  * Copyright (C) 2013, Avionic Design GmbH
@@ -34,9 +34,8 @@
 #include <mach/pinmux.h>
 #include <mach/edp.h>
 
-#include "gpio-names.h"
 #include "board.h"
-#include "board-tec-ng.h"
+#include "com-tamonten.h"
 #include "pm.h"
 
 /* FIXME: Taken from cardhu, while not understanding, what's this for */
@@ -190,8 +189,8 @@ static struct tps6591x_sleep_keepon_data tps_slp_keepon = {
 };
 
 static struct tps6591x_platform_data tps_platform = {
-	.irq_base = TPS6591X_IRQ_BASE,
-	.gpio_base = TPS6591X_GPIO_BASE,
+	.irq_base = TAMONTEN_PMU_IRQ_BASE,
+	.gpio_base = TAMONTEN_PMU_GPIO_BASE,
 	.dev_slp_en = true,
 	.slp_keepon = &tps_slp_keepon,
 	.use_power_off = true,
@@ -201,7 +200,7 @@ static struct tps6591x_platform_data tps_platform = {
 	.gpio_init_data = tps_gpio_pdata,
 };
 
-static struct i2c_board_info __initdata tec_ng_regulators[] = {
+static struct i2c_board_info __initdata tamonten_ng_regulators[] = {
 	{
 		I2C_BOARD_INFO("tps6591x", 0x2d),
 		.irq = INT_EXTERNAL_PMU,
@@ -244,7 +243,7 @@ static struct i2c_board_info __initdata tps62361_boardinfo[] = {
 	}
 };
 
-int __init tec_ng_regulator_init(void)
+int __init tamonten_ng_regulator_init(void)
 {
 	void __iomem *pmc = IO_ADDRESS(TEGRA_PMC_BASE);
 	u32 pmc_ctrl;
@@ -253,8 +252,8 @@ int __init tec_ng_regulator_init(void)
 	writel(pmc_ctrl | PMC_CTRL_INTR_LOW, pmc + PMC_CTRL);
 
 	regulator_has_full_constraints();
-	i2c_register_board_info(4, tec_ng_regulators, 1);
-	i2c_register_board_info(4, tps62361_boardinfo, 1);
+	i2c_register_board_info(COM_I2C_BUS_PWR, tamonten_ng_regulators, 1);
+	i2c_register_board_info(COM_I2C_BUS_PWR, tps62361_boardinfo, 1);
 
 	return 0;
 }
@@ -326,11 +325,11 @@ static struct regulator_consumer_supply fixed_reg_en_usb3_vbus_oc_supply[] = {
 		}, \
 	}
 
-FIXED_REG(0, en_5v_cp, NULL, 1, 0, TPS6591X_GPIO_0, true, 1, 5000, false);
-FIXED_REG(1, en_soc, NULL, 1, 0, TPS6591X_GPIO_2, true, 1, 1200, false);
-FIXED_REG(2, en_5v0, NULL, 1, 0, TPS6591X_GPIO_8, true, 1, 5000, false);
-FIXED_REG(3, en_ddr, NULL, 1, 0, TPS6591X_GPIO_7, true, 1, 1500, false);
-FIXED_REG(4, en_3v3_sys, NULL, 1, 0, TPS6591X_GPIO_6, true, 1, 3300, false);
+FIXED_REG(0, en_5v_cp, NULL, 1, 0, TAMONTEN_PMU_GPIO(0), true, 1, 5000, false);
+FIXED_REG(1, en_soc, NULL, 1, 0, TAMONTEN_PMU_GPIO(2), true, 1, 1200, false);
+FIXED_REG(2, en_5v0, NULL, 1, 0, TAMONTEN_PMU_GPIO(8), true, 1, 5000, false);
+FIXED_REG(3, en_ddr, NULL, 1, 0, TAMONTEN_PMU_GPIO(7), true, 1, 1500, false);
+FIXED_REG(4, en_3v3_sys, NULL, 1, 0, TAMONTEN_PMU_GPIO(6), true, 1, 3300, false);
 FIXED_REG(5, en_vdd_bl, NULL, 0, 0, TEGRA_GPIO_PW0, true, 0, 5000, false);
 FIXED_REG(6, en_3v3_fuse, FIXED_SUPPLY(en_3v3_sys), 0, 0, TEGRA_GPIO_PH3, true,
 		0, 3300, false);
@@ -356,13 +355,13 @@ static struct platform_device *fixed_reg_devs[] = {
 	&fixed_reg_en_usb3_vbus_oc_dev,
 };
 
-int __init tec_ng_fixed_regulator_init(void)
+int __init tamonten_ng_fixed_regulator_init(void)
 {
 	return platform_add_devices(fixed_reg_devs, ARRAY_SIZE(fixed_reg_devs));
 }
-subsys_initcall_sync(tec_ng_fixed_regulator_init);
+subsys_initcall_sync(tamonten_ng_fixed_regulator_init);
 
-static struct tegra_suspend_platform_data tec_ng_suspend_data = {
+static struct tegra_suspend_platform_data tamonten_ng_suspend_data = {
 	.cpu_timer	= 2000,
 	.cpu_off_timer	= 0,
 	.suspend_mode	= TEGRA_SUSPEND_NONE,
@@ -372,13 +371,13 @@ static struct tegra_suspend_platform_data tec_ng_suspend_data = {
 	.sysclkreq_high	= true,
 };
 
-int __init tec_ng_suspend_init(void)
+int __init tamonten_ng_suspend_init(void)
 {
-	tegra_init_suspend(&tec_ng_suspend_data);
+	tegra_init_suspend(&tamonten_ng_suspend_data);
 	return 0;
 }
 
-int __init tec_ng_edp_init(void)
+int __init tamonten_ng_edp_init(void)
 {
 #ifdef CONFIG_TEGRA_EDP_LIMITS
 	unsigned int regulator_mA;

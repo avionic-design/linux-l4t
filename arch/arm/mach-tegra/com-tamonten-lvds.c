@@ -117,6 +117,10 @@ static struct tegra_dc_out tamonten_panel_disp_out = {
 	.modes = NULL,
 	.n_modes = 0,
 
+#ifdef CONFIG_COM_TAMONTEN_NG
+	.parent_clk = "pll_d_out0",
+	.parent_clk_backup = "pll_d2_out0",
+#endif
 };
 
 struct tegra_dc_platform_data tamonten_lvds_disp_pdata = {

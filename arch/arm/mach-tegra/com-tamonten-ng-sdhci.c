@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/board-tec-ng-power.c
+ * arch/arm/mach-tegra/com-tamonten-ng-power.c
  *
  * Copyright (C) 2011-2012, NVIDIA Corporation
  * Copyright (C) 2013, Avionic Design GmbH
@@ -26,9 +26,8 @@
 #include <mach/iomap.h>
 #include <mach/sdhci.h>
 
-#include "board-tec-ng.h"
+#include "com-tamonten.h"
 #include "board.h"
-#include "gpio-names.h"
 
 static struct resource sdhci_resource0[] = {
 	{
@@ -69,8 +68,8 @@ static struct tegra_sdhci_platform_data tegra_sdhci_platform_data0 = {
 };
 
 static struct tegra_sdhci_platform_data tegra_sdhci_platform_data1 = {
-	.cd_gpio = TEC_NG_SD_CD,
-	.wp_gpio = TEC_NG_SD_WP,
+	.cd_gpio = COM_GPIO_SD_CD,
+	.wp_gpio = COM_GPIO_SD_WP,
 	.power_gpio = -1,
 	.tap_delay = 0x0f,
 	.ddr_clk_limit = 41000000,
@@ -96,7 +95,7 @@ static struct platform_device tegra_sdhci_device1 = {
 	},
 };
 
-int __init tec_ng_sdhci_init(void)
+int __init tamonten_ng_sdhci_init(void)
 {
 	int ret = 0;
 
