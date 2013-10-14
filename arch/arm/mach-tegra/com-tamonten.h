@@ -24,6 +24,15 @@ struct meminfo;
 struct tegra_dc_platform_data;
 struct device;
 
+/* The I2C buses */
+/* Note: DDC and GEN2 must follow each other because they are handled
+ * by the same controller on T20 */
+#define COM_I2C_BUS_GEN1		0
+#define COM_I2C_BUS_DDC			1
+#define COM_I2C_BUS_GEN2		2
+#define COM_I2C_BUS_CAM			3
+#define COM_I2C_BUS_PWR			4
+
 #define TAMONTEN_GPIO_TPS6586X(_x_)	(TEGRA_NR_GPIOS + (_x_))
 #define TAMONTEN_GPIO_LAST		TAMONTEN_GPIO_TPS6586X(4)
 

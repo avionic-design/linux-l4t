@@ -151,7 +151,7 @@ static struct platform_device tegra_nand_device = {
 };
 
 static struct tegra_i2c_platform_data tamonten_i2c1_platform_data = {
-	.adapter_nr = 0,
+	.adapter_nr = COM_I2C_BUS_GEN1,
 	.bus_count = 1,
 	/* On plutux .bus_clk_rate = { 400000, 0 } but why this is
 	   different doesn't show in the history. */
@@ -169,7 +169,7 @@ static const struct tegra_pingroup_config i2c2_gen2 = {
 };
 
 static struct tegra_i2c_platform_data tamonten_i2c2_platform_data = {
-	.adapter_nr = 1,
+	.adapter_nr = COM_I2C_BUS_DDC,
 	.bus_count = 2,
 	.bus_clk_rate = { 100000, 100000 },
 	.bus_mux = { &i2c2_ddc, &i2c2_gen2 },
@@ -177,13 +177,13 @@ static struct tegra_i2c_platform_data tamonten_i2c2_platform_data = {
 };
 
 static struct tegra_i2c_platform_data tamonten_i2c3_platform_data = {
-	.adapter_nr = 3,
+	.adapter_nr = COM_I2C_BUS_CAM,
 	.bus_count = 1,
 	.bus_clk_rate = { 400000, 0 },
 };
 
 static struct tegra_i2c_platform_data tamonten_dvc_platform_data = {
-	.adapter_nr = 4,
+	.adapter_nr = COM_I2C_BUS_PWR,
 	.bus_count = 1,
 	.bus_clk_rate = { 400000, 0 },
 	.is_dvc = true,

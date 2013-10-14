@@ -149,7 +149,8 @@ static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
 
 static void __init medcom_wide_i2c_init(void)
 {
-	i2c_register_board_info(0, medcom_wide_i2c0_board_info,
+	i2c_register_board_info(COM_I2C_BUS_GEN1,
+				medcom_wide_i2c0_board_info,
 				ARRAY_SIZE(medcom_wide_i2c0_board_info));
 }
 

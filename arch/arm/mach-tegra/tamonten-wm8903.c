@@ -79,6 +79,7 @@ static struct i2c_board_info __initdata wm8903_board_info = {
 
 void __init tamonten_wm8903_init(void)
 {
-	i2c_register_board_info(0, &wm8903_board_info, 1);
+	i2c_register_board_info(COM_I2C_BUS_GEN1,
+				&wm8903_board_info, 1);
 	platform_device_register(&tamonten_audio_device);
 }
