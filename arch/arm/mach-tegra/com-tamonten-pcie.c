@@ -37,38 +37,10 @@ static struct tegra_pci_platform_data tamonten_pci_platform_data = {
 
 int __init tamonten_pcie_init(void)
 {
-	struct regulator *regulator = NULL;
-	int err;
-
-	err = gpio_request(TPS_GPIO_EN_1V05, "EN_VDD_1V05");
-	if (err) {
-		pr_err("pcie: Failed to request GPIO TPS_GPIO_EN_1V05\n");
-		return err;
-	}
-
-	gpio_direction_output(TPS_GPIO_EN_1V05, 1);
-
-	regulator = regulator_get(NULL, "pex_clk");
-	if (IS_ERR_OR_NULL(regulator)) {
-		pr_err("pcie: Failed to get regultor pex_clk\n");
-		goto err_reg;
-	}
-
-	regulator_enable(regulator);
-
-	tegra_pinmux_set_tristate(TEGRA_PINGROUP_GPV, TEGRA_TRI_NORMAL);
-	tegra_pinmux_set_tristate(TEGRA_PINGROUP_SLXA, TEGRA_TRI_NORMAL);
-	tegra_pinmux_set_tristate(TEGRA_PINGROUP_SLXK, TEGRA_TRI_NORMAL);
-
 	tegra_pci_device.dev.platform_data = &tamonten_pci_platform_data;
 	platform_device_register(&tegra_pci_device);
 
 	return 0;
-
-err_reg:
-	gpio_free(TPS_GPIO_EN_1V05);
-
-	return err;
 }
 
 #else
