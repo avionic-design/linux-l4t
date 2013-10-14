@@ -24,7 +24,11 @@
 #include "devices.h"
 #include "board.h"
 #include "com-tamonten.h"
+#if defined(CONFIG_ARCH_TEGRA_2x_SOC)
 #include "tegra2_host1x_devices.h"
+#elif defined(CONFIG_ARCH_TEGRA_3x_SOC)
+#include "tegra3_host1x_devices.h"
+#endif
 
 #if defined(CONFIG_TEGRA_NVMAP)
 static struct nvmap_platform_carveout tamonten_carveouts[] = {
@@ -68,9 +72,15 @@ int __init tamonten_display_init(struct tegra_dc_platform_data *disp1_pdata,
 #endif
 
 #ifdef CONFIG_TEGRA_GRHOST
+#if defined(CONFIG_ARCH_TEGRA_2x_SOC)
 	err = tegra2_register_host1x_devices();
 	if (err)
 		return err;
+#elif defined(CONFIG_ARCH_TEGRA_3x_SOC)
+	err = tegra3_register_host1x_devices();
+	if (err)
+		return err;
+#endif
 #endif
 
 	err = platform_add_devices(tamonten_gfx_devices,
