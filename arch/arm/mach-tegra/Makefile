@@ -231,8 +231,8 @@ obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten.o
 obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-pinmux.o
 obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-power.o
 obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-pcie.o
-obj-$(CONFIG_COM_TAMONTEN)              += com-tamonten-display.o
 
+obj-$(CONFIG_COM_TAMONTEN_DISPLAY)      += com-tamonten-display.o
 obj-$(CONFIG_COM_TAMONTEN_LVDS)         += com-tamonten-lvds.o
 obj-$(CONFIG_COM_TAMONTEN_HDMI)         += com-tamonten-hdmi.o
 

@@ -234,17 +234,18 @@ config COM_TAMONTEN
 	select MFD_TPS6586X
 	select REGULATOR_TPS6586X
 
-config COM_TAMONTEN_LVDS
-	bool "LVDS support on Tamonten"
-	depends on COM_TAMONTEN
+config COM_TAMONTEN_DISPLAY
+	bool "Display support on Tamonten"
 	select TEGRA_GRHOST
 	select TEGRA_DC
 
+config COM_TAMONTEN_LVDS
+	bool "LVDS support on Tamonten"
+	select COM_TAMONTEN_DISPLAY
+
 config COM_TAMONTEN_HDMI
 	bool "HDMI support on Tamonten"
-	depends on COM_TAMONTEN
-	select TEGRA_GRHOST
-	select TEGRA_DC
+	select COM_TAMONTEN_DISPLAY
 
 config TAMONTEN_WM8903
 	bool

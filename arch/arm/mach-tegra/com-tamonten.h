@@ -18,6 +18,8 @@
 #ifndef _MACH_TEGRA_COM_TAMONTEN_H
 #define _MACH_TEGRA_COM_TAMONTEN_H
 
+#include "com-tamonten-display.h"
+
 struct machine_desc;
 struct tag;
 struct meminfo;
@@ -84,15 +86,6 @@ void tamonten_pinmux_init(void);
 int tamonten_regulator_init(void);
 int tamonten_suspend_init(void);
 int tamonten_pcie_init(void);
-
-void tamonten_hdmi_init(void);
-extern struct tegra_dc_platform_data tamonten_hdmi_disp_pdata;
-
-void tamonten_lvds_init(struct device *fb_device);
-extern struct tegra_dc_platform_data tamonten_lvds_disp_pdata;
-
-int tamonten_display_init(struct tegra_dc_platform_data *disp1_pdata,
-			  struct tegra_dc_platform_data *disp2_pdata);
 
 void tamonten_fixup(struct machine_desc *desc,
 		    struct tag *tags, char **cmdline,
