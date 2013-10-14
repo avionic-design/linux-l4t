@@ -27,7 +27,6 @@
 
 #include "board.h"
 #include "board-plutux.h"
-#include "gpio-names.h"
 
 static void __init plutux_init(void)
 {

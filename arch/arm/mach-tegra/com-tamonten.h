@@ -18,6 +18,8 @@
 #ifndef _MACH_TEGRA_COM_TAMONTEN_H
 #define _MACH_TEGRA_COM_TAMONTEN_H
 
+#include <mach/gpio.h>
+#include "gpio-names.h"
 #include "com-tamonten-display.h"
 
 struct machine_desc;

@@ -20,7 +20,6 @@
 #include <linux/init.h>
 #include <mach/pinmux.h>
 
-#include "gpio-names.h"
 #include "com-tamonten.h"
 
 #define DEFAULT_DRIVE(_name)					\

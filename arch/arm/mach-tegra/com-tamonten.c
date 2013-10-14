@@ -51,7 +51,6 @@
 #include "com-tamonten.h"
 #include "clock.h"
 #include "devices.h"
-#include "gpio-names.h"
 #include "pm.h"
 
 #define TAMONTEN_GPIO_TEMP_ALERT	TEGRA_GPIO_PN6

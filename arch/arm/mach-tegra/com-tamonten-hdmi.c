@@ -25,7 +25,6 @@
 #include <mach/fb.h>
 
 #include "devices.h"
-#include "gpio-names.h"
 #include "board.h"
 #include "com-tamonten.h"
 

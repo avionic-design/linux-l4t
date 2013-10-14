@@ -25,7 +25,6 @@
 #include <mach/dc.h>
 
 #include "devices.h"
-#include "gpio-names.h"
 #include "com-tamonten.h"
 
 /* panel power on sequence timing */

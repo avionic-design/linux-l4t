@@ -38,7 +38,6 @@
 #include "devices.h"
 #include "board.h"
 #include "board-medcom-wide.h"
-#include "gpio-names.h"
 
 static struct adnp_platform_data medcom_adnp_pdata = {
 	.gpio_base = ADNP_GPIO(0),
