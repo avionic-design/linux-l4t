@@ -323,6 +323,8 @@ static __initdata struct tegra_pingroup_config tamonten_ng_pinmux_common[] = {
 	DEFAULT_PINMUX(LCD_D22,         DISPLAYA,        NORMAL,    NORMAL,     INPUT),
 	DEFAULT_PINMUX(LCD_D23,         DISPLAYA,        NORMAL,    NORMAL,     INPUT),
 
+	/* LCD Backlight */
+	DEFAULT_PINMUX(GMI_AD8,         PWM,             NORMAL,    NORMAL,     OUTPUT),
 
 	/* USB are always running on their SFIO */
 
@@ -357,7 +359,6 @@ static __initdata struct tegra_pingroup_config tamonten_ng_unused_pins_lowpower[
 static struct gpio_init_pin_info init_gpio_mode_tamonten_ng[] = {
 
 	/* NAND GMI recycle - p9 */
-	GPIO_INIT_PIN_MODE(TEGRA_GPIO_PH0, false, 0), /* LCD_BL_PWM */
 	GPIO_INIT_PIN_MODE(TEGRA_GPIO_PH1, false, 0), /* PWM_3D */
 	GPIO_INIT_PIN_MODE(TEGRA_GPIO_PH2, false, 0), /* LCD1_BL_EN */
 	GPIO_INIT_PIN_MODE(TEGRA_GPIO_PH3, false, 0), /* EN_3V3_FUSE */
