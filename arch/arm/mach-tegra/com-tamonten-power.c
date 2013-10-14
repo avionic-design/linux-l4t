@@ -254,10 +254,10 @@ static struct tps6586x_subdev_info tps_devs[] = {
 };
 
 static struct tps6586x_platform_data tps_platform = {
-	.irq_base = TEGRA_NR_IRQS,
+	.irq_base = TAMONTEN_PMU_IRQ(0),
 	.num_subdevs = ARRAY_SIZE(tps_devs),
 	.subdevs = tps_devs,
-	.gpio_base = TAMONTEN_GPIO_TPS6586X(0),
+	.gpio_base = TAMONTEN_PMU_GPIO(0),
 	.use_power_off = true,
 };
 
