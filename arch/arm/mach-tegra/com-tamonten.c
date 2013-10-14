@@ -386,7 +386,7 @@ static __initdata struct tegra_clk_init_table tamonten_clk_init_table[] = {
 static struct tegra_sdhci_platform_data sdhci_pdata4 = {
 	.cd_gpio = COM_GPIO_SD_CD,
 	.wp_gpio = COM_GPIO_SD_WP,
-	.power_gpio = COM_GPIO_SD_POWER,
+	.power_gpio = -1,
 	.is_8bit = 1,
 };
 

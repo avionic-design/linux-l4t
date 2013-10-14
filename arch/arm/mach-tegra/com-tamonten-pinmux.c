@@ -161,7 +161,6 @@ static struct tegra_pingroup_config tamonten_pinmux[] __initdata = {
 static struct tegra_gpio_table gpio_table[] = {
 	{ .gpio = COM_GPIO_SD_CD,		.enable = true },
 	{ .gpio = COM_GPIO_SD_WP,		.enable = true },
-	{ .gpio = COM_GPIO_SD_POWER,		.enable = true },
 	{ .gpio = COM_GPIO_CDC_IRQ,		.enable = true },
 	{ .gpio = COM_GPIO_HP_DET,		.enable = true },
 	{ .gpio = COM_GPIO_EXT_MIC_EN,		.enable = true },
