@@ -71,7 +71,7 @@ static int tamonten_backlight_check_fb(struct device *dev, struct fb_info *info)
 }
 
 static struct platform_pwm_backlight_data tamonten_backlight_data = {
-	.pwm_id = 0,
+	.pwm_id = COM_PWM_BACKLIGHT,
 	.max_brightness = 255,
 	.dft_brightness = 224,
 	.pwm_period_ns = 5000000,

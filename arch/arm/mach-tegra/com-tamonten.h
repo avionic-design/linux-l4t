@@ -38,6 +38,8 @@ struct device;
 
 #define COM_GPIO_TO_IRQ(_x_)		TEGRA_GPIO_TO_IRQ(_x_)
 
+#define COM_PWM_BACKLIGHT		0
+
 #define COM_GPIO_0			TEGRA_GPIO_PU0
 #define COM_GPIO_1			TEGRA_GPIO_PU1
 
