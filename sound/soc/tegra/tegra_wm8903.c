@@ -79,6 +79,37 @@ struct tegra_wm8903 {
 	enum snd_soc_bias_level bias_level;
 };
 
+#if defined(CONFIG_COM_TAMONTEN_NG)
+#define WM8903_CPU_DAI_NAME	"tegra30-i2s.1"
+#define SPDIF_CPU_DAI_NAME	"tegra30-spdif"
+#else
+#define WM8903_CPU_DAI_NAME	"tegra20-i2s.0"
+#define SPDIF_CPU_DAI_NAME	"tegra20-spdif"
+#define BT_CPU_DAI_NAME		"tegra20-i2s.1"
+#endif
+
+#ifdef WM8903_CPU_DAI_NAME
+#ifndef WM8903_CODEC_NAME
+#define WM8903_CODEC_NAME	"wm8903.0-001a"
+#endif
+#define WITH_WM8903		1
+#endif
+
+#ifdef SPDIF_CPU_DAI_NAME
+#ifndef SPDIF_CODEC_NAME
+#define SPDIF_CODEC_NAME	"spdif-dit.0"
+#endif
+#define WITH_SPDIF		1
+#endif
+
+#ifdef BT_CPU_DAI_NAME
+#ifndef BT_CODEC_NAME
+#define BT_CODEC_NAME		"spdif-dit.1"
+#endif
+#define WITH_BT			1
+#endif
+
+#ifdef WITH_WM8903
 static int tegra_wm8903_hw_params(struct snd_pcm_substream *substream,
 					struct snd_pcm_hw_params *params)
 {
@@ -197,7 +228,9 @@ static int tegra_wm8903_hw_params(struct snd_pcm_substream *substream,
 #endif
 	return 0;
 }
+#endif
 
+#ifdef WITH_BT
 static int tegra_bt_sco_hw_params(struct snd_pcm_substream *substream,
 					struct snd_pcm_hw_params *params)
 {
@@ -289,7 +322,9 @@ static int tegra_bt_sco_hw_params(struct snd_pcm_substream *substream,
 #endif
 	return 0;
 }
+#endif
 
+#ifdef WITH_SPDIF
 static int tegra_spdif_hw_params(struct snd_pcm_substream *substream,
 					struct snd_pcm_hw_params *params)
 {
@@ -334,6 +369,7 @@ static int tegra_spdif_hw_params(struct snd_pcm_substream *substream,
 
 	return 0;
 }
+#endif
 
 static int tegra_hw_free(struct snd_pcm_substream *substream)
 {
@@ -345,20 +381,26 @@ static int tegra_hw_free(struct snd_pcm_substream *substream)
 	return 0;
 }
 
+#ifdef WITH_WM8903
 static struct snd_soc_ops tegra_wm8903_ops = {
 	.hw_params = tegra_wm8903_hw_params,
 	.hw_free = tegra_hw_free,
 };
+#endif
 
+#ifdef WITH_BT
 static struct snd_soc_ops tegra_wm8903_bt_sco_ops = {
 	.hw_params = tegra_bt_sco_hw_params,
 	.hw_free = tegra_hw_free,
 };
+#endif
 
+#ifdef WITH_SPDIF
 static struct snd_soc_ops tegra_spdif_ops = {
 	.hw_params = tegra_spdif_hw_params,
 	.hw_free = tegra_hw_free,
 };
+#endif
 
 static struct snd_soc_jack tegra_wm8903_hp_jack;
 static struct snd_soc_jack tegra_wm8903_mic_jack;
@@ -864,34 +906,40 @@ static int tegra30_soc_set_bias_level_post(struct snd_soc_card *card,
 #endif
 
 static struct snd_soc_dai_link tegra_wm8903_dai[] = {
+#ifdef WITH_WM8903
 	{
 		.name = "WM8903",
 		.stream_name = "WM8903 PCM",
-		.codec_name = "wm8903.0-001a",
+		.codec_name = WM8903_CODEC_NAME,
 		.platform_name = "tegra-pcm-audio",
-		.cpu_dai_name = "tegra20-i2s.0",
+		.cpu_dai_name = WM8903_CPU_DAI_NAME,
 		.codec_dai_name = "wm8903-hifi",
 		.init = tegra_wm8903_init,
 		.ops = &tegra_wm8903_ops,
 	},
+#endif
+#ifdef WITH_SPDIF
 	{
 		.name = "SPDIF",
 		.stream_name = "SPDIF PCM",
-		.codec_name = "spdif-dit.0",
+		.codec_name = SPDIF_CODEC_NAME,
 		.platform_name = "tegra-pcm-audio",
-		.cpu_dai_name = "tegra20-spdif",
+		.cpu_dai_name = SPDIF_CPU_DAI_NAME,
 		.codec_dai_name = "dit-hifi",
 		.ops = &tegra_spdif_ops,
 	},
+#endif
+#ifdef WITH_BT
 	{
 		.name = "BT-SCO",
 		.stream_name = "BT SCO PCM",
-		.codec_name = "spdif-dit.1",
+		.codec_name = BT_CODEC_NAME,
 		.platform_name = "tegra-pcm-audio",
-		.cpu_dai_name = "tegra20-i2s.1",
+		.cpu_dai_name = BT_CPU_DAI_NAME,
 		.codec_dai_name = "dit-hifi",
 		.ops = &tegra_wm8903_bt_sco_ops,
 	},
+#endif
 };
 
 static int tegra_wm8903_suspend_post(struct snd_soc_card *card)
@@ -978,14 +1026,6 @@ static __devinit int tegra_wm8903_driver_probe(struct platform_device *pdev)
 		tegra_wm8903_dai[1].cpu_dai_name = "tegra30-spdif";
 
 		tegra_wm8903_dai[2].cpu_dai_name = "tegra30-i2s.3";
-	}
-
-	if (machine_is_tec_ng()) {
-		tegra_wm8903_dai[0].codec_name = "wm8903.0-001a",
-		tegra_wm8903_dai[0].cpu_dai_name = "tegra30-i2s.1";
-		tegra_wm8903_dai[1].cpu_dai_name = "tegra30-spdif";
-		/* we use the first 2 links only */
-		card->num_links = 2;
 	}
 
 #ifdef CONFIG_SWITCH
