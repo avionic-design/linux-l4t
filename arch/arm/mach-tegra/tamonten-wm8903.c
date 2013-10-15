@@ -69,7 +69,7 @@ static struct wm8903_platform_data tamonten_wm8903_pdata = {
 static struct i2c_board_info __initdata wm8903_board_info = {
 	I2C_BOARD_INFO("wm8903", 0x1a),
 	.platform_data = &tamonten_wm8903_pdata,
-	.irq = TEGRA_GPIO_TO_IRQ(COM_GPIO_CDC_IRQ),
+	.irq = COM_GPIO_TO_IRQ(COM_GPIO_CDC_IRQ),
 };
 
 void __init tamonten_wm8903_init(void)
