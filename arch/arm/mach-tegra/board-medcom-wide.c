@@ -226,6 +226,11 @@ static void __init medcom_wide_init(void)
 	medcom_wide_panel_init();
 }
 
+static const char *medcom_wide_dt_board_compat[] = {
+	"avionic-design,medcom-wide",
+	NULL
+};
+
 MACHINE_START(MEDCOM_WIDE, "medcom-wide")
 	.boot_params    = TAMONTEN_BOOT_PARAMS,
 	.fixup          = tamonten_fixup,
@@ -235,4 +240,5 @@ MACHINE_START(MEDCOM_WIDE, "medcom-wide")
 	.init_irq       = tegra_init_irq,
 	.timer          = &tegra_timer,
 	.init_machine   = medcom_wide_init,
+	.dt_compat      = medcom_wide_dt_board_compat,
 MACHINE_END

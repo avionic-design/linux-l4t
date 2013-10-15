@@ -36,6 +36,11 @@ static void __init plutux_init(void)
 	plutux_hdmi_init();
 }
 
+static const char *plutux_dt_board_compat[] = {
+	"avionic-design,plutux",
+	NULL
+};
+
 MACHINE_START(PLUTUX, "plutux")
 	.boot_params    = TAMONTEN_BOOT_PARAMS,
 	.fixup          = tamonten_fixup,
@@ -45,4 +50,5 @@ MACHINE_START(PLUTUX, "plutux")
 	.init_irq       = tegra_init_irq,
 	.timer          = &tegra_timer,
 	.init_machine   = plutux_init,
+	.dt_compat      = plutux_dt_board_compat,
 MACHINE_END
