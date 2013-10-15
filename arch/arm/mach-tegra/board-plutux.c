@@ -37,7 +37,7 @@ static void __init plutux_init(void)
 }
 
 MACHINE_START(PLUTUX, "plutux")
-	.boot_params    = 0x00000100,
+	.boot_params    = TAMONTEN_BOOT_PARAMS,
 	.fixup          = tamonten_fixup,
 	.map_io         = tegra_map_common_io,
 	.reserve        = tamonten_reserve,
