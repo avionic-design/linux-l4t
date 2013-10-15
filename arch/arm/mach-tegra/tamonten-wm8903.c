@@ -41,11 +41,6 @@ static struct tegra_asoc_platform_data tamonten_audio_pdata = {
 	.i2s_param[BASEBAND] = {
 		.audio_port_id = -1,
 	},
-	.i2s_param[BT_SCO] = {
-		.audio_port_id = 3,
-		.is_i2s_master = 1,
-		.i2s_mode = TEGRA_DAIFMT_DSP_A,
-	},
 };
 
 static struct platform_device tamonten_audio_device = {

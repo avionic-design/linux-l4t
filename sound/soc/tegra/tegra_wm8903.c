@@ -82,6 +82,9 @@ struct tegra_wm8903 {
 #if defined(CONFIG_COM_TAMONTEN_NG)
 #define WM8903_CPU_DAI_NAME	"tegra30-i2s.1"
 #define SPDIF_CPU_DAI_NAME	"tegra30-spdif"
+#elif defined(CONFIG_COM_TAMONTEN)
+#define WM8903_CPU_DAI_NAME	"tegra20-i2s.0"
+#define SPDIF_CPU_DAI_NAME	"tegra20-spdif"
 #else
 #define WM8903_CPU_DAI_NAME	"tegra20-i2s.0"
 #define SPDIF_CPU_DAI_NAME	"tegra20-spdif"
