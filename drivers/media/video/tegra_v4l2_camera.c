@@ -646,7 +646,7 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_DATA_INPUT_CONTROL, 0x000003fc);
 	TC_VI_REG_WT(pcdev, TEGRA_VI_PIN_INVERSION, 0x00000000);
 
-	TC_VI_REG_WT(pcdev, TEGRA_VI_CONT_SYNCPT_VIP_VSYNC,
+	TC_VI_REG_WT(pcdev, TEGRA_VI_CONT_SYNCPT_OUT_1,
 		(0x1 << 8) | /* Enable continuous syncpt */
 		TEGRA_VI_SYNCPT_VI);
 
