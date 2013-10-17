@@ -284,6 +284,7 @@ struct tegra_camera_dev {
 	struct vb2_buffer		*active;
 	struct vb2_alloc_ctx		*alloc_ctx;
 	enum v4l2_field			field;
+	enum v4l2_field			next_field;
 	int				sequence;
 	enum v4l2_mbus_type		mbus_type;
 	unsigned long			mbus_flags;
@@ -619,7 +620,7 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 					     int yuv_input_format)
 {
 	int bt656 = (pcdev->mbus_type == V4L2_MBUS_BT656);
-	int field_detect = (pcdev->field == V4L2_FIELD_ALTERNATE);
+	int field_detect = (pcdev->field != V4L2_FIELD_NONE);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_CORE_CONTROL, 0x00000000);
 
@@ -664,7 +665,10 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 	int yuv_output_format = 0x0;
 	int output_format = 0x3; /* Default to YUV422 */
 	int port = pcdev->pdata->port;
-	int stride_l = pix_bytes_per_line(icd->user_width, output_fourcc);
+	int interlaced = (pcdev->field != V4L2_FIELD_NONE);
+	int height = icd->user_height >> interlaced;
+	int width  = icd->user_width  << interlaced;
+	int stride_l = pix_bytes_per_line(width, output_fourcc);
 	int stride_c = (output_fourcc == V4L2_PIX_FMT_YUV420 ||
 			output_fourcc == V4L2_PIX_FMT_YVU420);
 
@@ -739,7 +743,7 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 	 * bits 15:0 are the number of pixels per line.
 	 */
 	TC_VI_REG_WT(pcdev, TEGRA_VI_FIRST_OUTPUT_FRAME_SIZE,
-		(icd->user_height << 16) | icd->user_width);
+		(height << 16) | icd->user_width);
 
 	/* First output memory enabled */
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_ENABLE, 0x00000000);
@@ -749,7 +753,7 @@ static void tegra_camera_capture_setup(struct tegra_camera_dev *pcdev)
 
 	/* Set up buffer frame size. */
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_SIZE_FIRST,
-		(icd->user_height << 16) | icd->user_width);
+		(height << 16) | width);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_BUFFER_STRIDE_FIRST,
 		(stride_c << 30) | stride_l);
@@ -762,32 +766,45 @@ static int tegra_camera_capture_start(struct tegra_camera_dev *pcdev,
 {
 	struct soc_camera_device *icd = pcdev->icd;
 	int port = pcdev->pdata->port;
+	int offset = 0;
 	int err;
 
 	pcdev->syncpt_csi++;
 	pcdev->syncpt_vi++;
 
+	/* When capturing interlaced we need to shift one field of one line.
+	 * However because the vertical blanking is one line longer between
+	 * the top and bottom field, the bottom field effectively start with
+	 * line -1. This force us to put the top field after the bottom one.
+	 */
+	if (pcdev->next_field == V4L2_FIELD_TOP) {
+		offset = pix_bytes_per_line(
+			icd->user_width,
+			icd->current_fmt->host_fmt->fourcc);
+	}
+
 	switch (icd->current_fmt->host_fmt->fourcc) {
 	case V4L2_PIX_FMT_YUV420:
 	case V4L2_PIX_FMT_YVU420:
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_BASE_ADDRESS_U,
-			     buf->buffer_addr_u);
+			     buf->buffer_addr_u + offset / 2);
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_START_ADDRESS_U,
-			     buf->start_addr_u);
+			     buf->start_addr_u + offset / 2);
 
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_BASE_ADDRESS_V,
-			     buf->buffer_addr_v);
+			     buf->buffer_addr_v + offset / 2);
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_START_ADDRESS_V,
-			     buf->start_addr_v);
+			     buf->start_addr_v + offset / 2);
+
 
 	case V4L2_PIX_FMT_UYVY:
 	case V4L2_PIX_FMT_VYUY:
 	case V4L2_PIX_FMT_YUYV:
 	case V4L2_PIX_FMT_YVYU:
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_BASE_ADDRESS_FIRST,
-			     buf->buffer_addr);
+			     buf->buffer_addr + offset);
 		TC_VI_REG_WT(pcdev, TEGRA_VI_VB0_START_ADDRESS_FIRST,
-			     buf->start_addr);
+			     buf->start_addr + offset);
 
 		break;
 
@@ -966,12 +983,51 @@ static int tegra_camera_capture_frame(struct tegra_camera_dev *pcdev)
 					     0x00000005);
 			}
 
+			/* Resync the fields */
+			pcdev->next_field = V4L2_FIELD_NONE;
 
 			tegra_camera_incr_syncpts(pcdev);
 			tegra_camera_save_syncpts(pcdev);
 
 			continue;
 		}
+
+		/* Handle interlaced content */
+		if (pcdev->field != V4L2_FIELD_NONE) {
+			u32 status = TC_VI_REG_RD(
+				pcdev, TEGRA_VI_INTERRUPT_STATUS);
+			enum v4l2_field field = (status & BIT(20)) ?
+				V4L2_FIELD_TOP : V4L2_FIELD_BOTTOM;
+			/* Sync on the next top field */
+			if (pcdev->next_field == V4L2_FIELD_NONE) {
+				if (field != V4L2_FIELD_TOP) {
+					dev_warn(pcdev->icd->parent,
+						"Waiting for next top field!\n");
+					retry--;
+					continue;
+				}
+				pcdev->next_field = V4L2_FIELD_TOP;
+			}
+			/* Check that we didn't loose sync */
+			if (field != pcdev->next_field) {
+				dev_warn(pcdev->icd->parent,
+					"Lost field sync!\n");
+				pcdev->next_field = V4L2_FIELD_NONE;
+				retry--;
+				continue;
+			}
+			/* Get the bottom field after the top one */
+			if (field == V4L2_FIELD_TOP) {
+				pcdev->next_field = V4L2_FIELD_BOTTOM;
+				continue;
+			}
+			pcdev->next_field = V4L2_FIELD_TOP;
+			vb->v4l2_buf.field = V4L2_FIELD_INTERLACED;
+		} else
+			vb->v4l2_buf.field = V4L2_FIELD_NONE;
+
+		do_gettimeofday(&vb->v4l2_buf.timestamp);
+		vb->v4l2_buf.sequence = pcdev->sequence++;
 
 		break;
 	}
@@ -991,20 +1047,7 @@ static int tegra_camera_capture_frame(struct tegra_camera_dev *pcdev)
 	else
 		pcdev->active = NULL;
 
-	do_gettimeofday(&vb->v4l2_buf.timestamp);
-	if (pcdev->field == V4L2_FIELD_ALTERNATE) {
-		u32 status = TC_VI_REG_RD(pcdev, TEGRA_VI_INTERRUPT_STATUS);
-
-		if (status & (1 << 20))
-			vb->v4l2_buf.field = V4L2_FIELD_BOTTOM;
-		else
-			vb->v4l2_buf.field = V4L2_FIELD_TOP;
-	} else
-		vb->v4l2_buf.field = pcdev->field;
-	vb->v4l2_buf.sequence = pcdev->sequence++;
-
 	vb2_buffer_done(vb, err < 0 ? VB2_BUF_STATE_ERROR : VB2_BUF_STATE_DONE);
-
 	pcdev->num_frames++;
 
 	spin_unlock_irq(&pcdev->videobuf_queue_lock);
@@ -1019,6 +1062,7 @@ static void tegra_camera_work(struct work_struct *work)
 
 	mutex_lock(&pcdev->work_mutex);
 
+	pcdev->next_field = V4L2_FIELD_NONE;
 	while (pcdev->active)
 		tegra_camera_capture_frame(pcdev);
 
@@ -1554,7 +1598,7 @@ static int tegra_camera_set_fmt(struct soc_camera_device *icd,
 	icd->user_height	= mf.height;
 	icd->current_fmt	= xlate;
 
-	pcdev->field = pix->field;
+	pcdev->field = mf.field;
 
 	dev_dbg(dev, "Finished tegra_camera_set_fmt(), returning %d\n", ret);
 
@@ -1613,6 +1657,11 @@ static int tegra_camera_try_fmt(struct soc_camera_device *icd,
 	case V4L2_FIELD_ANY:
 	case V4L2_FIELD_NONE:
 		pix->field	= V4L2_FIELD_NONE;
+		break;
+	case V4L2_FIELD_SEQ_TB:
+	case V4L2_FIELD_SEQ_BT:
+	case V4L2_FIELD_ALTERNATE:
+		pix->field	= V4L2_FIELD_INTERLACED;
 		break;
 	default:
 		/* TODO: support interlaced at least in pass-through mode */
