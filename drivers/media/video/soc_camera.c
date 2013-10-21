@@ -199,6 +199,20 @@ static int soc_camera_try_fmt_vid_cap(struct file *file, void *priv,
 static int soc_camera_enum_input(struct file *file, void *priv,
 				 struct v4l2_input *inp)
 {
+	struct soc_camera_device *icd = file->private_data;
+	struct soc_camera_link *icl = to_soc_camera_link(icd);
+
+	if (icl->inputs) {
+		u32 index = inp->index;
+
+		if (index >= icl->input_count)
+			return -EINVAL;
+
+		*inp = icl->inputs[index].input;
+		inp->index = index;
+		return 0;
+	}
+
 	if (inp->index != 0)
 		return -EINVAL;
 
@@ -212,13 +226,34 @@ static int soc_camera_enum_input(struct file *file, void *priv,
 
 static int soc_camera_g_input(struct file *file, void *priv, unsigned int *i)
 {
-	*i = 0;
+	struct soc_camera_device *icd = file->private_data;
+
+	*i = icd->input;
 
 	return 0;
 }
 
 static int soc_camera_s_input(struct file *file, void *priv, unsigned int i)
 {
+	struct soc_camera_device *icd = file->private_data;
+	struct soc_camera_link *icl = to_soc_camera_link(icd);
+	int err;
+
+	if (icl->inputs) {
+		struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
+		if (i > icl->input_count)
+			return -EINVAL;
+		err = v4l2_subdev_call(
+			sd, video, s_routing,
+			icl->inputs[i].sensor_input,
+			icl->inputs[i].sensor_output,
+			icl->inputs[i].sensor_config);
+		if (!err)
+			icd->input = i;
+		printk("Set camera soc input to %u = %d\n", i, err);
+		return err;
+	}
+
 	if (i > 0)
 		return -EINVAL;
 

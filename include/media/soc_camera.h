@@ -36,6 +36,7 @@ struct soc_camera_device {
 	enum v4l2_colorspace colorspace;
 	unsigned char iface;		/* Host number */
 	unsigned char devnum;		/* Device number per host */
+	unsigned int input;		/* Currently selected input */
 	struct soc_camera_sense *sense;	/* See comment in struct definition */
 	struct soc_camera_ops *ops;
 	struct video_device *vdev;
@@ -112,6 +113,15 @@ struct soc_camera_host_ops {
 struct i2c_board_info;
 struct regulator_bulk_data;
 
+struct soc_camera_input {
+	/* Input to report */
+	struct v4l2_input input;
+	/* Routing config needed on the sensor */
+	int sensor_input;
+	int sensor_output;
+	int sensor_config;
+};
+
 struct soc_camera_link {
 	/* Camera bus id, used to match a camera and a bus */
 	int bus_id;
@@ -143,6 +153,9 @@ struct soc_camera_link {
 	int (*set_bus_param)(struct soc_camera_link *, unsigned long flags);
 	unsigned long (*query_bus_param)(struct soc_camera_link *);
 	void (*free_bus)(struct soc_camera_link *);
+
+	struct soc_camera_input *inputs;
+	unsigned int input_count;
 };
 
 static inline struct soc_camera_host *to_soc_camera_host(
