@@ -28,6 +28,7 @@
 
 #include <media/soc_camera.h>
 #include <media/tegra_v4l2_camera.h>
+#include <media/tvp5150.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -165,10 +166,31 @@ static struct i2c_board_info medcom_wide_camera_bus_board_info[] = {
 	},
 };
 
+static struct soc_camera_input medcom_wide_camera_inputs[] = {
+	{
+		.input = {
+			.name = "Internal",
+			.type = V4L2_INPUT_TYPE_CAMERA,
+		},
+		.sensor_input = TVP5150_COMPOSITE1,
+		.sensor_output = TVP5150_NORMAL,
+	},
+	{
+		.input = {
+			.name = "External",
+			.type = V4L2_INPUT_TYPE_CAMERA,
+		},
+		.sensor_input = TVP5150_COMPOSITE0,
+		.sensor_output = TVP5150_NORMAL,
+	},
+};
+
 static struct soc_camera_link medcom_wide_camera_iclink = {
 	.bus_id = -1,
 	.i2c_adapter_id = 0,
 	.board_info = medcom_wide_camera_bus_board_info,
+	.inputs = medcom_wide_camera_inputs,
+	.input_count = ARRAY_SIZE(medcom_wide_camera_inputs),
 };
 
 static struct platform_device medcom_wide_soc_camera = {
