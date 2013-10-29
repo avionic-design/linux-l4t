@@ -614,6 +614,88 @@ config HID_ZYDACRON
 	---help---
 	Support for Zydacron remote control.
 
+config EGALAX_HACK
+	bool "Use egalax hack"
+	depends on USB_HID
+	---help---
+	Hack for the problems with the egalax multitouch devices
+	(Device IDs 0x73F7 and 0x7201)
+
+menu "Options for egalax hack"
+	depends on EGALAX_HACK
+
+config EGALAX_HACK_EVENT_MAX_TRIGGER
+	int "Max trigger"
+	depends on EGALAX_HACK
+	default 40
+	---help---
+	Maximum trigger rate for events if only the coordinate has changed (ms).
+
+config EGALAX_HACK_PRINT_EVENTS
+	bool "Print events"
+	depends on EGALAX_HACK
+	default n
+	---help---
+	Print all touch events.
+
+config EGALAX_HACK_FRAME_FILTER
+	bool "Frame filter"
+	depends on EGALAX_HACK
+	default y
+	---help---
+	Filter all events outside of defined frame.
+
+config EGALAX_HACK_FRAME_MIN_X
+	int "Frame min X"
+	depends on EGALAX_HACK
+	default 768
+	---help---
+	Filter frame min x value.
+
+config EGALAX_HACK_FRAME_MAX_X
+	int "Frame max X"
+	depends on EGALAX_HACK
+	default 32000
+	---help---
+	Filter frame max x value.
+
+config EGALAX_HACK_FRAME_MIN_Y
+	int "Frame min Y"
+	depends on EGALAX_HACK
+	default 304
+	---help---
+	Filter frame min y value.
+
+config EGALAX_HACK_FRAME_MAX_Y
+	int "Frame max Y"
+	depends on EGALAX_HACK
+	default 31488
+	---help---
+	Filter frame max y value.
+
+config EGALAX_HACK_FAIL_MIN_COUNT
+	int "Frame min count"
+	depends on EGALAX_HACK
+	default 2000
+	---help---
+	Minimum number of fail events before fail state is assumed.
+
+config EGALAX_HACK_FAIL_TIMEOUT
+	int "Fail count"
+	depends on EGALAX_HACK
+	default 20000
+	---help---
+	Timeout for collecting fail events before fail state is assumed (ms)
+
+config EGALAX_HACK_MAX_SLOTS
+	int "Max slots"
+	depends on EGALAX_HACK
+	default 2
+	---help---
+	Number of simultan touch events
+
+endmenu
+
 endmenu
 
 endif # HID_SUPPORT
