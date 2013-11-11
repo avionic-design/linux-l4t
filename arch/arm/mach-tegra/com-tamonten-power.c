@@ -101,7 +101,7 @@ static struct regulator_consumer_supply vdd_1v5_consumer_supply[] = {
 
 static struct regulator_init_data vdd_1v5_initdata = {
 	.consumer_supplies = vdd_1v5_consumer_supply,
-	.num_consumer_supplies = 1,
+	.num_consumer_supplies = ARRAY_SIZE(vdd_1v5_consumer_supply),
 	.constraints = {
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.always_on = 0,
@@ -125,7 +125,7 @@ static struct regulator_consumer_supply vdd_1v2_consumer_supply[] = {
 
 static struct regulator_init_data vdd_1v2_initdata = {
 	.consumer_supplies = vdd_1v2_consumer_supply,
-	.num_consumer_supplies = 1,
+	.num_consumer_supplies = ARRAY_SIZE(vdd_1v2_consumer_supply),
 	.constraints = {
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.always_on = 1,
@@ -149,7 +149,7 @@ static struct regulator_consumer_supply vdd_1v05_consumer_supply[] = {
 
 static struct regulator_init_data vdd_1v05_initdata = {
 	.consumer_supplies = vdd_1v05_consumer_supply,
-	.num_consumer_supplies = 1,
+	.num_consumer_supplies = ARRAY_SIZE(vdd_1v05_consumer_supply),
 	.constraints = {
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.always_on = 1,
@@ -173,7 +173,7 @@ static struct regulator_consumer_supply vdd_1v05_mode_consumer_supply[] = {
 
 static struct regulator_init_data vdd_1v05_mode_initdata = {
 	.consumer_supplies = vdd_1v05_mode_consumer_supply,
-	.num_consumer_supplies = 1,
+	.num_consumer_supplies = ARRAY_SIZE(vdd_1v05_mode_consumer_supply),
 	.constraints = {
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.always_on = 1,
