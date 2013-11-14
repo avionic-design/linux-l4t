@@ -223,10 +223,13 @@ menuconfig TAMONTEN
 
 if TAMONTEN
 
+choice
+	prompt "CPU Module"
+	default COM_TAMONTEN
+
 config COM_TAMONTEN
 	bool "Tamonten COM"
-	depends on !COM_TAMONTEN_NG
-	select ARCH_TEGRA_2x_SOC
+	depends on ARCH_TEGRA_2x_SOC
 	select TEGRA_SILICON_PLATFORM
 	select I2C_TEGRA
 	select MFD_TPS6586X
@@ -234,13 +237,15 @@ config COM_TAMONTEN
 
 config COM_TAMONTEN_NG
 	bool "Tamonten NG COM"
-	select ARCH_TEGRA_3x_SOC
+	depends on ARCH_TEGRA_3x_SOC
 	select TEGRA_SILICON_PLATFORM
 	select I2C_TEGRA
 	select MFD_TPS65910
 	select REGULATOR_TPS65910
 	help
 	  Support for Avionic Design TEC NG COM module
+
+endchoice
 
 config COM_TAMONTEN_DISPLAY
 	bool "Display support on Tamonten"
