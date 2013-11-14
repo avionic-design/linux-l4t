@@ -261,7 +261,7 @@ config COM_TAMONTEN_HDMI
 	select COM_TAMONTEN_DISPLAY
 
 config TAMONTEN_WM8903
-	bool
+	bool "WM8903 support on Tamonten"
 	select MACH_HAS_SND_SOC_TEGRA_WM8903
 	select SND_SOC_TEGRA_WM8903
 	help
@@ -269,7 +269,7 @@ config TAMONTEN_WM8903
 	  boards.
 
 config TAMONTEN_TSC2007
-	bool
+	bool "TSC2007 support on Tamonten"
 	select INPUT_TOUCHSCREEN
 	select TOUCHSCREEN_TSC2007
 	help
