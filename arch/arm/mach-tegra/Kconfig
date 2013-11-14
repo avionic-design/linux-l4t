@@ -218,6 +218,11 @@ config MACH_KAI
        help
          Support for NVIDIA KAI development platform
 
+menuconfig TAMONTEN
+	bool "Avionic Design Tamonten Boards"
+
+if TAMONTEN
+
 config COM_TAMONTEN
 	bool "Tamonten COM"
 	depends on !COM_TAMONTEN_NG
@@ -293,6 +298,8 @@ config MACH_TEC_NG
 	help
 	  Support for Avionic Design Tamonten Evaluation Carrier developtment
 	  platform.
+
+endif
 
 choice
        prompt "Tegra platform type"
