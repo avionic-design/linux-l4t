@@ -266,6 +266,8 @@ config COM_TAMONTEN_UARTB
 config COM_TAMONTEN_UARTB_ID
 	int
 	depends on COM_TAMONTEN_UARTB
+	default 2 if MACH_PLUTUX
+	default 2 if MACH_TEC_NG
 	default -1
 
 config COM_TAMONTEN_UARTC
@@ -274,6 +276,9 @@ config COM_TAMONTEN_UARTC
 config COM_TAMONTEN_UARTC_ID
 	int
 	depends on COM_TAMONTEN_UARTC
+	default 1 if MACH_MEDCOM_WIDE
+	default 1 if MACH_PLUTUX
+	default 1 if MACH_TEC_NG
 	default -1
 
 config COM_TAMONTEN_LVDS
@@ -311,6 +316,7 @@ config TAMONTEN_TSC2007
 config MACH_MEDCOM_WIDE
 	bool "Medcom-Wide board"
 	depends on COM_TAMONTEN || COM_TAMONTEN_NG
+	select COM_TAMONTEN_UARTC
 	select COM_TAMONTEN_LVDS
 	select TAMONTEN_ADNP
 	select TAMONTEN_WM8903 if SND_SOC
@@ -320,6 +326,8 @@ config MACH_MEDCOM_WIDE
 config MACH_PLUTUX
 	bool "Plutux board"
 	depends on COM_TAMONTEN || COM_TAMONTEN_NG
+	select COM_TAMONTEN_UARTB
+	select COM_TAMONTEN_UARTC
 	select COM_TAMONTEN_HDMI
 	select TAMONTEN_WM8903 if SND_SOC
 	help
@@ -330,6 +338,8 @@ config MACH_PLUTUX
 config MACH_TEC_NG
 	bool "Tamonten Evaluation Carrier NG (TEC-NG) Board"
 	depends on COM_TAMONTEN || COM_TAMONTEN_NG
+	select COM_TAMONTEN_UARTB
+	select COM_TAMONTEN_UARTC
 	select COM_TAMONTEN_HDMI
 	select COM_TAMONTEN_LVDS
 	select TAMONTEN_ADNP
