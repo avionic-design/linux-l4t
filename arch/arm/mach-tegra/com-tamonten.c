@@ -265,10 +265,34 @@ static struct platform_device uart2_device = {
 	},
 };
 
+static struct plat_serial8250_port uart1_platform_data[] = {
+	{
+		.membase  = IO_ADDRESS(TEGRA_UARTA_BASE),
+		.mapbase  = TEGRA_UARTA_BASE,
+		.irq      = INT_UARTA,
+		.flags    = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE,
+		.type     = PORT_TEGRA,
+		.iotype   = UPIO_MEM,
+		.regshift = 2,
+		.uartclk  = 216000000,
+	}, {
+		.flags    = 0,
+	},
+};
+
+static struct platform_device uart1_device = {
+	.name = "serial8250",
+	.id = -1,
+	.dev = {
+		.platform_data = uart1_platform_data,
+	},
+};
+
 static struct platform_device *tamonten_uart_devices[] __initdata = {
 	&tegra_uartd_device,
 	&uart3_device,
 	&uart2_device,
+	&uart1_device,
 };
 
 static struct uart_clk_parent uart_parent_clk[] __initdata = {
