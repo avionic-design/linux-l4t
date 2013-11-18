@@ -33,6 +33,7 @@ static void __init tec_ng_init(void)
 {
 	tamonten_init();
 	tamonten_wm8903_init();
+	tamonten_adnp_init(COM_I2C_BUS_GEN1, TEC_NG_IRQ_CPLD);
 
 	tec_ng_panel_init();
 }

@@ -20,6 +20,10 @@
 
 #include "com-tamonten.h"
 #include "tamonten-wm8903.h"
+#include "tamonten-adnp.h"
+
+#define TEC_NG_GPIO_CPLD_IRQ	COM_GPIO_0
+#define TEC_NG_IRQ_CPLD		COM_GPIO_TO_IRQ(TEC_NG_GPIO_CPLD_IRQ)
 
 int tec_ng_panel_init(void);
 

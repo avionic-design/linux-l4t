@@ -299,6 +299,7 @@ config MACH_TEC_NG
 	depends on COM_TAMONTEN || COM_TAMONTEN_NG
 	select COM_TAMONTEN_HDMI
 	select COM_TAMONTEN_LVDS
+	select TAMONTEN_ADNP
 	select TAMONTEN_WM8903 if SND_SOC
 	help
 	  Support for Avionic Design Tamonten Evaluation Carrier developtment
