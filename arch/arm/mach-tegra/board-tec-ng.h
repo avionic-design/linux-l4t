@@ -21,9 +21,13 @@
 #include "com-tamonten.h"
 #include "tamonten-wm8903.h"
 #include "tamonten-adnp.h"
+#include "tamonten-tsc2007.h"
 
 #define TEC_NG_GPIO_CPLD_IRQ	COM_GPIO_0
 #define TEC_NG_IRQ_CPLD		COM_GPIO_TO_IRQ(TEC_NG_GPIO_CPLD_IRQ)
+
+#define TEC_NG_GPIO_TOUCH_IRQ	BOARD_GPIO(ADNP, 7)
+#define TEC_NG_IRQ_TOUCH	BOARD_GPIO_TO_IRQ(ADNP, TEC_NG_GPIO_TOUCH_IRQ)
 
 int tec_ng_panel_init(void);
 
