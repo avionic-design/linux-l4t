@@ -40,9 +40,9 @@
 #include "board-medcom-wide.h"
 
 static struct adnp_platform_data medcom_adnp_pdata = {
-	.gpio_base = ADNP_GPIO(0),
-	.nr_gpios = 64,
-	.irq_base = ADNP_GPIO_TO_IRQ(ADNP_GPIO(0)),
+	.gpio_base = BOARD_GPIO(ADNP, 0),
+	.nr_gpios = BOARD_ADNP_GPIO_COUNT,
+	.irq_base = BOARD_IRQ(ADNP, 0),
 	.names = NULL,
 };
 
@@ -50,7 +50,7 @@ static struct adnp_platform_data medcom_adnp_pdata = {
 #define SX8634_DEFAULT_THRESHOLD	0x45
 
 static struct sx8634_platform_data medcom_wide_keypad1_pdata = {
-	.reset_gpio = ADNP_GPIO(11),
+	.reset_gpio = BOARD_GPIO(ADNP, 11),
 	.debounce = 3,
 	.caps = {
 		[1] = {
@@ -93,7 +93,7 @@ static struct sx8634_platform_data medcom_wide_keypad1_pdata = {
 };
 
 static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
-	.reset_gpio = ADNP_GPIO(10),
+	.reset_gpio = BOARD_GPIO(ADNP, 10),
 	.debounce = 3,
 	.caps = {
 		[1] = {
@@ -143,11 +143,11 @@ static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
 	}, {
 		I2C_BOARD_INFO("sx8634", 0x2b),
 		.platform_data = &medcom_wide_keypad1_pdata,
-		.irq = ADNP_IRQ(3),
+		.irq = BOARD_IRQ(ADNP, 3),
 	}, {
 		I2C_BOARD_INFO("sx8634", 0x2c),
 		.platform_data = &medcom_wide_keypad2_pdata,
-		.irq = ADNP_IRQ(2),
+		.irq = BOARD_IRQ(ADNP, 2),
 	},
 };
 
