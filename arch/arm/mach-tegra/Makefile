@@ -230,6 +230,7 @@ obj-$(CONFIG_COM_TAMONTEN_LVDS)         += com-tamonten-lvds.o
 obj-$(CONFIG_COM_TAMONTEN_HDMI)         += com-tamonten-hdmi.o
 
 obj-$(CONFIG_TAMONTEN_WM8903)           += tamonten-wm8903.o
+obj-$(CONFIG_TAMONTEN_ADNP)             += tamonten-adnp.o
 obj-$(CONFIG_TAMONTEN_TSC2007)          += tamonten-tsc2007.o
 
 obj-$(CONFIG_MACH_MEDCOM_WIDE)          += board-medcom-wide.o

@@ -1,7 +1,6 @@
 /*
- * arch/arm/mach-tegra/board-medcom-wide.h
+ * arch/arm/mach-tegra/tamonten-adnp.h
  *
- * Copyright (C) 2010 Google, Inc.
  * Copyright (C) 2013 Avionic Design GmbH
  *
  * This software is licensed under the terms of the GNU General Public
@@ -15,16 +14,15 @@
  *
  */
 
-#ifndef _MACH_TEGRA_BOARD_MEDCOM_WIDE_H
-#define _MACH_TEGRA_BOARD_MEDCOM_WIDE_H
+#ifndef _MACH_TEGRA_TAMONTEN_ADNP_H
+#define _MACH_TEGRA_TAMONTEN_ADNP_H
 
-#include "com-tamonten.h"
-#include "tamonten-wm8903.h"
-#include "tamonten-adnp.h"
+#include "tamonten-board.h"
 
-#define MEDCOM_WIDE_GPIO_CPLD_IRQ	COM_GPIO_0
-#define MEDCOM_WIDE_IRQ_CPLD		COM_GPIO_TO_IRQ(MEDCOM_WIDE_GPIO_CPLD_IRQ)
-
-int medcom_wide_panel_init(void);
+#ifdef CONFIG_TAMONTEN_ADNP
+void tamonten_adnp_init(int i2c_bus, int irq);
+#else
+static inline void tamonten_adnp_init(int i2c_bus, int irq) {}
+#endif
 
 #endif

@@ -268,6 +268,14 @@ config TAMONTEN_WM8903
 	  Support for the WM8903 audio codec found on many Tamonten base
 	  boards.
 
+config TAMONTEN_ADNP
+	bool "Avionic Design GPIO expander support on Tamonten"
+	select GPIO_ADNP
+	select GPIO_ADNP_IRQ
+	help
+	  Support for the Avionic Design GPIO expander found on some Tamonten
+	  base boards.
+
 config TAMONTEN_TSC2007
 	bool "TSC2007 support on Tamonten"
 	select INPUT_TOUCHSCREEN
@@ -280,6 +288,7 @@ config MACH_MEDCOM_WIDE
 	bool "Medcom-Wide board"
 	depends on COM_TAMONTEN || COM_TAMONTEN_NG
 	select COM_TAMONTEN_LVDS
+	select TAMONTEN_ADNP
 	select TAMONTEN_WM8903 if SND_SOC
 	help
 	  Support for Avionic Design Medcom-Wide boards

@@ -39,13 +39,6 @@
 #include "board.h"
 #include "board-medcom-wide.h"
 
-static struct adnp_platform_data medcom_adnp_pdata = {
-	.gpio_base = BOARD_GPIO(ADNP, 0),
-	.nr_gpios = BOARD_ADNP_GPIO_COUNT,
-	.irq_base = BOARD_IRQ(ADNP, 0),
-	.names = NULL,
-};
-
 #define SX8634_DEFAULT_SENSITIVITY	0x07
 #define SX8634_DEFAULT_THRESHOLD	0x45
 
@@ -137,10 +130,6 @@ static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
 
 static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
 	{
-		I2C_BOARD_INFO("gpio-adnp", 0x41),
-		.platform_data = &medcom_adnp_pdata,
-		.irq = MEDCOM_WIDE_IRQ_CPLD,
-	}, {
 		I2C_BOARD_INFO("sx8634", 0x2b),
 		.platform_data = &medcom_wide_keypad1_pdata,
 		.irq = BOARD_IRQ(ADNP, 3),
@@ -220,6 +209,7 @@ static void __init medcom_wide_init(void)
 {
 	tamonten_init();
 	tamonten_wm8903_init();
+	tamonten_adnp_init(COM_I2C_BUS_GEN1, MEDCOM_WIDE_IRQ_CPLD);
 
 	medcom_wide_i2c_init();
 	medcom_wide_camera_init();
