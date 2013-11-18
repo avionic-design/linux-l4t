@@ -17,6 +17,11 @@
 #ifndef _MACH_TEGRA_TAMONTEN_TSC2007_H
 #define _MACH_TEGRA_TAMONTEN_TSC2007_H
 
+#ifdef CONFIG_TAMONTEN_TSC2007
 void tamonten_tsc2007_init(int i2c_bus, int gpio, int irq);
+#else
+static inline void tamonten_tsc2007_init(int i2c_bus, int gpio, int irq)
+{}
+#endif
 
 #endif

@@ -22,6 +22,10 @@
 
 #define BOARD_GPIO_SPKR_EN	BOARD_GPIO_WM8903(2)
 
+#ifdef CONFIG_TAMONTEN_WM8903
 void tamonten_wm8903_init(void);
+#else
+static inline void tamonten_wm8903_init(void) {}
+#endif
 
 #endif
