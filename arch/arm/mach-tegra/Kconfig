@@ -252,6 +252,30 @@ config COM_TAMONTEN_DISPLAY
 	select TEGRA_GRHOST
 	select TEGRA_DC
 
+config COM_TAMONTEN_UARTA
+	bool
+
+config COM_TAMONTEN_UARTA_ID
+	int
+	depends on COM_TAMONTEN_UARTA
+	default -1
+
+config COM_TAMONTEN_UARTB
+	bool
+
+config COM_TAMONTEN_UARTB_ID
+	int
+	depends on COM_TAMONTEN_UARTB
+	default -1
+
+config COM_TAMONTEN_UARTC
+	bool
+
+config COM_TAMONTEN_UARTC_ID
+	int
+	depends on COM_TAMONTEN_UARTC
+	default -1
+
 config COM_TAMONTEN_LVDS
 	bool "LVDS support on Tamonten"
 	select COM_TAMONTEN_DISPLAY

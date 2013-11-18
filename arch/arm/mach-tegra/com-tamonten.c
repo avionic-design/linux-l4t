@@ -219,6 +219,7 @@ static void __init tamonten_i2c_init(void)
 				ARRAY_SIZE(tamonten_dvc_board_info));
 }
 
+#ifdef CONFIG_COM_TAMONTEN_UARTC
 static struct plat_serial8250_port uart3_platform_data[] = {
 	{
 		.membase	= IO_ADDRESS(TEGRA_UARTC_BASE),
@@ -236,12 +237,14 @@ static struct plat_serial8250_port uart3_platform_data[] = {
 
 static struct platform_device uart3_device = {
 	.name = "serial8250",
-	.id = PLAT8250_DEV_PLATFORM1,
+	.id = CONFIG_COM_TAMONTEN_UARTC_ID,
 	.dev = {
 		.platform_data = uart3_platform_data,
 	},
 };
+#endif
 
+#ifdef CONFIG_COM_TAMONTEN_UARTB
 static struct plat_serial8250_port uart2_platform_data[] = {
 	{
 		.membase  = IO_ADDRESS(TEGRA_UARTB_BASE),
@@ -259,12 +262,14 @@ static struct plat_serial8250_port uart2_platform_data[] = {
 
 static struct platform_device uart2_device = {
 	.name = "serial8250",
-	.id = PLAT8250_DEV_PLATFORM2,
+	.id = CONFIG_COM_TAMONTEN_UARTB_ID,
 	.dev = {
 		.platform_data = uart2_platform_data,
 	},
 };
+#endif
 
+#ifdef CONFIG_COM_TAMONTEN_UARTA
 static struct plat_serial8250_port uart1_platform_data[] = {
 	{
 		.membase  = IO_ADDRESS(TEGRA_UARTA_BASE),
@@ -282,17 +287,24 @@ static struct plat_serial8250_port uart1_platform_data[] = {
 
 static struct platform_device uart1_device = {
 	.name = "serial8250",
-	.id = -1,
+	.id = CONFIG_COM_TAMONTEN_UARTA_ID,
 	.dev = {
 		.platform_data = uart1_platform_data,
 	},
 };
+#endif
 
 static struct platform_device *tamonten_uart_devices[] __initdata = {
 	&tegra_uartd_device,
+#ifdef CONFIG_COM_TAMONTEN_UARTC
 	&uart3_device,
+#endif
+#ifdef CONFIG_COM_TAMONTEN_UARTB
 	&uart2_device,
+#endif
+#ifdef CONFIG_COM_TAMONTEN_UARTA
 	&uart1_device,
+#endif
 };
 
 static struct uart_clk_parent uart_parent_clk[] __initdata = {
