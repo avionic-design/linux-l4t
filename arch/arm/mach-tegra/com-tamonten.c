@@ -393,8 +393,8 @@ void __init tamonten_fixup(struct machine_desc *desc,
 
 static __initdata struct tegra_clk_init_table tamonten_clk_init_table[] = {
 	/* name		parent		rate		enabled */
-	{ "uarta",	"pll_p",	216000000,	false },
-	{ "uartb",	"pll_p",	216000000,	false },
+	{ "uarta",	"pll_p",	216000000,	true  },
+	{ "uartb",	"pll_p",	216000000,	true  },
 	{ "uartc",	"pll_p",	216000000,	true  },
 	{ "uartd",	"pll_p",	216000000,	true  },
 	{ "uarte",	"pll_p",	216000000,	false },
