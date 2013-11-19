@@ -324,7 +324,7 @@ static __initdata struct tegra_pingroup_config tamonten_ng_pinmux_common[] = {
 	DEFAULT_PINMUX(LCD_D23,         DISPLAYA,        NORMAL,    NORMAL,     INPUT),
 
 	/* LCD Backlight */
-	DEFAULT_PINMUX(GMI_AD8,         PWM,             NORMAL,    NORMAL,     OUTPUT),
+	DEFAULT_PINMUX(GMI_AD8,         PWM0,            NORMAL,    NORMAL,     OUTPUT),
 
 	/* USB are always running on their SFIO */
 
