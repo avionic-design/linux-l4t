@@ -383,9 +383,8 @@ int __init tamonten_ng_edp_init(void)
 	unsigned int regulator_mA;
 
 	regulator_mA = get_maximum_cpu_current_supported();
-	if (!regulator_mA) {
-		regulator_mA = 6000; /* regular T30/s */
-	}
+	if (!regulator_mA)
+		regulator_mA = 2000;
 	pr_info("%s: CPU regulator %d mA\n", __func__, regulator_mA);
 
 	tegra_init_cpu_edp_limits(regulator_mA);
