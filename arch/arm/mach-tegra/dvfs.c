@@ -425,6 +425,12 @@ int tegra_dvfs_set_rate(struct clk *c, unsigned long rate)
 	if (!c->dvfs)
 		return -EINVAL;
 
+	/* Clamp the requested frequency to the allowed range */
+	if (rate > c->max_rate)
+		rate = c->max_rate;
+	if (rate && rate < c->min_rate)
+		rate = c->min_rate;
+
 	mutex_lock(&dvfs_lock);
 	ret = __tegra_dvfs_set_rate(c->dvfs, rate);
 	mutex_unlock(&dvfs_lock);
