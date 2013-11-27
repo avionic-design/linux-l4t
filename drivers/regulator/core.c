@@ -130,6 +130,11 @@ static const char *rdev_get_name(struct regulator_dev *rdev)
 		return "";
 }
 
+static bool have_full_constraints(void)
+{
+	return has_full_constraints;
+}
+
 /**
  * of_get_regulator - get a regulator device node based on supply name
  * @dev: Device pointer for the consumer (of regulator) device
@@ -1548,7 +1553,7 @@ static struct regulator *_regulator_get(struct device *dev, const char *id,
 	/* If the board didn't flag that it was fully constrained then
 	 * substitute in a dummy regulator so consumers can continue.
 	 */
-	if (!has_full_constraints) {
+	if (have_full_constraints()) {
 		pr_warn("%s supply %s not found, using dummy regulator\n",
 			devname, id);
 		rdev = dummy_regulator_rdev;
@@ -4425,7 +4430,7 @@ int regulator_suspend_finish(void)
 			if (error)
 				ret = error;
 		} else {
-			if (!has_full_constraints)
+			if (!have_full_constraints())
 				goto unlock;
 			if (!_regulator_is_enabled(rdev))
 				goto unlock;
@@ -4630,7 +4635,7 @@ static int __init regulator_init_complete(void)
 		if (!enabled)
 			goto unlock;
 
-		if (has_full_constraints) {
+		if (have_full_constraints()) {
 			/* We log since this may kill the system if it
 			 * goes wrong. */
 			rdev_info(rdev, "disabling\n");
