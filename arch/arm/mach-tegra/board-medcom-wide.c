@@ -24,6 +24,7 @@
 #include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/i2c/adnp.h>
+#include <linux/mfd/sx8634.h>
 #include <linux/input/sx8634.h>
 
 #include <media/soc_camera.h>
@@ -42,8 +43,7 @@
 #define SX8634_DEFAULT_SENSITIVITY	0x07
 #define SX8634_DEFAULT_THRESHOLD	0x45
 
-static struct sx8634_platform_data medcom_wide_keypad1_pdata = {
-	.reset_gpio = BOARD_GPIO(ADNP, 11),
+static struct sx8634_touch_platform_data medcom_wide_keypad1_touch_pdata = {
 	.debounce = 3,
 	.caps = {
 		[1] = {
@@ -85,8 +85,13 @@ static struct sx8634_platform_data medcom_wide_keypad1_pdata = {
 	},
 };
 
-static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
-	.reset_gpio = BOARD_GPIO(ADNP, 10),
+static struct sx8634_platform_data medcom_wide_keypad1_pdata = {
+	.id = 0,
+	.reset_gpio = BOARD_GPIO(ADNP, 11),
+	.touch = &medcom_wide_keypad1_touch_pdata,
+};
+
+static struct sx8634_touch_platform_data medcom_wide_keypad2_touch_pdata = {
 	.debounce = 3,
 	.caps = {
 		[1] = {
@@ -126,6 +131,12 @@ static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
 			.threshold = SX8634_DEFAULT_THRESHOLD,
 		},
 	},
+};
+
+static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
+	.id = 1,
+	.reset_gpio = BOARD_GPIO(ADNP, 10),
+	.touch = &medcom_wide_keypad2_touch_pdata,
 };
 
 static struct i2c_board_info __initdata medcom_wide_i2c0_board_info[] = {
