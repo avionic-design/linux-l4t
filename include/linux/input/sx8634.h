@@ -17,9 +17,8 @@ struct sx8634_cap {
 	u8 threshold;
 };
 
-struct sx8634_platform_data {
+struct sx8634_touch_platform_data {
 	struct sx8634_cap caps[SX8634_NUM_CAPS];
-	int reset_gpio;
 	u8 debounce;
 };
 

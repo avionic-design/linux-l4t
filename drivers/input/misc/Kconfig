@@ -532,7 +532,7 @@ config INPUT_CMA3000_I2C
 
 config INPUT_SX8634
 	tristate "Semtech SX8634"
-	depends on I2C
+	depends on MFD_SX8634
 	default n
 	help
 	  Say Y here if you want to use the Semtech SX8634 controller.

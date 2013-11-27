@@ -1,0 +1,46 @@
+Semtech SX8634 Capacitive Button and Slider Touch Controller
+
+The SX8634 controller is configured with the following properties:
+
+Required parent device properties:
+  - compatible: "semtech,sx8634"
+  - reg: I2C bus address of the device
+  - interrupts: interrupt number of the device
+
+Optional parent device properties:
+  - gpios: should specify the GPIO used for reset
+
+The SX8634 provides the following sub devices:
+
+Device			 Supply Names	 Description
+------			 ------------	 -----------
+sx8634-touch		:		: Touch controller
+
+Example:
+
+	keypad: sx8634@2b {
+		compatible = "semtech,sx8634";
+		reg = <0x2b>;
+		interrupts = <386>;
+
+		touch {
+			compatible = "semtech,sx8634-touch";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			threshold = <0xa0>;
+			sensitivity = <7>;
+
+			cap@1 {
+				reg = <1>;
+				label = "Up";
+				linux,code = <103>; /* KEY_UP */
+			};
+
+			cap@2 {
+				reg = <2>;
+				label = "Down";
+				linux,code = <108>; /* KEY_DOWN */
+			};
+		};
+	};

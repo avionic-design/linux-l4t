@@ -895,6 +895,18 @@ config MFD_PALMAS
 	  If you say yes here you get support for the Palmas
 	  series of PMIC chips from Texas Instruments.
 
+config MFD_SX8634
+	bool "Support for the Semtech SX8634 touch controller"
+	select MFD_CORE
+	depends on I2C
+	help
+	  If you say yes here you get support for the SX8634 touch
+	  controller.
+	  This driver provides common support for accessing the device,
+	  additional drivers must be enabled in order to use the
+	  functionality of the device.
+
+
 endif # MFD_SUPPORT
 
 menu "Multimedia Capabilities Port drivers"
