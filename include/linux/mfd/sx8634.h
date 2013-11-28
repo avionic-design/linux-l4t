@@ -62,9 +62,20 @@
 #define SPM_BTN_CFG_TOUCH_DEBOUNCE_MASK 0x03
 #define SPM_BTN_CFG_TOUCH_DEBOUNCE_SHIFT 0
 
+#define SPM_GPIO_MODE_7_4 0x40
+#define SPM_GPIO_MODE_3_0 0x41
+#define SPM_GPIO_MODE_GPO 0
+#define SPM_GPIO_MODE_GPP 1
+#define SPM_GPIO_MODE_GPI 2
+
+#define SPM_GPIO_POLARITY 0x44
+#define SPM_GPIO_FUNCTION 0x56
+
 #define SPM_BLOCK_SIZE 8
 #define SPM_NUM_BLOCKS 16
 #define SPM_SIZE (SPM_BLOCK_SIZE * SPM_NUM_BLOCKS)
+
+#define GPP_PIN_COUNT 8
 
 struct platform_device;
 struct notifier_block;
@@ -72,10 +83,21 @@ struct notifier_block;
 struct sx8634;
 struct sx8634_touch_platform_data;
 
+struct sx8634_backlight_pin {
+	int max_brightness;
+	int high_active;
+	int linear;
+};
+
+struct sx8634_backlight_platform_data {
+	struct sx8634_backlight_pin pin[GPP_PIN_COUNT];
+};
+
 struct sx8634_platform_data {
 	int id;
 	int reset_gpio;
 	struct sx8634_touch_platform_data *touch;
+	struct sx8634_backlight_platform_data *backlight;
 };
 
 /* Helper for the cell implementations */

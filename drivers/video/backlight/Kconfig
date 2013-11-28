@@ -352,6 +352,12 @@ config BACKLIGHT_AAT2870
 	  If you have a AnalogicTech AAT2870 say Y to enable the
 	  backlight driver.
 
+config BACKLIGHT_SX8634
+	tristate "Semtech SX8634 Backlight"
+	depends on MFD_SX8634
+	help
+	  Say Y to enable the backlight driver for Semtech SX8634.
+
 endif # BACKLIGHT_CLASS_DEVICE
 
 endif # BACKLIGHT_LCD_SUPPORT

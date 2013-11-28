@@ -352,6 +352,9 @@ static struct mfd_cell sx8634_cells[] = {
 	{
 		.name = "sx8634-touch",
 	},
+	{
+		.name = "sx8634-backlight",
+	},
 };
 
 #ifdef CONFIG_OF
