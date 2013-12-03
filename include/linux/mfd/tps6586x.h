@@ -5,6 +5,13 @@
 #define SM1_PWM_BIT 1
 #define SM2_PWM_BIT 2
 
+/* VERSION CRC */
+#define TPS658621A	0x15
+#define TPS658621CD	0x2c
+#define TPS658623	0x1b
+#define TPS658640	0x01
+#define TPS658643	0x03
+
 enum {
 	TPS6586X_ID_SM_0,
 	TPS6586X_ID_SM_1,
@@ -128,5 +135,6 @@ extern int tps6586x_set_bits(struct device *dev, int reg, uint8_t bit_mask);
 extern int tps6586x_clr_bits(struct device *dev, int reg, uint8_t bit_mask);
 extern int tps6586x_update(struct device *dev, int reg, uint8_t val,
 			   uint8_t mask);
+extern int tps6586x_get_version(struct device *dev);
 
 #endif /*__LINUX_MFD_TPS6586X_H */

@@ -96,6 +96,7 @@ struct tps6586x {
 	struct mutex		lock;
 	struct device		*dev;
 	struct i2c_client	*client;
+	int			version;
 
 	struct gpio_chip	gpio;
 	struct irq_chip		irq_chip;
@@ -254,6 +255,14 @@ out:
 	return ret;
 }
 EXPORT_SYMBOL_GPL(tps6586x_update);
+
+int tps6586x_get_version(struct device *dev)
+{
+	struct tps6586x *tps6586x = dev_get_drvdata(dev);
+
+	return tps6586x->version;
+}
+EXPORT_SYMBOL_GPL(tps6586x_get_version);
 
 static struct i2c_client *tps6586x_i2c_client = NULL;
 static void tps6586x_power_off(void)
@@ -505,6 +514,34 @@ failed:
 	return ret;
 }
 
+static void tps6586x_print_version(struct i2c_client *client, int version)
+{
+	const char *name;
+
+	switch (version) {
+	case TPS658621A:
+		name = "TPS658621A";
+		break;
+	case TPS658621CD:
+		name = "TPS658621C/D";
+		break;
+	case TPS658623:
+		name = "TPS658623";
+		break;
+	case TPS658640:
+		name = "TPS658640";
+		break;
+	case TPS658643:
+		name = "TPS658643";
+		break;
+	default:
+		name = "TPS6586X";
+		break;
+	}
+
+	dev_info(&client->dev, "Found %s, VERSIONCRC is %02x\n", name, version);
+}
+
 static int __devinit tps6586x_i2c_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
 {
@@ -523,11 +560,12 @@ static int __devinit tps6586x_i2c_probe(struct i2c_client *client,
 		return -EIO;
 	}
 
-	dev_info(&client->dev, "VERSIONCRC is %02x\n", ret);
-
 	tps6586x = kzalloc(sizeof(struct tps6586x), GFP_KERNEL);
 	if (tps6586x == NULL)
 		return -ENOMEM;
+
+	tps6586x->version = ret;
+	tps6586x_print_version(client, tps6586x->version);
 
 	tps6586x->client = client;
 	tps6586x->dev = &client->dev;
