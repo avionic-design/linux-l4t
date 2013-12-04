@@ -199,7 +199,9 @@ static struct i2c_board_info __initdata tamonten_dvc_board_info[] = {
 	{
 		I2C_BOARD_INFO("nct1008", 0x4c),
 		.platform_data = &tamonten_nct1008_pdata,
-		.irq = TEGRA_GPIO_TO_IRQ(TAMONTEN_GPIO_TEMP_ALERT)
+		/* FIXME: With set irq, the sensor is not available through
+		 *        the sensors interface (libsensors).
+		.irq = TEGRA_GPIO_TO_IRQ(TAMONTEN_GPIO_TEMP_ALERT) */
 	},
 };
 
