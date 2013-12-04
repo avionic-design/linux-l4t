@@ -229,11 +229,27 @@ static int tps6586x_ldo4_voltages[] = {
 	2300, 2325, 2350, 2375, 2400, 2425, 2450, 2475,
 };
 
+#define tps658623_sm2_voltages tps6586x_ldo4_voltages
+
 static int tps6586x_sm2_voltages[] = {
 	3000, 3050, 3100, 3150, 3200, 3250, 3300, 3350,
 	3400, 3450, 3500, 3550, 3600, 3650, 3700, 3750,
 	3800, 3850, 3900, 3950, 4000, 4050, 4100, 4150,
 	4200, 4250, 4300, 4350, 4400, 4450, 4500, 4550,
+};
+
+static int tps658640_sm2_voltages[] = {
+	2150, 2200, 2250, 2300, 2350, 2400, 2450, 2500,
+	2550, 2600, 2650, 2700, 2750, 2800, 2850, 2900,
+	2950, 3000, 3050, 3100, 3150, 3200, 3250, 3300,
+	3350, 3400, 3450, 3500, 3550, 3600, 3650, 3700,
+};
+
+static unsigned int tps658643_sm2_voltages[] = {
+	1025000, 1050000, 1075000, 1100000, 1125000, 1150000, 1175000, 1200000,
+	1225000, 1250000, 1275000, 1300000, 1325000, 1350000, 1375000, 1400000,
+	1425000, 1450000, 1475000, 1500000, 1525000, 1550000, 1575000, 1600000,
+	1625000, 1650000, 1675000, 1700000, 1725000, 1750000, 1775000, 1800000,
 };
 
 static int tps6586x_dvm_voltages[] = {
@@ -250,7 +266,7 @@ static int tps6586x_dvm_voltages[] = {
 		.ops	= &tps6586x_regulator_##_ops,			\
 		.type	= REGULATOR_VOLTAGE,				\
 		.id	= TPS6586X_ID_##_id,				\
-		.n_voltages = ARRAY_SIZE(tps6586x_##vdata##_voltages),	\
+		.n_voltages = ARRAY_SIZE(vdata##_voltages),		\
 		.owner	= THIS_MODULE,					\
 	},								\
 	.volt_reg	= TPS6586X_##vreg,				\
@@ -260,7 +276,7 @@ static int tps6586x_dvm_voltages[] = {
 	.enable_bit[0]	= (ebit0),					\
 	.enable_reg[1]	= TPS6586X_SUPPLY##ereg1,			\
 	.enable_bit[1]	= (ebit1),					\
-	.voltages	= tps6586x_##vdata##_voltages,			\
+	.voltages	= vdata##_voltages,				\
 	.delay		= en_time,
 
 #define TPS6586X_REGULATOR_DVM_GOREG(goreg, gobit)			\
@@ -283,21 +299,69 @@ static int tps6586x_dvm_voltages[] = {
 }
 
 static struct tps6586x_regulator tps6586x_regulator[] = {
-	TPS6586X_LDO(LDO_0, ldo0, SUPPLYV1, 5, 3, ENC, 0, END, 0, 4000),
-	TPS6586X_LDO(LDO_1, dvm, SUPPLYV1, 0, 5, ENC, 1, END, 1, 4000),
-	TPS6586X_LDO(LDO_3, ldo, SUPPLYV4, 0, 3, ENC, 2, END, 2, 3000),
-	TPS6586X_LDO(LDO_5, ldo, SUPPLYV6, 0, 3, ENE, 6, ENE, 6, 3000),
-	TPS6586X_LDO(LDO_6, ldo, SUPPLYV3, 0, 3, ENC, 4, END, 4, 15000),
-	TPS6586X_LDO(LDO_7, ldo, SUPPLYV3, 3, 3, ENC, 5, END, 5, 15000),
-	TPS6586X_LDO(LDO_8, ldo, SUPPLYV2, 5, 3, ENC, 6, END, 6, 15000),
-	TPS6586X_LDO(LDO_9, ldo, SUPPLYV6, 3, 3, ENE, 7, ENE, 7, 3000),
-	TPS6586X_LDO(LDO_RTC, ldo, SUPPLYV4, 3, 3, V4, 7, V4, 7, 0),
-	TPS6586X_LDO(SM_2, sm2, SUPPLYV2, 0, 5, ENC, 7, END, 7, 0),
+	TPS6586X_LDO(LDO_0, tps6586x_ldo0, SUPPLYV1, 5, 3,
+		ENC, 0, END, 0, 4000),
+	TPS6586X_LDO(LDO_1, tps6586x_dvm, SUPPLYV1, 0, 5,
+		ENC, 1, END, 1, 4000),
+	TPS6586X_LDO(LDO_3, tps6586x_ldo, SUPPLYV4, 0, 3,
+		ENC, 2, END, 2, 3000),
+	TPS6586X_LDO(LDO_5, tps6586x_ldo, SUPPLYV6, 0, 3,
+		ENE, 6, ENE, 6, 3000),
+	TPS6586X_LDO(LDO_6, tps6586x_ldo, SUPPLYV3, 0, 3,
+		ENC, 4, END, 4, 15000),
+	TPS6586X_LDO(LDO_7, tps6586x_ldo, SUPPLYV3, 3, 3,
+		ENC, 5, END, 5, 15000),
+	TPS6586X_LDO(LDO_8, tps6586x_ldo, SUPPLYV2, 5, 3,
+		ENC, 6, END, 6, 15000),
+	TPS6586X_LDO(LDO_9, tps6586x_ldo, SUPPLYV6, 3, 3,
+		ENE, 7, ENE, 7, 3000),
+	TPS6586X_LDO(LDO_RTC, tps6586x_ldo, SUPPLYV4, 3, 3,
+		V4, 7, V4, 7, 0),
+	TPS6586X_LDO(SM_2, tps6586x_sm2, SUPPLYV2, 0, 5,
+		ENC, 7, END, 7, 0),
 
-	TPS6586X_DVM(LDO_2, dvm, LDO2BV1, 0, 5, ENA, 3, ENB, 3, VCC2, 6, 3000),
-	TPS6586X_DVM(SM_0, dvm, SM0V1, 0, 5, ENA, 1, ENB, 1, VCC1, 2, 4000),
-	TPS6586X_DVM(SM_1, dvm, SM1V1, 0, 5, ENA, 0, ENB, 0, VCC1, 0, 4000),
-	TPS6586X_DVM(LDO_4, ldo4, LDO4V1, 0, 5, ENC, 3, END, 3, VCC1, 6, 15000),
+	TPS6586X_DVM(LDO_2, tps6586x_dvm, LDO2BV1, 0, 5,
+		ENA, 3, ENB, 3, VCC2, 6, 3000),
+	TPS6586X_DVM(SM_0, tps6586x_dvm, SM0V1, 0, 5,
+		ENA, 1, ENB, 1, VCC1, 2, 4000),
+	TPS6586X_DVM(SM_1, tps6586x_dvm, SM1V1, 0, 5,
+		ENA, 0, ENB, 0, VCC1, 0, 4000),
+	TPS6586X_DVM(LDO_4, tps6586x_ldo4, LDO4V1, 0, 5,
+		ENC, 3, END, 3, VCC1, 6, 15000),
+};
+
+static struct tps6586x_regulator tps658623_regulator[] = {
+	TPS6586X_LDO(SM_2, tps658623_sm2, SUPPLYV2, 0, 5,
+		ENC, 7, END, 7, 0),
+};
+
+static struct tps6586x_regulator tps658640_regulator[] = {
+	TPS6586X_LDO(LDO_0, tps6586x_ldo0, SUPPLYV1, 5, 3,
+		ENC, 0, END, 0, 4000),
+	TPS6586X_LDO(LDO_1, tps6586x_dvm, SUPPLYV1, 0, 5,
+		ENC, 1, END, 1, 4000),
+	TPS6586X_LDO(LDO_3, tps6586x_ldo0, SUPPLYV4, 0, 3,
+		ENC, 2, END, 2, 3000),
+	TPS6586X_LDO(LDO_5, tps6586x_ldo0, SUPPLYV6, 0, 3,
+		ENE, 6, ENE, 6, 3000),
+	TPS6586X_LDO(LDO_6, tps6586x_ldo0, SUPPLYV3, 0, 3,
+		ENC, 4, END, 4, 15000),
+	TPS6586X_LDO(LDO_7, tps6586x_ldo0, SUPPLYV3, 3, 3,
+		ENC, 5, END, 5, 15000),
+	TPS6586X_LDO(LDO_8, tps6586x_ldo0, SUPPLYV2, 5, 3,
+		ENC, 6, END, 6, 15000),
+	TPS6586X_LDO(LDO_9, tps6586x_ldo0, SUPPLYV6, 3, 3,
+		ENE, 7, ENE, 7, 3000),
+
+	TPS6586X_LDO(LDO_8, tps658640_sm2, SUPPLYV2, 5, 3,
+		ENC, 6, END, 6, 15000),
+	TPS6586X_LDO(SM_2, tps658640_sm2, SUPPLYV2, 0, 5,
+		ENC, 7, END, 7, 0),
+};
+
+static struct tps6586x_regulator tps658643_regulator[] = {
+	TPS6586X_LDO(SM_2, tps658643_sm2, SUPPLYV2, 0, 5,
+		ENC, 7, END, 7, 0),
 };
 
 /*
@@ -399,13 +463,14 @@ static inline int tps6586x_regulator_set_slew_rate(struct platform_device *pdev)
 	return tps6586x_write(parent, reg, setting->slew_rate);
 }
 
-static inline struct tps6586x_regulator *find_regulator_info(int id)
+static inline struct tps6586x_regulator *find_regulator_info(int id,
+			struct tps6586x_regulator regulator_info[], int num)
 {
 	struct tps6586x_regulator *ri;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(tps6586x_regulator); i++) {
-		ri = &tps6586x_regulator[i];
+	for (i = 0; i < num; i++) {
+		ri = &regulator_info[i];
 		if (ri->desc.id == id)
 			return ri;
 	}
@@ -417,11 +482,33 @@ static int __devinit tps6586x_regulator_probe(struct platform_device *pdev)
 	struct tps6586x_regulator *ri = NULL;
 	struct regulator_dev *rdev;
 	int id = pdev->id;
+	int version;
 	int err;
 
 	dev_dbg(&pdev->dev, "Probing reulator %d\n", id);
 
-	ri = find_regulator_info(id);
+	version = tps6586x_get_version(pdev->dev.parent);
+
+	switch (version) {
+	case TPS658623:
+		ri = find_regulator_info(id, tps658623_regulator,
+					ARRAY_SIZE(tps658623_regulator));
+		break;
+	case TPS658640:
+		ri = find_regulator_info(id, tps658640_regulator,
+					ARRAY_SIZE(tps658640_regulator));
+		break;
+	case TPS658643:
+		ri = find_regulator_info(id, tps658643_regulator,
+					ARRAY_SIZE(tps658643_regulator));
+		break;
+	}
+
+	/* Search fallback table if necessary */
+	if (!ri)
+		ri = find_regulator_info(id, tps6586x_regulator,
+					ARRAY_SIZE(tps6586x_regulator));
+
 	if (ri == NULL) {
 		dev_err(&pdev->dev, "invalid regulator ID specified\n");
 		return -EINVAL;
