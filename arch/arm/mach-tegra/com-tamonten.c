@@ -32,7 +32,7 @@
 #include <linux/memblock.h>
 #include <linux/platform_data/tegra_usb.h>
 #include <linux/tegra_uart.h>
-#include <linux/nct1008.h>
+#include <linux/adt7461.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -188,20 +188,24 @@ static struct tegra_i2c_platform_data tamonten_dvc_platform_data = {
 	.is_dvc = true,
 };
 
-static struct nct1008_platform_data tamonten_nct1008_pdata = {
+static struct adt7461_platform_data tamonten_nct1008_pdata = {
 	.supported_hwrev = true,
 	.ext_range = false,
 	.conv_rate = 0x08,
 	.offset = 0,
+	.hysteresis = 10,
+	.shutdown_ext_limit = 85,
+	.shutdown_local_limit = 85,
+	.throttling_ext_limit = 70,
+	.alarm_fn = NULL,
+	.irq_gpio = TAMONTEN_GPIO_TEMP_ALERT,
 };
 
 static struct i2c_board_info __initdata tamonten_dvc_board_info[] = {
 	{
-		I2C_BOARD_INFO("nct1008", 0x4c),
+		I2C_BOARD_INFO("adt7461", 0x4c),
 		.platform_data = &tamonten_nct1008_pdata,
-		/* FIXME: With set irq, the sensor is not available through
-		 *        the sensors interface (libsensors).
-		.irq = TEGRA_GPIO_TO_IRQ(TAMONTEN_GPIO_TEMP_ALERT) */
+		.irq = TEGRA_GPIO_TO_IRQ(TAMONTEN_GPIO_TEMP_ALERT),
 	},
 };
 
