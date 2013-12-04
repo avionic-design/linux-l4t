@@ -234,6 +234,7 @@ config COM_TAMONTEN
 	select I2C_TEGRA
 	select MFD_TPS6586X
 	select REGULATOR_TPS6586X
+	select SENSORS_ADT7461 if HWMON
 
 config COM_TAMONTEN_NG
 	bool "Tamonten NG COM"
