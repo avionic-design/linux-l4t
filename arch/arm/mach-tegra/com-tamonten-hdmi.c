@@ -101,7 +101,10 @@ struct tegra_dc_platform_data tamonten_hdmi_disp_pdata = {
 
 void __init tamonten_hdmi_init(void)
 {
-	gpio_request(COM_GPIO_HDMI_HPD, "hdmi_hpd");
+	if (gpio_request(COM_GPIO_HDMI_HPD, "hdmi_hpd")) {
+		pr_err("Failed to request HDMI Hotplug Detect gpio\n");
+		return;
+	}
 	gpio_direction_input(COM_GPIO_HDMI_HPD);
 	tegra_gpio_enable(COM_GPIO_HDMI_HPD);
 }

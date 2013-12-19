@@ -131,7 +131,10 @@ struct tegra_dc_platform_data tamonten_lvds_disp_pdata = {
 
 void __init tamonten_lvds_init(struct device *fb_device)
 {
-	gpio_request(COM_GPIO_LVDS_SHUTDOWN, "LVDS shutdown");
+	if (gpio_request(COM_GPIO_LVDS_SHUTDOWN, "LVDS shutdown")) {
+		pr_err("Failed to request LVDS shutdown gpio\n");
+		return;
+	}
 	gpio_direction_output(COM_GPIO_LVDS_SHUTDOWN, 1);
 
 	tamonten_backlight_fb = fb_device;
