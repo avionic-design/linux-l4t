@@ -554,7 +554,8 @@ static int adnp_irq_setup(struct adnp *adnp)
 static void adnp_irq_teardown(struct adnp *adnp)
 {
 	irq_free_descs(adnp->irq_base, adnp->gpio.ngpio);
-	free_irq(adnp->client->irq, adnp);
+	if (adnp->gpio.to_irq)
+		free_irq(adnp->client->irq, adnp);
 }
 #else
 static int adnp_irq_setup(struct adnp *adnp)
