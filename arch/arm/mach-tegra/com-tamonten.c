@@ -433,6 +433,7 @@ static struct tegra_sdhci_platform_data sdhci_pdata4 = {
 
 void __init tamonten_init(void)
 {
+	tamonten_emc_init();
 	tegra_clk_init_from_table(tamonten_clk_init_table);
 
 	tamonten_pinmux_init();

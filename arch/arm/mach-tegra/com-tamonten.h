@@ -149,6 +149,7 @@ int tamonten_ng_sensors_init(void);
 
 #endif
 
+void tamonten_emc_init(void);
 int tamonten_pcie_init(void);
 
 void tamonten_fixup(struct machine_desc *desc,
