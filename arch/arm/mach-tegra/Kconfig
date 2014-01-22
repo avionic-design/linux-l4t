@@ -302,6 +302,7 @@ config TAMONTEN_ADNP
 	bool "Avionic Design GPIO expander support on Tamonten"
 	select GPIO_ADNP
 	select GPIO_ADNP_IRQ
+	select GPIO_ADNP_MACHXO
 	help
 	  Support for the Avionic Design GPIO expander found on some Tamonten
 	  base boards.

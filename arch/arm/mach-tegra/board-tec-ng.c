@@ -29,11 +29,17 @@
 #include "board-tec-ng.h"
 #include "board.h"
 
+static u32 tec_ng_platform_id[] = {
+	0xFDA,
+	0xFDB,
+};
+
 static void __init tec_ng_init(void)
 {
 	tamonten_init();
 	tamonten_wm8903_init();
-	tamonten_adnp_init(COM_I2C_BUS_GEN1, TEC_NG_IRQ_CPLD);
+	tamonten_adnp_init(COM_I2C_BUS_GEN1, TEC_NG_IRQ_CPLD,
+			tec_ng_platform_id, ARRAY_SIZE(tec_ng_platform_id));
 	tamonten_tsc2007_init(COM_I2C_BUS_GEN2,
 			TEC_NG_GPIO_TOUCH_IRQ, TEC_NG_IRQ_TOUCH);
 

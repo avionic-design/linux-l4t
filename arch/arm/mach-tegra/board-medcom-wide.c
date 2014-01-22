@@ -234,11 +234,18 @@ static void __init medcom_wide_camera_init(void)
 static void __init medcom_wide_camera_init(void) {}
 #endif /* CONFIG_VIDEO_TEGRA */
 
+static u32 medcom_wide_platform_id[] = {
+	0xFF1, /* Gen 1 */
+	0xFDD, /* Gen 2 */
+};
+
 static void __init medcom_wide_init(void)
 {
 	tamonten_init();
 	tamonten_wm8903_init();
-	tamonten_adnp_init(COM_I2C_BUS_GEN1, MEDCOM_WIDE_IRQ_CPLD);
+	tamonten_adnp_init(COM_I2C_BUS_GEN1, MEDCOM_WIDE_IRQ_CPLD,
+			medcom_wide_platform_id,
+			ARRAY_SIZE(medcom_wide_platform_id));
 
 	medcom_wide_i2c_init();
 	medcom_wide_camera_init();
