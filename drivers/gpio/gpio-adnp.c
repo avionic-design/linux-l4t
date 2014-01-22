@@ -14,6 +14,7 @@
 #include <linux/of_irq.h>
 #include <linux/seq_file.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
 
 #include <linux/i2c/adnp.h>
 
@@ -568,12 +569,188 @@ static void adnp_irq_teardown(struct adnp *adnp)
 }
 #endif
 
+#ifdef CONFIG_GPIO_ADNP_MACHXO
+static int machxo_cmd(struct i2c_client *client,
+		u8 *cmd_buf, int cmd_len,
+		u8 *data, int data_len)
+{
+	struct i2c_msg msgs[2] = {
+		{
+			.addr = client->addr,
+			.flags = client->flags & I2C_M_TEN,
+			.len = cmd_len,
+			.buf = cmd_buf,
+		},{
+			.addr = client->addr,
+			.flags = (client->flags & I2C_M_TEN) | I2C_M_RD,
+			.len = data_len,
+			.buf = data,
+		}
+	};
+	int err, msg_cnt = 1 + (data && data_len > 0);
+
+	err = i2c_transfer(client->adapter, msgs, msg_cnt);
+	if (err < 0)
+		return err;
+	if (err != msg_cnt)
+		return -EIO;
+
+	return 0;
+}
+
+static int machxo_read_reg(struct i2c_client *client, u8 addr, u32 *val)
+{
+	u8 cmd[] = { addr, 0x00, 0x00, 0x00 };
+	int err;
+
+	err = machxo_cmd(client, cmd, sizeof(cmd), (u8 *)val, sizeof(*val));
+	if (!err)
+		*val = be32_to_cpu(*val);
+
+	return err;
+}
+
+static int machxo_enable_cfg_if_transparent(struct i2c_client *client)
+{
+	u8 cmd[] = { 0x74, 0x08, 0x00, 0x00 };
+	int err;
+
+	err = machxo_cmd(client, cmd, sizeof(cmd), NULL, 0);
+	if (err)
+		return err;
+
+	usleep_range(10, 20000);
+	return 0;
+}
+
+static int machxo_disable_cfg_if(struct i2c_client *client)
+{
+	u8 disable_cmd[] = { 0x26, 0x00, 0x00 };
+	u8 bypass_cmd[] = { 0xff, 0xff, 0xff, 0xff };
+	int err;
+
+	err = machxo_cmd(client, disable_cmd, sizeof(disable_cmd), NULL, 0);
+	if (err)
+		return err;
+
+	return machxo_cmd(client, bypass_cmd, sizeof(bypass_cmd), NULL, 0);
+}
+
+static int machxo_read_devid(struct i2c_client *client, u32 *usercode)
+{
+	return machxo_read_reg(client, 0xe0, usercode);
+}
+
+static int machxo_read_traceid(struct i2c_client *client, u32 *usercode)
+{
+	return machxo_read_reg(client, 0x19, usercode);
+}
+
+static int machxo_read_usercode(struct i2c_client *client, u32 *usercode)
+{
+	return machxo_read_reg(client, 0xc0, usercode);
+}
+
+static int adnp_check_machxo(struct i2c_client *client)
+{
+	struct adnp_platform_data *pdata = client->dev.platform_data;
+	struct i2c_client *cpld;
+	u32 devid, traceid, cfg_usercode, sram_usercode;
+	int err;
+
+	/* Only run if there is a MachXO check function */
+	if (pdata->machxo_check == NULL)
+		return 0;
+
+	cpld = i2c_new_dummy(client->adapter, client->addr - 1);
+	if (!cpld)
+		return -ENOMEM;
+
+	/* Make sure the CFG interface is disabled */
+	err = machxo_disable_cfg_if(cpld);
+	if (err) {
+		dev_err(&client->dev,
+			"Failed to disable CFG interface: %d\n", err);
+		return err;
+	}
+
+	/* Get the device ID */
+	err = machxo_read_devid(cpld, &devid);
+	if (err) {
+		dev_err(&client->dev,
+			"Failed to read MachXO device ID: %d\n", err);
+		goto unregister_device;
+	}
+	dev_info(&client->dev, "MachXO device ID: %08x\n", devid);
+
+	/* Get the trace ID */
+	err = machxo_read_traceid(cpld, &traceid);
+	if (err) {
+		dev_err(&client->dev,
+			"Failed to read MachXO device ID: %d\n", err);
+		goto unregister_device;
+	}
+	dev_info(&client->dev, "MachXO trace ID: %08x\n", traceid);
+
+	/* Then the SRAM usercode */
+	err = machxo_read_usercode(cpld, &sram_usercode);
+	if (err) {
+		dev_err(&client->dev,
+			"Failed to read MachXO SRAM user code: %d\n", err);
+		goto unregister_device;
+	}
+	dev_info(&client->dev, "MachXO SRAM usercode: %08x\n", sram_usercode);
+
+	/* Enable the config interface to read the CFG usercode */
+	err = machxo_enable_cfg_if_transparent(cpld);
+	if (err) {
+		dev_err(&client->dev,
+			"Failed to enable CFG interface: %d\n", err);
+		goto unregister_device;
+	}
+
+	/* Read the CFG usercode */
+	err = machxo_read_usercode(cpld, &cfg_usercode);
+	if (!err)
+		err = machxo_read_usercode(cpld, &cfg_usercode);
+	if (err) {
+		dev_err(&client->dev,
+			"Failed to read MachXO CFG user code: %d\n", err);
+		goto disable_cfg_if;
+	}
+	dev_info(&client->dev, "MachXO CFG usercode: %08x\n", cfg_usercode);
+
+disable_cfg_if:
+	err = machxo_disable_cfg_if(cpld);
+	if (err)
+		dev_err(&client->dev,
+			"Failed to disable CFG interface: %d\n", err);
+
+	if (!err)
+		err = pdata->machxo_check(devid, traceid,
+					sram_usercode, cfg_usercode);
+
+unregister_device:
+	i2c_unregister_device(cpld);
+	return err;
+}
+#else
+static int adnp_check_machxo(struct i2c_client *client)
+{
+	return 0;
+}
+#endif
+
 static __devinit int adnp_i2c_probe(struct i2c_client *client,
 				    const struct i2c_device_id *id)
 {
 	struct adnp_platform_data *pdata = client->dev.platform_data;
 	struct adnp *adnp;
 	int err;
+
+	err = adnp_check_machxo(client);
+	if (err)
+		return err;
 
 	adnp = kzalloc(sizeof(*adnp), GFP_KERNEL);
 	if (!adnp)

@@ -379,6 +379,14 @@ config GPIO_ADNP_IRQ
 	  be used as an interrupt controller. It requires the driver to be
 	  built in the kernel.
 
+config GPIO_ADNP_MACHXO
+	bool "ADNP on MachXO CPLD support"
+	depends on GPIO_ADNP
+	help
+	  Say yes here to allow checking that the MachXO CPLD has been
+	  properly programmed before trying to use the Avionic Design N-bit
+	  GPIO expander.
+
 comment "PCI GPIO expanders:"
 
 config GPIO_CS5535
