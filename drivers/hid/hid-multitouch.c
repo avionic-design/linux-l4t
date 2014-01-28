@@ -73,7 +73,7 @@ MODULE_PARM_DESC(egalax_hack_frame_filter,
 
 static unsigned int egalax_hack_event_max_triger =
 	CONFIG_EGALAX_HACK_EVENT_MAX_TRIGGER;
-module_param(egalax_hack_event_max_triger, bool, 0644);
+module_param(egalax_hack_event_max_triger, uint, 0644);
 MODULE_PARM_DESC(egalax_hack_event_max_triger, "Maximum trigger rate for " \
 	"events if only the coordinate has changed (ms).");
 
