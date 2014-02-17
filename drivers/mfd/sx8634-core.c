@@ -493,6 +493,9 @@ static int __devexit sx8634_i2c_remove(struct i2c_client *client)
 		gpio_free(sx->reset_gpio);
 	}
 
+	free_irq(client->irq, sx);
+	mfd_remove_devices(&client->dev);
+
 	return 0;
 }
 
