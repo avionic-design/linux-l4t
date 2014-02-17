@@ -95,7 +95,7 @@ static struct sx8634_backlight_platform_data medcom_wide_keypad1_bl_pdata = {
 
 static struct sx8634_platform_data medcom_wide_keypad1_pdata = {
 	.id = 0,
-	.reset_gpio = BOARD_GPIO(ADNP, 11),
+	.reset_gpio = BOARD_GPIO(ADNP, 10),
 	.touch = &medcom_wide_keypad1_touch_pdata,
 	.backlight = &medcom_wide_keypad1_bl_pdata,
 };
@@ -152,7 +152,7 @@ static struct sx8634_backlight_platform_data medcom_wide_keypad2_bl_pdata = {
 
 static struct sx8634_platform_data medcom_wide_keypad2_pdata = {
 	.id = 1,
-	.reset_gpio = BOARD_GPIO(ADNP, 10),
+	.reset_gpio = BOARD_GPIO(ADNP, 11),
 	.touch = &medcom_wide_keypad2_touch_pdata,
 	.backlight = &medcom_wide_keypad2_bl_pdata,
 };
