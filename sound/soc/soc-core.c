@@ -3789,11 +3789,13 @@ static inline char *fmt_multiple_name(struct device *dev,
 /**
  * snd_soc_register_dai - Register a DAI with the ASoC core
  *
- * @dai: DAI to register
+ * @component: The component the DAIs are registered for
+ * @dai_drv: DAI driver to use for the DAIs
  */
-static int snd_soc_register_dai(struct device *dev,
+static int snd_soc_register_dai(struct snd_soc_component *component,
 		struct snd_soc_dai_driver *dai_drv)
 {
+	struct device *dev = component->dev;
 	struct snd_soc_codec *codec;
 	struct snd_soc_dai *dai;
 
@@ -3810,6 +3812,7 @@ static int snd_soc_register_dai(struct device *dev,
 		return -ENOMEM;
 	}
 
+	dai->component = component;
 	dai->dev = dev;
 	dai->driver = dai_drv;
 	dai->dapm.dev = dev;
@@ -3867,12 +3870,14 @@ found:
 /**
  * snd_soc_register_dais - Register multiple DAIs with the ASoC core
  *
- * @dai: Array of DAIs to register
+ * @component: The component the DAIs are registered for
+ * @dai_drv: DAI driver to use for the DAIs
  * @count: Number of DAIs
  */
-static int snd_soc_register_dais(struct device *dev,
+static int snd_soc_register_dais(struct snd_soc_component *component,
 		struct snd_soc_dai_driver *dai_drv, size_t count)
 {
+	struct device *dev = component->dev;
 	struct snd_soc_codec *codec;
 	struct snd_soc_dai *dai;
 	int i, ret = 0;
@@ -3895,6 +3900,7 @@ static int snd_soc_register_dais(struct device *dev,
 			goto err;
 		}
 
+		dai->component = component;
 		dai->dev = dev;
 		dai->driver = &dai_drv[i];
 		if (dai->driver->id)
@@ -3991,9 +3997,9 @@ __snd_soc_register_component(struct device *dev,
 	 * since it had been used snd_soc_register_dais(),
 	 */
 	if ((1 == num_dai) && allow_single_dai)
-		ret = snd_soc_register_dai(dev, dai_drv);
+		ret = snd_soc_register_dai(cmpnt, dai_drv);
 	else
-		ret = snd_soc_register_dais(dev, dai_drv, num_dai);
+		ret = snd_soc_register_dais(cmpnt, dai_drv, num_dai);
 	if (ret < 0) {
 		dev_err(dev, "ASoC: Failed to regster DAIs: %d\n", ret);
 		goto error_component_name;
