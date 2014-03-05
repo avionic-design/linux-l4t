@@ -60,9 +60,8 @@ void snd_soc_runtime_activate(struct snd_soc_pcm_runtime *rtd, int stream)
 
 	cpu_dai->active++;
 	codec_dai->active++;
-	if (cpu_dai->codec)
-		cpu_dai->codec->active++;
-	codec_dai->codec->active++;
+	cpu_dai->component->active++;
+	codec_dai->component->active++;
 }
 
 /**
@@ -92,9 +91,8 @@ void snd_soc_runtime_deactivate(struct snd_soc_pcm_runtime *rtd, int stream)
 
 	cpu_dai->active--;
 	codec_dai->active--;
-	if (cpu_dai->codec)
-		cpu_dai->codec->active--;
-	codec_dai->codec->active--;
+	cpu_dai->component->active--;
+	codec_dai->component->active--;
 }
 
 /**
