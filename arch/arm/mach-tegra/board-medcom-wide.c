@@ -235,7 +235,11 @@ static void __init medcom_wide_camera_init(void) {}
 #endif /* CONFIG_VIDEO_TEGRA */
 
 static u32 medcom_wide_platform_id[] = {
-	0xFF1, /* Gen 1 */
+	0xFF1, /* Gen 1 as documentation states */
+	0xFF6, /* Gen 1 as seen in real world
+		  This is actually a 1408/Plutux Image, but was
+		  used in production of 1427 due to some mysterious
+		  reasons. */
 	0xFDD, /* Gen 2 */
 };
 
