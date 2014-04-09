@@ -695,6 +695,8 @@ struct input_keymap_entry {
 #define KEY_PHONE_SPEED_DIAL	0x242
 #define KEY_PHONE_STORE_NUMBER	0x243
 
+#define KEY_MEDICAL_ALARM	0x250
+
 #define BTN_TRIGGER_HAPPY		0x2c0
 #define BTN_TRIGGER_HAPPY1		0x2c0
 #define BTN_TRIGGER_HAPPY2		0x2c1
@@ -756,6 +758,7 @@ struct input_keymap_entry {
 #define REL_DIAL		0x07
 #define REL_WHEEL		0x08
 #define REL_MISC		0x09
+#define REL_ROOM_TEMPERATURE	0x0a
 #define REL_MAX			0x0f
 #define REL_CNT			(REL_MAX+1)
 

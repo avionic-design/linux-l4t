@@ -578,6 +578,12 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 		case 0x0ea: map_key_clear(KEY_VOLUMEDOWN);	break;
 		case 0x0f5: map_key_clear(KEY_SLOW);		break;
 
+		case 0x102: map_key_clear(KEY_LIGHTS_TOGGLE);	break;
+
+		case 0x105: map_rel(REL_ROOM_TEMPERATURE);	break;
+
+		case 0x10d: map_key_clear(KEY_MEDICAL_ALARM);	break;
+
 		case 0x182: map_key_clear(KEY_BOOKMARKS);	break;
 		case 0x183: map_key_clear(KEY_CONFIG);		break;
 		case 0x184: map_key_clear(KEY_WORDPROCESSOR);	break;
