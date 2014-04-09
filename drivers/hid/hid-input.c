@@ -478,6 +478,29 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 		}
 		break;
 
+	case HID_UP_TELEPHONY:
+		switch (usage->hid & HID_USAGE) {
+		case 0x000: goto ignore;
+		case 0x26: map_key_clear(KEY_PHONE_DROP);	break;
+		case 0x31: map_key_clear(KEY_PHONE_SEND);	break;
+		case 0x50: map_key_clear(KEY_PHONE_SPEED_DIAL);	break;
+		case 0x51: map_key_clear(KEY_PHONE_STORE_NUMBER);break;
+		case 0xB0: map_key_clear(KEY_NUMERIC_0);	break;
+		case 0xB1: map_key_clear(KEY_NUMERIC_1);	break;
+		case 0xB2: map_key_clear(KEY_NUMERIC_2);	break;
+		case 0xB3: map_key_clear(KEY_NUMERIC_3);	break;
+		case 0xB4: map_key_clear(KEY_NUMERIC_4);	break;
+		case 0xB5: map_key_clear(KEY_NUMERIC_5);	break;
+		case 0xB6: map_key_clear(KEY_NUMERIC_6);	break;
+		case 0xB7: map_key_clear(KEY_NUMERIC_7);	break;
+		case 0xB8: map_key_clear(KEY_NUMERIC_8);	break;
+		case 0xB9: map_key_clear(KEY_NUMERIC_9);	break;
+		case 0xBA: map_key_clear(KEY_NUMERIC_STAR);	break;
+		case 0xBB: map_key_clear(KEY_NUMERIC_POUND);	break;
+		default:  goto ignore;
+		}
+		break;
+
 	case HID_UP_CONSUMER:	/* USB HUT v1.12, pages 75-84 */
 		switch (usage->hid & HID_USAGE) {
 		case 0x000: goto ignore;

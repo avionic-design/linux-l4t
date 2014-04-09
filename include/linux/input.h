@@ -690,6 +690,11 @@ struct input_keymap_entry {
 
 #define KEY_ALS_TOGGLE		0x230 /* Ambient light sensor */
 
+#define KEY_PHONE_DROP		0x240
+#define KEY_PHONE_SEND		0x241
+#define KEY_PHONE_SPEED_DIAL	0x242
+#define KEY_PHONE_STORE_NUMBER	0x243
+
 #define BTN_TRIGGER_HAPPY		0x2c0
 #define BTN_TRIGGER_HAPPY1		0x2c0
 #define BTN_TRIGGER_HAPPY2		0x2c1
