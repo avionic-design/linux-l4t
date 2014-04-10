@@ -302,6 +302,14 @@ config HID_MICROSOFT
 	---help---
 	Support for Microsoft devices that are not fully compliant with HID standard.
 
+config HID_MMT
+	tristate "MMT extended functions"
+	depends on USB_HID
+	---help---
+	 Support for the extra features founds on Avionic Design Multimedia
+	 Terminal Tableau.
+
+
 config HID_MONTEREY
 	tristate "Monterey Genius KB29E keyboard" if EXPERT
 	depends on USB_HID
