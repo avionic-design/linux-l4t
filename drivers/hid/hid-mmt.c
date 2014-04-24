@@ -25,6 +25,33 @@ struct mmt_attribute {
 	unsigned offset;
 };
 
+#define mmt_map_key_clear(c)	hid_map_usage_clear(hi, usage, bit, max, \
+					EV_KEY, (c))
+
+static int mmt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
+		struct hid_field *field, struct hid_usage *usage,
+		unsigned long **bit, int *max)
+{
+
+	if ((usage->hid & HID_USAGE_PAGE) == HID_UP_TELEPHONY) {
+		unsigned int hid_usage = usage->hid & HID_USAGE;
+		unsigned int key;
+		/* Extended avionic codes: 0xAcci
+		   where cc is the original code, i the index */
+		if ((hid_usage & 0xF000) != 0xA000)
+			return 0;
+		switch ((hid_usage >> 4) & 0xFF) {
+		case 0x50: key = KEY_PHONE_SPEED_DIAL;		break;
+		case 0x51: key = KEY_PHONE_STORE_NUMBER;	break;
+		default: return -1; /* Ignore */
+		}
+		mmt_map_key_clear(key + (hid_usage & 0xF));
+		return 1;
+	}
+
+	return 0;
+}
+
 static ssize_t mmt_show_field(struct device *dev,
 			struct device_attribute *dev_attr, char *buf)
 {
@@ -186,6 +213,7 @@ static struct hid_driver mmt_driver = {
 	.id_table = mmt_devices,
 	.probe = mmt_probe,
 	.remove = mmt_remove,
+	.input_mapping = mmt_input_mapping,
 };
 
 static int __init mmt_init(void)
