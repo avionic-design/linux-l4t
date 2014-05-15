@@ -204,6 +204,15 @@ static struct regulator_ops tps6586x_regulator_ldo_ops = {
 	.disable = tps6586x_regulator_disable,
 };
 
+static struct regulator_ops tps6586x_regulator_fixed_ldo_ops = {
+	.list_voltage = tps6586x_ldo_list_voltage,
+	.get_voltage = tps6586x_ldo_get_voltage,
+	.enable_time = tps6586x_regulator_enable_time,
+	.is_enabled = tps6586x_regulator_is_enabled,
+	.enable = tps6586x_regulator_enable,
+	.disable = tps6586x_regulator_disable,
+};
+
 static struct regulator_ops tps6586x_regulator_dvm_ops = {
 	.list_voltage = tps6586x_ldo_list_voltage,
 	.get_voltage = tps6586x_ldo_get_voltage,
@@ -259,6 +268,10 @@ static int tps6586x_dvm_voltages[] = {
 	1325, 1350, 1375, 1400, 1425, 1450, 1475, 1500,
 };
 
+static int tps658640_rtc_voltages[] = {
+	2500, 2850, 3100, 3300,
+};
+
 #define TPS6586X_REGULATOR(_id, vdata, _ops, vreg, shift, nbits,	\
 			   ereg0, ebit0, ereg1, ebit1, en_time)		\
 	.desc	= {							\
@@ -288,6 +301,13 @@ static int tps6586x_dvm_voltages[] = {
 {									\
 	TPS6586X_REGULATOR(_id, vdata, ldo_ops, vreg, shift, nbits,	\
 			   ereg0, ebit0, ereg1, ebit1, en_time)		\
+}
+
+#define TPS6586X_FIXED_LDO(_id, vdata, vreg, shift, nbits,		\
+		     ereg0, ebit0, ereg1, ebit1, en_time)		\
+{									\
+	TPS6586X_REGULATOR(_id, vdata, fixed_ldo_ops, vreg, shift,	\
+			   nbits, ereg0, ebit0, ereg1, ebit1, en_time)	\
 }
 
 #define TPS6586X_DVM(_id, vdata, vreg, shift, nbits,			\
@@ -350,6 +370,9 @@ static struct tps6586x_regulator tps658640_regulator[] = {
 		ENE, 7, ENE, 7, 3000),
 	TPS6586X_LDO(SM_2, tps658640_sm2, SUPPLYV2, 0, 5,
 		ENC, 7, END, 7, 0),
+
+	TPS6586X_FIXED_LDO(LDO_RTC, tps658640_rtc, SUPPLYV4,
+		3, 2, V4, 7, V4, 7, 0),
 };
 
 static struct tps6586x_regulator tps658643_regulator[] = {
