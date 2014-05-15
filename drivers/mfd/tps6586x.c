@@ -529,6 +529,7 @@ static void tps6586x_print_version(struct i2c_client *client, int version)
 		name = "TPS658623";
 		break;
 	case TPS658640:
+	case TPS658640v2:
 		name = "TPS658640";
 		break;
 	case TPS658643:

@@ -495,6 +495,7 @@ static int __devinit tps6586x_regulator_probe(struct platform_device *pdev)
 					ARRAY_SIZE(tps658623_regulator));
 		break;
 	case TPS658640:
+	case TPS658640v2:
 		ri = find_regulator_info(id, tps658640_regulator,
 					ARRAY_SIZE(tps658640_regulator));
 		break;
