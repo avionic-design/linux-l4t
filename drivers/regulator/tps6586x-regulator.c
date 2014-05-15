@@ -336,10 +336,6 @@ static struct tps6586x_regulator tps658623_regulator[] = {
 };
 
 static struct tps6586x_regulator tps658640_regulator[] = {
-	TPS6586X_LDO(LDO_0, tps6586x_ldo0, SUPPLYV1, 5, 3,
-		ENC, 0, END, 0, 4000),
-	TPS6586X_LDO(LDO_1, tps6586x_dvm, SUPPLYV1, 0, 5,
-		ENC, 1, END, 1, 4000),
 	TPS6586X_LDO(LDO_3, tps6586x_ldo0, SUPPLYV4, 0, 3,
 		ENC, 2, END, 2, 3000),
 	TPS6586X_LDO(LDO_5, tps6586x_ldo0, SUPPLYV6, 0, 3,
@@ -352,9 +348,6 @@ static struct tps6586x_regulator tps658640_regulator[] = {
 		ENC, 6, END, 6, 15000),
 	TPS6586X_LDO(LDO_9, tps6586x_ldo0, SUPPLYV6, 3, 3,
 		ENE, 7, ENE, 7, 3000),
-
-	TPS6586X_LDO(LDO_8, tps658640_sm2, SUPPLYV2, 5, 3,
-		ENC, 6, END, 6, 15000),
 	TPS6586X_LDO(SM_2, tps658640_sm2, SUPPLYV2, 0, 5,
 		ENC, 7, END, 7, 0),
 };
