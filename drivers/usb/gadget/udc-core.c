@@ -29,12 +29,12 @@
 
 /**
  * struct usb_udc - describes one usb device controller
- * @driver - the gadget driver pointer. For use by the class code
+ * @driver - the gadget driver pointer. For use by gadget bus
  * @dev - the child device to the actual controller
- * @gadget - the gadget. For use by the class code
- * @list - for use by the udc class driver
+ * @gadget - the gadget. For use by the gadget bus code
+ * @list - for use by the gadget bus code
  *
- * This represents the internal data structure which is used by the UDC-class
+ * This represents the internal data structure which is used by the gadget bus
  * to hold information about udc driver and gadget together.
  */
 struct usb_udc {
@@ -44,7 +44,7 @@ struct usb_udc {
 	struct list_head		list;
 };
 
-static struct class *udc_class;
+static struct bus_type gadget_bus_type;
 static LIST_HEAD(udc_list);
 static DEFINE_MUTEX(udc_lock);
 
@@ -116,7 +116,7 @@ EXPORT_SYMBOL_GPL(usb_gadget_set_state);
  * @gadget: The gadget we want to get started
  * @driver: The driver we want to bind to @gadget
  *
- * This call is issued by the UDC Class driver when it's about
+ * This call is issued by the gadget bus driver when it's about
  * to register a gadget driver to the device controller, before
  * calling gadget driver's bind() method.
  *
@@ -136,7 +136,7 @@ static inline int usb_gadget_udc_start(struct usb_gadget *gadget,
  * @gadget: The device we want to stop activity
  * @driver: The driver to unbind from @gadget
  *
- * This call is issued by the UDC Class driver after calling
+ * This call is issued by the gadget bus driver after calling
  * gadget driver's unbind() method.
  *
  * The details are implementation specific, but it can go as
@@ -173,7 +173,7 @@ static void usb_udc_nop_release(struct device *dev)
 }
 
 /**
- * usb_add_gadget_udc_release - adds a new gadget to the udc class driver list
+ * usb_add_gadget_udc_release - adds a new gadget to the udc framework
  * @parent: the parent device to this udc. Usually the controller driver's
  * device.
  * @gadget: the gadget to be added to the list.
@@ -209,7 +209,7 @@ int usb_add_gadget_udc_release(struct device *parent, struct usb_gadget *gadget,
 
 	device_initialize(&udc->dev);
 	udc->dev.release = usb_udc_release;
-	udc->dev.class = udc_class;
+	udc->dev.bus = &gadget_bus_type;
 	udc->dev.groups = usb_udc_attr_groups;
 	udc->dev.parent = parent;
 	ret = dev_set_name(&udc->dev, "%s", kobject_name(&parent->kobj));
@@ -248,7 +248,7 @@ err1:
 EXPORT_SYMBOL_GPL(usb_add_gadget_udc_release);
 
 /**
- * usb_add_gadget_udc - adds a new gadget to the udc class driver list
+ * usb_add_gadget_udc - adds a new gadget to the udc framework
  * @parent: the parent device to this udc. Usually the controller
  * driver's device.
  * @gadget: the gadget to be added to the list
@@ -550,23 +550,26 @@ static int usb_udc_uevent(struct device *dev, struct kobj_uevent_env *env)
 	return 0;
 }
 
+static struct bus_type gadget_bus_type = {
+	.name =		"usb_gadget",
+	.uevent =	usb_udc_uevent,
+};
+
 static int __init usb_udc_init(void)
 {
-	udc_class = class_create(THIS_MODULE, "udc");
-	if (IS_ERR(udc_class)) {
-		pr_err("failed to create udc class --> %ld\n",
-				PTR_ERR(udc_class));
-		return PTR_ERR(udc_class);
-	}
+	int ret = bus_register(&gadget_bus_type);
 
-	udc_class->dev_uevent = usb_udc_uevent;
-	return 0;
+	if (ret)
+		pr_err("failed to register gadget bus: %d\n", ret);
+
+	return ret;
+
 }
 subsys_initcall(usb_udc_init);
 
 static void __exit usb_udc_exit(void)
 {
-	class_destroy(udc_class);
+	bus_unregister(&gadget_bus_type);
 }
 module_exit(usb_udc_exit);
 
