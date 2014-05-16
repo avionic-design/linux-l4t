@@ -46,6 +46,21 @@ static struct bus_type gadget_bus_type;
 static DEFINE_MUTEX(udc_lock);
 static DEFINE_IDA(udc_ida);
 
+/*
+ * We can bind any unused udc to specfic driver after setting manual_binding
+ * eg:
+ * echo udc-0 > /sys/bus/usb_gadget/drivers/g_serial
+ * echo udc-1 > /sys/bus/usb_gadget/drivers/g_mass_storage
+ *
+ * How to use manual_binding:
+ * First, set manual_binding = 1 before drivers and devices are added to bus
+ * Second, set manual_binding = 0
+ * Third, do manual_binding like above
+ */
+static bool manual_binding;
+module_param(manual_binding, bool, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(manual_binding, "binding udc and gadget driver manully");
+
 /* ------------------------------------------------------------------------- */
 
 int usb_gadget_map_request(struct usb_gadget *gadget,
@@ -562,6 +577,9 @@ static int usb_gadget_match(struct device *dev, struct device_driver *drv)
 	struct usb_gadget_driver *driver =
 		container_of(drv, struct usb_gadget_driver, driver);
 	bool dev_not_in_use = true, driver_not_in_use = true;
+
+	if (manual_binding)
+		return 0;
 
 	dev_dbg(dev, "%s: driver: %s\n", __func__, drv->name);
 
