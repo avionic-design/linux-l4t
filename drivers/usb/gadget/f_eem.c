@@ -528,7 +528,7 @@ error:
  * Caller must have called @gether_setup().  Caller is also responsible
  * for calling @gether_cleanup() before module unload.
  */
-int __init eem_bind_config(struct usb_configuration *c, struct eth_dev *dev)
+int eem_bind_config(struct usb_configuration *c, struct eth_dev *dev)
 {
 	struct f_eem	*eem;
 	int		status;
