@@ -194,9 +194,9 @@ static struct adt7461_platform_data tamonten_nct1008_pdata = {
 	.conv_rate = 0x08,
 	.offset = 0,
 	.hysteresis = 10,
-	.shutdown_ext_limit = 85,
+	.shutdown_ext_limit = 105,
 	.shutdown_local_limit = 85,
-	.throttling_ext_limit = 70,
+	.throttling_ext_limit = 90,
 	.alarm_fn = NULL,
 	.irq_gpio = TAMONTEN_GPIO_TEMP_ALERT,
 };
