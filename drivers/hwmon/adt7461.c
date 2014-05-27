@@ -565,7 +565,7 @@ static int adt7461_init_client(struct i2c_client *client)
 {
 	struct adt7461_data *data = i2c_get_clientdata(client);
 	struct adt7461_platform_data *pdata = client->dev.platform_data;
-	u8 config = 0;
+	u8 config = STANDBY_BIT;
 	u8 value;
 	int err;
 
@@ -639,10 +639,10 @@ static int adt7461_init_client(struct i2c_client *client)
 
 	if (data->flags & ADT7461_FLAG_THERM2) {
 		data->alarm_fn = pdata->alarm_fn;
-		config = (THERM2_BIT | STANDBY_BIT);
-	} else {
-		config = (~ALERT_BIT & ~THERM2_BIT & STANDBY_BIT);
+		config |= THERM2_BIT;
 	}
+	if (data->flags & ADT7461_FLAG_ADT7461_EXT)
+		config |= EXTENDED_RANGE_BIT;
 
 	err = i2c_smbus_write_byte_data(client, ADT7461_REG_W_CONFIG1, config);
 	if (err < 0)
