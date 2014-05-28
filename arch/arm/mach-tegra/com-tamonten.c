@@ -190,7 +190,7 @@ static struct tegra_i2c_platform_data tamonten_dvc_platform_data = {
 
 static struct adt7461_platform_data tamonten_nct1008_pdata = {
 	.supported_hwrev = true,
-	.ext_range = false,
+	.ext_range = true,
 	.conv_rate = 0x08,
 	.offset = 0,
 	.hysteresis = 10,
