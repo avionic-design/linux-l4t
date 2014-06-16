@@ -757,6 +757,10 @@ static inline void hid_map_usage(struct hid_input *hidinput,
 		*bit = input->ledbit;
 		*max = LED_MAX;
 		break;
+	case EV_SW:
+		*bit = input->swbit;
+		*max = SW_MAX;
+		break;
 	}
 }
 
