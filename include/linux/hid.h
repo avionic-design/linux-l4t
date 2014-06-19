@@ -197,6 +197,7 @@ struct hid_item {
 #define HID_UP_CONSUMER		0x000c0000
 #define HID_UP_DIGITIZER	0x000d0000
 #define HID_UP_PID		0x000f0000
+#define HID_UP_DISPLAY		0x00140000
 #define HID_UP_HPVENDOR         0xff7f0000
 #define HID_UP_MSVENDOR		0xff000000
 #define HID_UP_CUSTOM		0x00ff0000
@@ -293,8 +294,9 @@ struct hid_item {
 #define HID_CONNECT_HIDDEV		0x08
 #define HID_CONNECT_HIDDEV_FORCE	0x10
 #define HID_CONNECT_FF			0x20
+#define HID_CONNECT_DISPLAY		0x40
 #define HID_CONNECT_DEFAULT	(HID_CONNECT_HIDINPUT|HID_CONNECT_HIDRAW| \
-		HID_CONNECT_HIDDEV|HID_CONNECT_FF)
+		HID_CONNECT_HIDDEV|HID_CONNECT_FF|HID_CONNECT_DISPLAY)
 
 /*
  * HID device quirks.
@@ -442,6 +444,7 @@ struct hid_output_fifo {
 #define HID_CLAIMED_INPUT	1
 #define HID_CLAIMED_HIDDEV	2
 #define HID_CLAIMED_HIDRAW	4
+#define HID_CLAIMED_DISPLAY	8
 
 #define HID_STAT_ADDED		1
 #define HID_STAT_PARSED		2
@@ -488,6 +491,7 @@ struct hid_device {							/* device report descriptor */
 	void *hiddev;							/* The hiddev structure */
 	void *hidraw;
 	int minor;							/* Hiddev minor number */
+	void *display;
 
 	int open;							/* is the device open by anyone? */
 	char name[128];							/* Device name */

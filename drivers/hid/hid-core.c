@@ -34,6 +34,7 @@
 #include <linux/hiddev.h>
 #include <linux/hid-debug.h>
 #include <linux/hidraw.h>
+#include <linux/hid-display.h>
 
 #include "hid-ids.h"
 
@@ -1218,6 +1219,8 @@ int hid_connect(struct hid_device *hdev, unsigned int connect_mask)
 		hdev->claimed |= HID_CLAIMED_HIDDEV;
 	if ((connect_mask & HID_CONNECT_HIDRAW) && !hidraw_connect(hdev))
 		hdev->claimed |= HID_CLAIMED_HIDRAW;
+	if ((connect_mask & HID_CONNECT_DISPLAY) && !hid_display_connect(hdev))
+		hdev->claimed |= HID_CLAIMED_DISPLAY;
 
 	if (!hdev->claimed) {
 		hid_err(hdev, "claimed by neither input, hiddev nor hidraw\n");
@@ -1282,6 +1285,8 @@ void hid_disconnect(struct hid_device *hdev)
 		hdev->hiddev_disconnect(hdev);
 	if (hdev->claimed & HID_CLAIMED_HIDRAW)
 		hidraw_disconnect(hdev);
+	if (hdev->claimed & HID_CLAIMED_DISPLAY)
+		hid_display_disconnect(hdev);
 }
 EXPORT_SYMBOL_GPL(hid_disconnect);
 

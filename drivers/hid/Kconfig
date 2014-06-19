@@ -50,6 +50,10 @@ config HIDRAW
 
 	If unsure, say Y.
 
+config HID_DISPLAY
+	bool "HID display device support"
+	depends on HID
+
 source "drivers/hid/usbhid/Kconfig"
 
 menu "Special HID drivers"
