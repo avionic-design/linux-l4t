@@ -28,6 +28,7 @@
 #include <linux/fault-inject.h>
 #include <linux/random.h>
 #include <linux/slab.h>
+#include <linux/of.h>
 #include <linux/wakelock.h>
 #include <linux/devfreq.h>
 #include <linux/slab.h>
@@ -1198,6 +1199,34 @@ u32 mmc_vddrange_to_ocrmask(int vdd_min, int vdd_max)
 	return mask;
 }
 EXPORT_SYMBOL(mmc_vddrange_to_ocrmask);
+
+static int mmc_of_get_func_num(struct device_node *node)
+{
+	u32 reg;
+	int ret;
+
+	ret = of_property_read_u32(node, "reg", &reg);
+	if (ret < 0)
+		return ret;
+
+	return reg;
+}
+
+struct device_node *mmc_of_find_child_device(struct mmc_host *host,
+		unsigned func_num)
+{
+	struct device_node *node;
+
+	if (!host->parent || !host->parent->of_node)
+		return NULL;
+
+	for_each_child_of_node(host->parent->of_node, node) {
+		if (mmc_of_get_func_num(node) == func_num)
+			return node;
+	}
+
+	return NULL;
+}
 
 #ifdef CONFIG_REGULATOR
 
