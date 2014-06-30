@@ -489,18 +489,24 @@ void tegra_dc_put(struct tegra_dc *dc)
 	tegra_dc_io_end(dc);
 }
 
+EXPORT_SYMBOL(tegra_dc_put);
+
 void tegra_dc_hold_dc_out(struct tegra_dc *dc)
 {
-	tegra_dc_get(dc);
-	if (dc->out_ops && dc->out_ops->hold)
-		dc->out_ops->hold(dc);
+	if (1 == atomic_inc_return(&dc->holding)) {
+		tegra_dc_get(dc);
+		if (dc->out_ops && dc->out_ops->hold)
+			dc->out_ops->hold(dc);
+	}
 }
 
 void tegra_dc_release_dc_out(struct tegra_dc *dc)
 {
-	if (dc->out_ops && dc->out_ops->release)
-		dc->out_ops->release(dc);
-	tegra_dc_put(dc);
+	if (0 == atomic_dec_return(&dc->holding)) {
+		if (dc->out_ops && dc->out_ops->release)
+			dc->out_ops->release(dc);
+		tegra_dc_put(dc);
+	}
 }
 
 #define DUMP_REG(a) do {			\
@@ -1918,6 +1924,15 @@ int tegra_dc_config_frame_end_intr(struct tegra_dc *dc, bool enable)
 	return ret;
 }
 
+static void tegra_dc_process_vblank(struct tegra_dc *dc, ktime_t timestamp)
+{
+	if (test_bit(V_BLANK_USER, &dc->vblank_ref_count))
+		tegra_dc_ext_process_vblank(dc->ndev->id, timestamp);
+#ifdef CONFIG_ADF_TEGRA
+	tegra_adf_process_vblank(dc->adf, timestamp);
+#endif
+}
+
 static void tegra_dc_one_shot_irq(struct tegra_dc *dc, unsigned long status,
 		ktime_t timestamp)
 {
@@ -1927,9 +1942,7 @@ static void tegra_dc_one_shot_irq(struct tegra_dc *dc, unsigned long status,
 			dc->out->user_needs_vblank = false;
 			complete(&dc->out->user_vblank_comp);
 		}
-#ifdef CONFIG_ADF_TEGRA
-		tegra_adf_process_vblank(dc->adf, timestamp);
-#endif
+		tegra_dc_process_vblank(dc, timestamp);
 	}
 
 	if (status & V_BLANK_INT) {
@@ -1965,10 +1978,8 @@ static void tegra_dc_continuous_irq(struct tegra_dc *dc, unsigned long status,
 	if (status & V_BLANK_INT)
 		queue_work(system_freezable_wq, &dc->vblank_work);
 
-#ifdef CONFIG_ADF_TEGRA
 	if (status & (V_BLANK_INT | MSF_INT))
-		tegra_adf_process_vblank(dc->adf, timestamp);
-#endif
+		tegra_dc_process_vblank(dc, timestamp);
 
 	if (status & FRAME_END_INT) {
 		struct timespec tm = CURRENT_TIME;
@@ -2592,6 +2603,12 @@ static void _tegra_dc_controller_disable(struct tegra_dc *dc)
 	unsigned i;
 
 	tegra_dc_get(dc);
+
+	if (atomic_read(&dc->holding)) {
+		/* Force release all refs but the last one */
+		atomic_set(&dc->holding, 1);
+		tegra_dc_release_dc_out(dc);
+	}
 
 	if (dc->out && dc->out->prepoweroff)
 		dc->out->prepoweroff();
