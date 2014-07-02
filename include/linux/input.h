@@ -692,6 +692,8 @@ struct input_keymap_entry {
 
 #define KEY_PHONE_DROP		0x240
 #define KEY_PHONE_SEND		0x241
+#define KEY_PHONE_LINE		0x242
+#define KEY_PHONE_REDIAL	0x243
 
 #define KEY_PHONE_SPEED_DIAL	0x250
 #define KEY_PHONE_SPEED_DIAL1	0x250
