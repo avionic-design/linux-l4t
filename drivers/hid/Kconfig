@@ -105,6 +105,12 @@ config HID_BELKIN
 	---help---
 	Support for Belkin Flip KVM and Wireless keyboard.
 
+config HID_BGU
+	tristate "BGU extended functions"
+	depends on USB_HID
+	---help---
+	 Support for the extra features founds on Avionic Design BGU-Handset
+
 config HID_CHERRY
 	tristate "Cherry Cymotion keyboard" if EXPERT
 	depends on USB_HID
