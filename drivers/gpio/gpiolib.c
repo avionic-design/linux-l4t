@@ -13,6 +13,7 @@
 #include <linux/idr.h>
 #include <linux/slab.h>
 #include <linux/gpio/driver.h>
+#include <linux/gpio/machine.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/gpio.h>
