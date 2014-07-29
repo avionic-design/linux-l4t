@@ -354,7 +354,7 @@ static int pix_bytes_per_line(unsigned int width, u32 fourcc)
 		return roundup(width, 2) * 2;
 	case V4L2_PIX_FMT_YUV420:
 	case V4L2_PIX_FMT_YVU420:
-		return roundup(width, 2);
+		return roundup(width, 8);
 	}
 	return -EINVAL;
 }
@@ -369,7 +369,7 @@ static int pix_size(unsigned int width, unsigned int height, u32 fourcc)
 		return roundup(width, 2) * 2 * height;
 	case V4L2_PIX_FMT_YUV420:
 	case V4L2_PIX_FMT_YVU420:
-		return roundup(width, 2) * height * 3 / 2;
+		return roundup(width, 8) * height * 3 / 2;
 	}
 	return -EINVAL;
 }
