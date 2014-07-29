@@ -645,7 +645,10 @@ static void tegra_camera_capture_setup_vip(struct tegra_camera_dev *pcdev,
 	TC_VI_REG_WT(pcdev, TEGRA_VI_PIN_INPUT_ENABLE,
 		     0x000003fc | (bt656 ? 0 : 0x6000));
 	TC_VI_REG_WT(pcdev, TEGRA_VI_VI_DATA_INPUT_CONTROL, 0x000003fc);
-	TC_VI_REG_WT(pcdev, TEGRA_VI_PIN_INVERSION, 0x00000000);
+	TC_VI_REG_WT(pcdev, TEGRA_VI_PIN_INVERSION,
+		((pcdev->mbus_flags & SOCAM_HSYNC_ACTIVE_HIGH) ? BIT(0) : 0) |
+		((pcdev->mbus_flags & SOCAM_VSYNC_ACTIVE_HIGH) ? BIT(1) : 0) |
+		0);
 
 	TC_VI_REG_WT(pcdev, TEGRA_VI_CONT_SYNCPT_OUT_1,
 		(0x1 << 8) | /* Enable continuous syncpt */
@@ -1486,8 +1489,8 @@ static int tegra_camera_set_bus_param(struct soc_camera_device *icd,
 	/* Compute the common flags */
 	cam_flags = icd->ops->query_bus_param(icd);
 	host_flags = SOCAM_MASTER |
-		SOCAM_HSYNC_ACTIVE_HIGH |
-		SOCAM_VSYNC_ACTIVE_HIGH |
+		SOCAM_HSYNC_ACTIVE_HIGH | SOCAM_HSYNC_ACTIVE_LOW |
+		SOCAM_VSYNC_ACTIVE_HIGH | SOCAM_VSYNC_ACTIVE_LOW |
 		SOCAM_PCLK_SAMPLE_RISING |
 		SOCAM_DATA_ACTIVE_HIGH |
 		SOCAM_DATAWIDTH_8;
