@@ -1451,7 +1451,7 @@ static unsigned long mt9v126_query_bus_param(struct soc_camera_device *icd)
 	struct soc_camera_link *icl = to_soc_camera_link(icd);
 	unsigned long flags =
 		SOCAM_MASTER | SOCAM_PCLK_SAMPLE_RISING |
-		SOCAM_HSYNC_ACTIVE_HIGH | SOCAM_VSYNC_ACTIVE_HIGH |
+		SOCAM_HSYNC_ACTIVE_LOW | SOCAM_VSYNC_ACTIVE_LOW |
 		SOCAM_DATA_ACTIVE_HIGH | SOCAM_DATAWIDTH_8;
 	return soc_camera_apply_sensor_flags(icl, flags);
 }
