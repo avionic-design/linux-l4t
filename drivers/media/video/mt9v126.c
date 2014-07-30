@@ -1313,7 +1313,7 @@ static int mt9v126_try_mbus_fmt(struct v4l2_subdev *sd,
 	} else {
 		fmt->width = 720;
 		fmt->height = 576;
-		fmt->field = V4L2_FIELD_INTERLACED;
+		fmt->field = V4L2_FIELD_SEQ_TB;
 	}
 
 	fmt->code = V4L2_MBUS_FMT_UYVY8_2X8;
