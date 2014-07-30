@@ -685,7 +685,7 @@ static int mt9v126_get_dewarp_state(struct v4l2_subdev *sd,
 	if (output_fmt)
 		*output_fmt = ret[2].int_u8;
 	if (err_status)
-		*err_status = ret[3].int_u8;
+		*err_status = mt9v126_errno(ret[3].int_u8);
 
 	return 0;
 }
@@ -774,15 +774,15 @@ static int mt9v126_enable_dewarp(struct v4l2_subdev *sd, int enable,
 	while (retry > 0) {
 		err = mt9v126_get_dewarp_state(
 			sd, NULL, NULL, NULL, &state);
-		if (err)
+		if (err != 0 && err != -EBUSY)
 			return err;
-		if (state != -EBUSY)
+		if (err == 0 && state != -EBUSY)
 			return state;
 		usleep_range(1000, 10000);
 		retry -= 1;
 	}
 
-	return err;
+	return -EBUSY;
 }
 
 static int mt9v126_get_overlay_state(struct v4l2_subdev *sd,
