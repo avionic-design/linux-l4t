@@ -1395,6 +1395,14 @@ static int mt9v126_s_stream(struct v4l2_subdev *sd, int enable)
 	return mt9v126_switch_state(sd, new_state);
 }
 
+static int mt9v126_get_std(struct v4l2_subdev *sd, v4l2_std_id *norm)
+{
+	struct mt9v126 *mt9v126 = to_mt9v126(sd);
+
+	*norm = mt9v126->progressive ? V4L2_STD_UNKNOWN : V4L2_STD_PAL;
+	return 0;
+}
+
 #ifdef CONFIG_VIDEO_ADV_DEBUG
 static int mt9v126_get_register(struct v4l2_subdev *sd,
 				struct v4l2_dbg_register *reg)
@@ -1440,6 +1448,7 @@ static const struct v4l2_subdev_core_ops mt9v126_core_ops = {
 	.g_chip_ident = mt9v126_get_chip_id,
 	.queryctrl = mt9v126_queryctrl,
 	.g_ctrl = mt9v126_get_control,
+	.g_std = mt9v126_get_std,
 #ifdef CONFIG_VIDEO_ADV_DEBUG
 	.g_register = mt9v126_get_register,
 	.s_register = mt9v126_set_register,
