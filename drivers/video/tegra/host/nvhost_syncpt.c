@@ -487,18 +487,21 @@ u32 nvhost_syncpt_incr_max_ext(struct nvhost_device *dev, u32 id, u32 incrs)
 	struct nvhost_syncpt *sp = &(nvhost_get_host(dev)->syncpt);
 	return nvhost_syncpt_incr_max(sp, id, incrs);
 }
+EXPORT_SYMBOL_GPL(nvhost_syncpt_incr_max_ext);
 
 void nvhost_syncpt_cpu_incr_ext(struct nvhost_device *dev, u32 id)
 {
 	struct nvhost_syncpt *sp = &(nvhost_get_host(dev)->syncpt);
 	nvhost_syncpt_cpu_incr(sp, id);
 }
+EXPORT_SYMBOL_GPL(nvhost_syncpt_cpu_incr_ext);
 
 u32 nvhost_syncpt_read_ext(struct nvhost_device *dev, u32 id)
 {
 	struct nvhost_syncpt *sp = &(nvhost_get_host(dev)->syncpt);
 	return nvhost_syncpt_read(sp, id);
 }
+EXPORT_SYMBOL_GPL(nvhost_syncpt_read_ext);
 
 int nvhost_syncpt_wait_timeout_ext(struct nvhost_device *dev, u32 id, u32 thresh,
 	u32 timeout, u32 *value)
@@ -506,3 +509,4 @@ int nvhost_syncpt_wait_timeout_ext(struct nvhost_device *dev, u32 id, u32 thresh
 	struct nvhost_syncpt *sp = &(nvhost_get_host(dev)->syncpt);
 	return nvhost_syncpt_wait_timeout(sp, id, thresh, timeout, value);
 }
+EXPORT_SYMBOL_GPL(nvhost_syncpt_wait_timeout_ext);

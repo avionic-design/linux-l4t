@@ -634,13 +634,16 @@ bool nvhost_module_powered_ext(struct nvhost_device *dev)
 {
 	return nvhost_module_powered(dev);
 }
+EXPORT_SYMBOL_GPL(nvhost_module_powered_ext);
 
 void nvhost_module_busy_ext(struct nvhost_device *dev)
 {
 	nvhost_module_busy(dev);
 }
+EXPORT_SYMBOL_GPL(nvhost_module_busy_ext);
 
 void nvhost_module_idle_ext(struct nvhost_device *dev)
 {
 	nvhost_module_idle(dev);
 }
+EXPORT_SYMBOL_GPL(nvhost_module_idle_ext);

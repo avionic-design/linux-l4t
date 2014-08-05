@@ -84,6 +84,7 @@ int nvhost_read_module_regs(struct nvhost_device *ndev,
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(nvhost_read_module_regs);
 
 int nvhost_write_module_regs(struct nvhost_device *ndev,
 			u32 offset, int count, const u32 *values)
@@ -106,6 +107,7 @@ int nvhost_write_module_regs(struct nvhost_device *ndev,
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(nvhost_write_module_regs);
 
 struct nvhost_channel_userctx {
 	struct nvhost_channel *ch;
@@ -576,6 +578,7 @@ int nvhost_client_user_init(struct nvhost_device *dev)
 fail:
 	return err;
 }
+EXPORT_SYMBOL_GPL(nvhost_client_user_init);
 
 int nvhost_client_device_init(struct nvhost_device *dev)
 {
@@ -611,6 +614,7 @@ fail:
 	nvhost_free_channel(ch);
 	return err;
 }
+EXPORT_SYMBOL_GPL(nvhost_client_device_init);
 
 int nvhost_client_device_suspend(struct nvhost_device *dev)
 {
@@ -624,6 +628,7 @@ int nvhost_client_device_suspend(struct nvhost_device *dev)
 
 	return ret;
 }
+EXPORT_SYMBOL_GPL(nvhost_client_device_suspend);
 
 int nvhost_client_device_get_resources(struct nvhost_device *dev)
 {
@@ -658,6 +663,7 @@ fail:
 
 	return -ENXIO;
 }
+EXPORT_SYMBOL_GPL(nvhost_client_device_get_resources);
 
 void nvhost_client_device_put_resources(struct nvhost_device *dev)
 {
@@ -670,3 +676,4 @@ void nvhost_client_device_put_resources(struct nvhost_device *dev)
 
 	release_mem_region(r->start, resource_size(r));
 }
+EXPORT_SYMBOL_GPL(nvhost_client_device_put_resources);
