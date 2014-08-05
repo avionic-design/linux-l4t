@@ -107,14 +107,14 @@ static void tegra_wdt_disable(struct tegra_wdt *wdt)
 
 static inline void tegra_wdt_ping(struct tegra_wdt *wdt)
 {
-	return;
+	/* Clear the interrupt flag, the watchdog will bite
+	 * if an interrupt occurs with the flag still set. */
+	writel(TIMER_PCR_INTR, wdt->wdt_timer + TIMER_PCR);
 }
 
 static irqreturn_t tegra_wdt_interrupt(int irq, void *dev_id)
 {
-	struct tegra_wdt *wdt = dev_id;
-
-	writel(TIMER_PCR_INTR, wdt->wdt_timer + TIMER_PCR);
+	/* The interrupt flag is cleared in the ping function. */
 	return IRQ_HANDLED;
 }
 #elif defined(CONFIG_ARCH_TEGRA_3x_SOC)
@@ -437,7 +437,8 @@ static int tegra_wdt_probe(struct platform_device *pdev)
 		tegra_wdt_int_priority(wdt);
 #endif
 		ret = request_irq(res_irq->start, tegra_wdt_interrupt,
-				  IRQF_DISABLED, dev_name(&pdev->dev), wdt);
+				IRQF_DISABLED | IRQF_TRIGGER_RISING,
+				dev_name(&pdev->dev), wdt);
 		if (ret) {
 			dev_err(&pdev->dev, "unable to configure IRQ\n");
 			goto fail;
