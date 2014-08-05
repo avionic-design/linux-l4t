@@ -87,6 +87,7 @@ struct nvmap_device {
 };
 
 struct nvmap_device *nvmap_dev;
+EXPORT_SYMBOL_GPL(nvmap_dev);
 
 static struct backing_dev_info nvmap_bdi = {
 	.ra_pages	= 0,
@@ -662,6 +663,7 @@ struct nvmap_client *nvmap_create_client(struct nvmap_device *dev,
 	spin_unlock(&dev->clients_lock);
 	return client;
 }
+EXPORT_SYMBOL_GPL(nvmap_create_client);
 
 static void destroy_client(struct nvmap_client *client)
 {
@@ -723,6 +725,7 @@ struct nvmap_client *nvmap_client_get(struct nvmap_client *client)
 
 	return client;
 }
+EXPORT_SYMBOL_GPL(nvmap_client_get);
 
 struct nvmap_client *nvmap_client_get_file(int fd)
 {
@@ -739,6 +742,7 @@ struct nvmap_client *nvmap_client_get_file(int fd)
 	fput(f);
 	return client;
 }
+EXPORT_SYMBOL_GPL(nvmap_client_get_file);
 
 void nvmap_client_put(struct nvmap_client *client)
 {
@@ -748,6 +752,7 @@ void nvmap_client_put(struct nvmap_client *client)
 	if (!atomic_dec_return(&client->count))
 		destroy_client(client);
 }
+EXPORT_SYMBOL_GPL(nvmap_client_put);
 
 static int nvmap_open(struct inode *inode, struct file *filp)
 {

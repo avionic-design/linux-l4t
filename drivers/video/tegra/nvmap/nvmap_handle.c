@@ -1052,3 +1052,4 @@ struct nvmap_handle_ref *nvmap_duplicate_handle_id(struct nvmap_client *client,
 	trace_nvmap_duplicate_handle_id(client, id, ref);
 	return ref;
 }
+EXPORT_SYMBOL_GPL(nvmap_duplicate_handle_id);

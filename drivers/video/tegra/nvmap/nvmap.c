@@ -387,6 +387,7 @@ phys_addr_t nvmap_pin(struct nvmap_client *client,
 
 	return ret ?: phys;
 }
+EXPORT_SYMBOL_GPL(nvmap_pin);
 
 phys_addr_t nvmap_handle_address(struct nvmap_client *c, unsigned long id)
 {
@@ -403,6 +404,7 @@ phys_addr_t nvmap_handle_address(struct nvmap_client *c, unsigned long id)
 
 	return phys;
 }
+EXPORT_SYMBOL_GPL(nvmap_handle_address);
 
 void nvmap_unpin(struct nvmap_client *client, struct nvmap_handle_ref *ref)
 {
@@ -413,6 +415,7 @@ void nvmap_unpin(struct nvmap_client *client, struct nvmap_handle_ref *ref)
 	if (handle_unpin(client, ref->handle, false))
 		wake_up(&client->share->pin_wait);
 }
+EXPORT_SYMBOL_GPL(nvmap_unpin);
 
 void nvmap_unpin_handles(struct nvmap_client *client,
 			 struct nvmap_handle **h, int nr)
@@ -429,6 +432,7 @@ void nvmap_unpin_handles(struct nvmap_client *client,
 	if (do_wake)
 		wake_up(&client->share->pin_wait);
 }
+EXPORT_SYMBOL_GPL(nvmap_unpin_handles);
 
 void *nvmap_mmap(struct nvmap_handle_ref *ref)
 {
@@ -501,6 +505,7 @@ void *nvmap_mmap(struct nvmap_handle_ref *ref)
 	 * nvmap_handle_put will be called by unmapping this address */
 	return p;
 }
+EXPORT_SYMBOL_GPL(nvmap_mmap);
 
 void nvmap_munmap(struct nvmap_handle_ref *ref, void *addr)
 {
@@ -523,6 +528,7 @@ void nvmap_munmap(struct nvmap_handle_ref *ref, void *addr)
 	}
 	nvmap_handle_put(h);
 }
+EXPORT_SYMBOL_GPL(nvmap_munmap);
 
 struct nvmap_handle_ref *nvmap_alloc(struct nvmap_client *client, size_t size,
 				     size_t align, unsigned int flags,
@@ -550,6 +556,7 @@ struct nvmap_handle_ref *nvmap_alloc(struct nvmap_client *client, size_t size,
 
 	return r;
 }
+EXPORT_SYMBOL_GPL(nvmap_alloc);
 
 /* allocates memory with specifed iovm_start address. */
 struct nvmap_handle_ref *nvmap_alloc_iovm(struct nvmap_client *client,
@@ -605,6 +612,7 @@ void nvmap_free(struct nvmap_client *client, struct nvmap_handle_ref *r)
 
 	nvmap_free_handle_id(client, nvmap_ref_to_id(r));
 }
+EXPORT_SYMBOL_GPL(nvmap_free);
 
 int nvmap_mark_global(struct nvmap_client *client, struct nvmap_handle_ref *r)
 {
@@ -618,3 +626,4 @@ int nvmap_mark_global(struct nvmap_client *client, struct nvmap_handle_ref *r)
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(nvmap_mark_global);
