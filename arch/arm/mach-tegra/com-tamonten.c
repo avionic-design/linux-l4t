@@ -398,6 +398,7 @@ static struct platform_device *tamonten_devices[] __initdata = {
 	&tegra_spi_device4,
 	&tegra_gart_device,
 	&tegra_avp_device,
+	&tegra_wdt_device,
 };
 
 void __init tamonten_fixup(struct machine_desc *desc,
