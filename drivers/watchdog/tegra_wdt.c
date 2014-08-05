@@ -316,6 +316,10 @@ static long tegra_wdt_ioctl(struct file *file, unsigned int cmd,
 static ssize_t tegra_wdt_write(struct file *file, const char __user *data,
 			       size_t len, loff_t *ppos)
 {
+	struct tegra_wdt *wdt = file->private_data;
+
+	tegra_wdt_ping(wdt);
+
 	return len;
 }
 
