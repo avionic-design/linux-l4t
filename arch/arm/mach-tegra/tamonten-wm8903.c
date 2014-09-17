@@ -53,8 +53,9 @@ static struct platform_device tamonten_audio_device = {
 
 static struct wm8903_platform_data tamonten_wm8903_pdata = {
 	.irq_active_low = 0,
-	.micdet_cfg = 0,
-	.micdet_delay = 100,
+	.micdet_cfg = (0 << WM8903_MICDET_THR_SHIFT) |
+			(2 << WM8903_MICSHORT_THR_SHIFT),
+	.micdet_delay = 50,
 	.gpio_base = BOARD_WM8903_GPIO_BASE,
 	.gpio_cfg = {
 		WM8903_GPn_FN_DMIC_LR_CLK_OUTPUT << WM8903_GP1_FN_SHIFT,
