@@ -133,6 +133,13 @@ static int tegra_fb_set_par(struct fb_info *info)
 		tegra_fb->win->stride_uv = 0;
 		tegra_fb->win->phys_addr_u = 0;
 		tegra_fb->win->phys_addr_v = 0;
+		if (var->rotate == FB_ROTATE_UD) {
+			tegra_fb->win->flags |= TEGRA_WIN_FLAG_INVERT_H;
+			tegra_fb->win->flags |= TEGRA_WIN_FLAG_INVERT_V;
+		} else {
+			tegra_fb->win->flags &= ~TEGRA_WIN_FLAG_INVERT_H;
+			tegra_fb->win->flags &= ~TEGRA_WIN_FLAG_INVERT_V;
+		}
 	}
 
 	if (var->pixclock) {
@@ -282,7 +289,7 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 	switch (blank) {
 	case FB_BLANK_UNBLANK:
 		dev_dbg(&tegra_fb->ndev->dev, "unblank\n");
-		tegra_fb->win->flags = TEGRA_WIN_FLAG_ENABLED;
+		tegra_fb->win->flags |= TEGRA_WIN_FLAG_ENABLED;
 		tegra_dc_enable(tegra_fb->win->dc);
 		return 0;
 
@@ -322,7 +329,7 @@ static int tegra_fb_pan_display(struct fb_var_screeninfo *var,
 			(var->xoffset * (var->bits_per_pixel/8));
 
 		tegra_fb->win->phys_addr = addr;
-		tegra_fb->win->flags = TEGRA_WIN_FLAG_ENABLED;
+		tegra_fb->win->flags |= TEGRA_WIN_FLAG_ENABLED;
 		tegra_fb->win->virt_addr = info->screen_base;
 
 		tegra_dc_update_windows(&tegra_fb->win, 1);
