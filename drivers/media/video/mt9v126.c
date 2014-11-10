@@ -109,6 +109,8 @@ static const struct v4l2_queryctrl mt9v126_controls[] = {
 	},
 };
 
+static int mt9v126_set_config(struct v4l2_subdev *sd);
+
 static inline struct mt9v126 *to_mt9v126(struct v4l2_subdev *sd)
 {
 	return container_of(sd, struct mt9v126, sd);
@@ -547,6 +549,7 @@ static int mt9v126_switch_state(struct v4l2_subdev *sd, int new_state)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int err, state, next_state = -1, unknown_state = -1;
+	int reset_count = 0;
 
 	while (1) {
 		state = mt9v126_get_state(sd);
@@ -554,6 +557,36 @@ static int mt9v126_switch_state(struct v4l2_subdev *sd, int new_state)
 			return state;
 		if (state == new_state)
 			return 0;
+
+		/* Handle a few special cases: */
+		switch (state) {
+		case MT9V126_SYS_STATE_DEAD:
+			/* Make sure we don't loop if the reset doesn't help */
+			if (reset_count > 0) {
+				dev_err(&client->dev,
+					"Sensor still dead after reset!\n");
+				return -EINVAL;
+			}
+			reset_count++;
+			err = mt9v126_hard_reset(sd);
+			if (err) {
+				dev_err(&client->dev,
+					"Failed to reset the sensor, "
+					"recovery not possible\n");
+				return err;
+			}
+			/* Retry */
+			continue;
+		case MT9V126_SYS_STATE_UNCONFIGURED:
+			err = mt9v126_set_config(sd);
+			if (err) {
+				dev_err(&client->dev,
+					"Failed to configure the sensor\n");
+				return err;
+			}
+			/* Continue with the state switch */
+			break;
+		}
 
 		switch (state) {
 		case MT9V126_SYS_STATE_STANDBY:
@@ -1288,13 +1321,6 @@ static int mt9v126_set_config(struct v4l2_subdev *sd)
 		goto error;
 	}
 
-	/* Suspend until the stream start */
-	err = mt9v126_switch_state(sd, MT9V126_SYS_STATE_SUSPENDED);
-	if (err) {
-		dev_err(&client->dev, "Failed to suspend\n");
-		goto error;
-	}
-
 	return 0;
 error:
 	dev_err(&client->dev, "Set config failed (%d)\n", err);
@@ -1557,9 +1583,6 @@ static int mt9v126_probe(struct i2c_client *client,
 	icd->ops = &mt9v126_camera_ops;
 
 	mt9v126_hard_reset(&mt9v126->sd);
-	err = mt9v126_set_config(&mt9v126->sd);
-	if (err)
-		goto error;
 
 	return 0;
 
