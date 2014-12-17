@@ -1,0 +1,53 @@
+/dts-v1/;
+
+#include "tegra124-meerkat.dtsi"
+
+/ {
+	model = "Avionic Design Kein Baseboard";
+	compatible = "ad,kein-baseboard", "ad,meerkat", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+
+	serial@70006300 {
+		status = "okay";
+	};
+
+	/* USB 3.0 */
+	usb@7d008000 {
+		status = "okay";
+		usb_vbus-supply = <&vdd_usb3_vbus>;
+	};
+
+	regulators {
+		vdd_5v0: regulator@100 {
+			compatible = "regulator-fixed";
+			reg = <100>;
+			regulator-name = "+VDD_5V";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_3v3: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
+			regulator-name = "+VDD_3V3";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_usb3_vbus: regulator@102 {
+			compatible = "regulator-fixed";
+			reg = <102>;
+			regulator-name = "+USB3.0_VCC";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio TEGRA_GPIO(FF, 1) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+			vin-supply = <&vdd_5v0_sys>;
+		};
+	};
+};

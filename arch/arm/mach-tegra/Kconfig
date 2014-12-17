@@ -194,6 +194,26 @@ config MACH_LAGUNA
 	 help
 	 Support for NVIDIA LAGUNA Development platform
 
+config COM_MEERKAT
+	bool
+	depends on ARCH_TEGRA_12x_SOC
+	select TEGRA_SILICON_PLATFORM
+	select SERIAL_OF_PLATFORM
+	select I2C_TEGRA
+	select MFD_AS3722
+	select REGULATOR_AS3722
+	select PINCTRL_AS3722
+	select POWER_RESET_AS3722
+	select RTC_DRV_AS3722
+	help
+	  Support for Avionic Design Meerkat COM
+
+config MACH_KEIN_BASEBOARD
+	bool "Kein Baseboard"
+	select COM_MEERKAT
+	help
+	  Support for Avionic Design Kein Baseboard
+
 choice
        prompt "Tegra platform type"
        default TEGRA_SILICON_PLATFORM
