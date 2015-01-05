@@ -27,6 +27,7 @@
 #include <linux/module.h>
 #include <linux/tegra-soc.h>
 #include <linux/tegra-fuse.h>
+#include <linux/of.h>
 
 #include "board.h"
 #include "iomap.h"
@@ -284,10 +285,10 @@ static int pwrdet_notify_cb(
 }
 
 static int __init pwr_detect_cell_init_one(
-	struct pwr_detect_cell *cell, u32 *disabled_mask)
+	struct device *dev, struct pwr_detect_cell *cell, u32 *disabled_mask)
 {
 	int ret;
-	struct regulator *regulator = regulator_get(NULL, cell->reg_id);
+	struct regulator *regulator = regulator_get(dev, cell->reg_id);
 
 	if (IS_ERR(regulator))
 		return PTR_ERR(regulator);
@@ -295,6 +296,7 @@ static int __init pwr_detect_cell_init_one(
 	cell->regulator_nb.notifier_call = pwrdet_notify_cb;
 	ret = regulator_register_notifier(regulator, &cell->regulator_nb);
 	if (ret) {
+		cell->regulator_nb.notifier_call = NULL;
 		regulator_put(regulator);
 		return ret;
 	}
@@ -306,15 +308,20 @@ static int __init pwr_detect_cell_init_one(
 	return 0;
 }
 
-int __init tegra_pwr_detect_cell_init(void)
+static int tegra_pwr_detect_cell_probe(struct platform_device *pdev)
 {
 	int i, ret;
 	u32 package_mask;
 	unsigned long flags;
 	bool rails_found = true;
+	struct device *dev = NULL;
 
 	if (!tegra_platform_is_silicon())
 		return -ENOSYS;
+
+	/* When setup from DT we need to pass the device to regulator_get() */
+	if (pdev->dev.of_node)
+		dev = &pdev->dev;
 
 	i = tegra_package_id();
 	if ((i != -1) && (i & (~0x1F))) {
@@ -327,12 +334,17 @@ int __init tegra_pwr_detect_cell_init(void)
 	for (i = 0; i < ARRAY_SIZE(pwr_detect_cells); i++) {
 		struct pwr_detect_cell *cell = &pwr_detect_cells[i];
 
+		if (cell->regulator_nb.notifier_call)
+			continue;
+
 		if (!(cell->package_mask & package_mask)) {
 			pwrio_disabled_mask |= cell->pwrio_mask;
 			continue;
 		}
 
-		ret = pwr_detect_cell_init_one(cell, &pwrio_disabled_mask);
+		ret = pwr_detect_cell_init_one(dev, cell, &pwrio_disabled_mask);
+		if (ret == -EPROBE_DEFER)
+			return ret;
 		if (ret) {
 			pr_err("tegra: failed to map regulator to power detect"
 			       " cell %s(%d)\n", cell->reg_id, ret);
@@ -359,6 +371,52 @@ int __init tegra_pwr_detect_cell_init(void)
 	pr_info("tegra: started io power detection dynamic control\n");
 	pr_info("tegra: NO_IO_POWER setting 0x%x\n", pwrio_disabled_mask);
 
+	return 0;
+}
+
+#ifdef CONFIG_OF
+static struct of_device_id tegra_power_detect_of_match[] = {
+	{ .compatible = "nvidia,tegra124-power-detect", },
+	{},
+};
+#endif
+
+static struct platform_driver tegra_power_detect_driver = {
+	.driver		= {
+		.name	= "tegra-power-detect",
+		.owner	= THIS_MODULE,
+		.of_match_table = of_match_ptr(tegra_power_detect_of_match),
+	},
+	.probe		= tegra_pwr_detect_cell_probe,
+};
+
+int __init tegra_pwr_detect_cell_init(void)
+{
+	bool create_dev;
+	int err;
+
+	err = platform_driver_register(&tegra_power_detect_driver);
+	if (err) {
+		pr_err("Failed to register power detect driver: %d\n", err);
+		return err;
+	}
+
+#ifdef CONFIG_OF
+	create_dev = !of_find_matching_node(NULL, tegra_power_detect_of_match);
+#else
+	create_dev = true;
+#endif
+
+	/* To be compatible with non-DT boards create the device manually */
+	if (create_dev)  {
+		struct platform_device *pdev;
+
+		pdev = platform_device_register_simple(
+			"tegra-power-detect", 0, NULL, 0);
+		if (IS_ERR(pdev))
+			pr_warn("Failed to register power detect device: %ld\n",
+				PTR_ERR(pdev));
+	}
 	return 0;
 }
 
