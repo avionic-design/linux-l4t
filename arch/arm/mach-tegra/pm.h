@@ -31,6 +31,7 @@
 #include <linux/clkdev.h>
 #include <linux/tegra-pmc.h>
 #include <linux/tegra-pm.h>
+#include <linux/io.h>
 
 #include "iomap.h"
 
