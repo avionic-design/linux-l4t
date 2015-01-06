@@ -4014,6 +4014,12 @@ static struct tegra_sdhci_platform_data *sdhci_tegra_dt_parse_pdata(
 	return plat;
 }
 
+static void sdhci_tegra_clear_platform_data(void *data)
+{
+	struct platform_device *pdev = data;
+	pdev->dev.platform_data = NULL;
+}
+
 static int sdhci_tegra_probe(struct platform_device *pdev)
 {
 	const struct of_device_id *match;
@@ -4075,6 +4081,19 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 		dev_err(mmc_dev(host->mmc), "failed to allocate tegra_host\n");
 		rc = -ENOMEM;
 		goto err_no_plat;
+	}
+
+	/* If pdev->dev.platform_data was allocated it must be cleared
+	 * on driver detach. Otherwise a stale pointer get used if probe()
+	 * is run again. */
+	if (!pdev->dev.platform_data) {
+		rc = devm_add_action(&pdev->dev,
+				sdhci_tegra_clear_platform_data, pdev);
+		if (rc) {
+			dev_err(mmc_dev(host->mmc),
+				"failed to register platform_data cleanup\n");
+			goto err_no_plat;
+		}
 	}
 
 	tegra_host->plat = plat;
@@ -4192,9 +4211,13 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 		tegra_host->vddio_max_uv = SDHOST_HIGH_VOLT_MAX;
 	}
 
-	tegra_host->vdd_io_reg = regulator_get(mmc_dev(host->mmc),
+	tegra_host->vdd_io_reg = devm_regulator_get(mmc_dev(host->mmc),
 							"vddio_sdmmc");
 	if (IS_ERR_OR_NULL(tegra_host->vdd_io_reg)) {
+		if (PTR_ERR(tegra_host->vdd_io_reg) == -EPROBE_DEFER) {
+			rc = -EPROBE_DEFER;
+			goto err_clk_get;
+		}
 		dev_info(mmc_dev(host->mmc), "%s regulator not found: %ld."
 			"Assuming vddio_sdmmc is not required.\n",
 			"vddio_sdmmc", PTR_ERR(tegra_host->vdd_io_reg));
@@ -4209,14 +4232,18 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 				"Init volt(%duV-%duV) setting failed %d\n",
 				tegra_host->vddio_min_uv,
 				tegra_host->vddio_max_uv, rc);
-			regulator_put(tegra_host->vdd_io_reg);
+			devm_regulator_put(tegra_host->vdd_io_reg);
 			tegra_host->vdd_io_reg = NULL;
 		}
 	}
 
-	tegra_host->vdd_slot_reg = regulator_get(mmc_dev(host->mmc),
+	tegra_host->vdd_slot_reg = devm_regulator_get(mmc_dev(host->mmc),
 							"vddio_sd_slot");
 	if (IS_ERR_OR_NULL(tegra_host->vdd_slot_reg)) {
+		if (PTR_ERR(tegra_host->vdd_io_reg) == -EPROBE_DEFER) {
+			rc = -EPROBE_DEFER;
+			goto err_clk_get;
+		}
 		dev_info(mmc_dev(host->mmc), "%s regulator not found: %ld."
 			" Assuming vddio_sd_slot is not required.\n",
 			"vddio_sd_slot", PTR_ERR(tegra_host->vdd_slot_reg));
@@ -4443,11 +4470,6 @@ static int sdhci_tegra_remove(struct platform_device *pdev)
 	if (rc)
 		dev_err(mmc_dev(host->mmc),
 			"Regulator disable in remove failed %d\n", rc);
-
-	if (tegra_host->vdd_slot_reg)
-		regulator_put(tegra_host->vdd_slot_reg);
-	if (tegra_host->vdd_io_reg)
-		regulator_put(tegra_host->vdd_io_reg);
 
 	if (gpio_is_valid(plat->wp_gpio))
 		gpio_free(plat->wp_gpio);
