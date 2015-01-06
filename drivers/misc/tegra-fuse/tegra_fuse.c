@@ -1243,8 +1243,11 @@ static int tegra_fuse_probe(struct platform_device *pdev)
 #ifndef CONFIG_TEGRA_PRE_SILICON_SUPPORT
 	/* get fuse_regulator regulator */
 	fuse_regulator = devm_regulator_get(&pdev->dev, TEGRA_FUSE_SUPPLY);
-	if (IS_ERR(fuse_regulator))
+	if (IS_ERR(fuse_regulator)) {
+		if (PTR_ERR(fuse_regulator) == -EPROBE_DEFER)
+			return -EPROBE_DEFER;
 		dev_err(&pdev->dev, "no fuse_regulator, fuse write disabled\n");
+	}
 #endif
 
 	clk_fuse = clk_get_sys("fuse-tegra", "fuse_burn");
