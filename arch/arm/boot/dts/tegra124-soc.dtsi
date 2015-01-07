@@ -689,4 +689,26 @@
 			0x0 0x7000e400 0x0 0x400>; /* PMC base */
 		interrupts = <0 58 0x04>;
 	};
+
+	usb@7d000000 {
+		compatible = "nvidia,tegra124-ehci", "nvidia,tegra20-ehci", "usb-ehci";
+		reg = <0x0 0x7d000000 0x0 0x4000>;
+		interrupts = <0 20 0x04>;
+		status = "disabled";
+	};
+
+	usb@7d004000 {
+		compatible = "nvidia,tegra124-ehci", "nvidia,tegra20-ehci", "usb-ehci";
+		reg = <0x0 0x7d004000 0x0 0x4000>;
+		interrupts = <0 21 0x04>;
+		status = "disabled";
+	};
+
+	usb@7d008000 {
+		compatible = "nvidia,tegra124-ehci", "nvidia,tegra20-ehci", "usb-ehci";
+		reg = <0x0 0x7d008000 0x0 0x4000>;
+		interrupts = <0 97 0x04>;
+		status = "disabled";
+	};
+
 };
