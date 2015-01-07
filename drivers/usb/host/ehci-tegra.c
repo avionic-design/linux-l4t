@@ -630,8 +630,8 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 	tegra->phy = tegra_usb_phy_open(pdev);
 	hcd->phy = get_usb_phy(tegra->phy);
 	if (IS_ERR(tegra->phy)) {
-		dev_err(&pdev->dev, "failed to open USB phy\n");
-		err = -ENXIO;
+		dev_err(&pdev->dev, "failed to open USB phy (%ld)\n", PTR_ERR(tegra->phy));
+		err = PTR_ERR(tegra->phy);
 		goto fail_io;
 	}
 
