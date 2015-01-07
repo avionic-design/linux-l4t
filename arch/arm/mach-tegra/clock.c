@@ -1105,7 +1105,7 @@ static int __init tegra_clk_late_init(void)
 	tegra_update_cpu_edp_limits();
 	return 0;
 }
-late_initcall(tegra_clk_late_init);
+late_initcall_sync(tegra_clk_late_init);
 
 
 /* Several extended clock configuration bits (e.g., clock routing, clock
