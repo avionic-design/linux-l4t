@@ -551,6 +551,10 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 		pdev->dev.dma_mask = &tegra_ehci_dma_mask;
 
 	pdata = dev_get_platdata(&pdev->dev);
+	if (!pdata) {
+		dev_err(&pdev->dev, "Platform data is missing\n");
+		return -EINVAL;
+	}
 
 	tegra = devm_kzalloc(&pdev->dev, sizeof(struct tegra_ehci_hcd),
 			     GFP_KERNEL);
