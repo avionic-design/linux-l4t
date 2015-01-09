@@ -377,6 +377,13 @@ config HID_MT_UP_TIMEOUT
 	Set the touch state to unpressed if there are no more events within this
 	time. Needed for devices that do not report unpressed event.
 
+config HID_MT_SHARP
+	bool "Sharp multitouch support"
+	default HID_MULTITOUCH
+	depends on HID_MULTITOUCH
+	---help---
+	Support for Sharp multitouch.
+
 config HID_NTRIG
 	tristate "N-Trig touch screen"
 	depends on USB_HID

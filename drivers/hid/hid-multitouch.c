@@ -166,6 +166,9 @@ struct mt_device {
 #define MT_CLS_CYPRESS				0x0102
 #define MT_CLS_EGALAX				0x0103
 #define MT_CLS_EGALAX_SERIAL			0x0104
+#ifdef CONFIG_HID_MT_SHARP
+#define MT_CLS_SHARP				0x0105
+#endif
 
 #define MT_DEFAULT_MAXCONTACT	10
 
@@ -249,6 +252,14 @@ static struct mt_class mt_classes[] = {
 		.sn_move = 4096,
 		.sn_pressure = 32,
 	},
+#ifdef CONFIG_HID_MT_SHARP
+	{ .name = MT_CLS_SHARP,
+		.quirks = MT_QUIRK_NOT_SEEN_MEANS_UP |
+			MT_QUIRK_USE_UP_TIMER |
+			MT_QUIRK_SLOT_IS_CONTACTID,
+		.maxcontacts = 5,
+	},
+#endif
 
 	{ }
 };
@@ -1043,6 +1054,12 @@ static const struct hid_device_id mt_devices[] = {
 	{ .driver_data = MT_CLS_DEFAULT,
 		HID_USB_DEVICE(USB_VENDOR_ID_XAT,
 			USB_DEVICE_ID_XAT_CSR) },
+
+#ifdef CONFIG_HID_MT_SHARP
+	{ .driver_data = MT_CLS_SHARP,
+		HID_USB_DEVICE(USB_VENDOR_ID_SHARP,
+			USB_DEVICE_ID_SHARP_TOUCH_9570) },
+#endif
 
 	{ }
 };
