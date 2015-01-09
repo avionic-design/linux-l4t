@@ -51,6 +51,9 @@ MODULE_LICENSE("GPL");
 #define MT_QUIRK_VALID_IS_INRANGE	(1 << 5)
 #define MT_QUIRK_VALID_IS_CONFIDENCE	(1 << 6)
 #define MT_QUIRK_SLOT_IS_CONTACTID_MINUS_ONE	(1 << 8)
+#ifdef CONFIG_HID_MT_UP_TIMEOUT
+#define MT_QUIRK_USE_UP_TIMER		(1 << 9)
+#endif
 
 #ifdef CONFIG_EGALAX_HACK
 
@@ -135,6 +138,9 @@ struct mt_device {
 	__u8 maxcontacts;
 	bool curvalid;		/* is the current contact valid? */
 	struct mt_slot *slots;
+#ifdef CONFIG_HID_MT_UP_TIMEOUT
+	struct timer_list up_timer;
+#endif
 #ifdef CONFIG_EGALAX_HACK
 	bool use_egalax_hack;
 	struct mt_slot lastdata[CONFIG_EGALAX_HACK_MAX_SLOTS];
@@ -539,7 +545,31 @@ static void mt_emit_event(struct mt_device *td, struct input_dev *input)
 	input_mt_report_pointer_emulation(input, true);
 	input_sync(input);
 	td->num_received = 0;
+#ifdef CONFIG_HID_MT_UP_TIMEOUT
+	if (td->mtclass.quirks & MT_QUIRK_USE_UP_TIMER)
+		mod_timer(&td->up_timer, jiffies +
+				msecs_to_jiffies(CONFIG_HID_MT_UP_TIMEOUT));
+#endif
 }
+
+#ifdef CONFIG_HID_MT_UP_TIMEOUT
+static void mt_up_timeout(unsigned long data)
+{
+	struct hid_device *hid = (struct hid_device *)data;
+	struct mt_device *td = hid_get_drvdata(hid);
+	struct hid_input *hidinput;
+	int i;
+
+	list_for_each_entry(hidinput, &hid->inputs, list) {
+		for (i = 0; i < td->maxcontacts; ++i) {
+			input_mt_slot(hidinput->input, i);
+			input_mt_report_slot_state(hidinput->input,
+					MT_TOOL_FINGER, false);
+		}
+		input_sync(hidinput->input);
+	}
+}
+#endif
 
 #ifdef CONFIG_EGALAX_HACK
 static bool mt_egalax_check(struct mt_device *td)
@@ -784,6 +814,9 @@ static int mt_probe(struct hid_device *hdev, const struct hid_device_id *id)
 		ret = -ENOMEM;
 		goto fail;
 	}
+#ifdef CONFIG_HID_MT_UP_TIMEOUT
+	setup_timer(&td->up_timer, mt_up_timeout, (unsigned long)hdev);
+#endif
 
 	ret = sysfs_create_group(&hdev->dev.kobj, &mt_attribute_group);
 
@@ -807,6 +840,9 @@ static int mt_reset_resume(struct hid_device *hdev)
 static void mt_remove(struct hid_device *hdev)
 {
 	struct mt_device *td = hid_get_drvdata(hdev);
+#ifdef CONFIG_HID_MT_UP_TIMEOUT
+	del_timer(&td->up_timer);
+#endif
 	sysfs_remove_group(&hdev->dev.kobj, &mt_attribute_group);
 	hid_hw_stop(hdev);
 	kfree(td->slots);

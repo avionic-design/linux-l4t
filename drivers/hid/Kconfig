@@ -369,6 +369,14 @@ config HID_MULTITOUCH
 	  To compile this driver as a module, choose M here: the
 	  module will be called hid-multitouch.
 
+config HID_MT_UP_TIMEOUT
+	int "Set multitouch up timeout"
+	depends on HID_MULTITOUCH
+	default 40
+	---help---
+	Set the touch state to unpressed if there are no more events within this
+	time. Needed for devices that do not report unpressed event.
+
 config HID_NTRIG
 	tristate "N-Trig touch screen"
 	depends on USB_HID
