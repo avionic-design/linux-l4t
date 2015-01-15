@@ -211,6 +211,9 @@ struct device_node *tegra_panel_get_dt_node(
 				&dsi_s_wqxga_10_1_ops);
 		np_panel = of_find_compatible_node(NULL, NULL, "s,wqxga-10-1");
 		break;
+	case 0:
+		/* No warning on unknown boards */
+		break;
 	default:
 		WARN(1, "Display panel not supported\n");
 	};
