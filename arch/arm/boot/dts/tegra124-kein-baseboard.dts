@@ -1,11 +1,25 @@
 /dts-v1/;
 
+#include <dt-bindings/display/tegra-dc.h>
 #include "tegra124-meerkat.dtsi"
 
 / {
 	model = "Avionic Design Kein Baseboard";
 	compatible = "ad,kein-baseboard", "ad,meerkat", "nvidia,tegra124";
 	nvidia,dtsfilename = __FILE__;
+
+	host1x {
+		dc@54200000 {
+			status = "okay";
+
+			nvidia,dc-connection = "external-display";
+			vdd_hdmi_5v0-supply = <&vdd_5v0>;
+		};
+
+		hdmi {
+			status = "okay";
+		};
+	};
 
 	serial@70006300 {
 		status = "okay";
@@ -15,6 +29,11 @@
 	usb@7d008000 {
 		status = "okay";
 		usb_vbus-supply = <&vdd_usb3_vbus>;
+	};
+
+	/* HDMI DDC */
+	i2c@7000c700 {
+		status = "okay";
 	};
 
 	regulators {
