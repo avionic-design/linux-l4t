@@ -1400,9 +1400,10 @@ static int dc_hdmi_out_enable(struct device *dev)
 	if (!of_hdmi_reg) {
 		of_hdmi_reg = regulator_get(dev, "avdd_hdmi");
 		if (IS_ERR_OR_NULL(of_hdmi_reg)) {
+			ret = of_hdmi_reg ? PTR_ERR(of_hdmi_reg) : -ENODEV;
 			pr_err("hdmi: couldn't get regulator avdd_hdmi\n");
 			of_hdmi_reg = NULL;
-			return PTR_ERR(of_hdmi_reg);
+			return ret;
 		}
 	}
 	ret = regulator_enable(of_hdmi_reg);
@@ -1413,16 +1414,18 @@ static int dc_hdmi_out_enable(struct device *dev)
 	if (!of_hdmi_pll) {
 		of_hdmi_pll = regulator_get(dev, "avdd_hdmi_pll");
 		if (IS_ERR_OR_NULL(of_hdmi_pll)) {
+			ret = of_hdmi_pll ? PTR_ERR(of_hdmi_pll) : -ENODEV;
 			pr_err("hdmi: couldn't get regulator avdd_hdmi_pll\n");
 			of_hdmi_pll = NULL;
 			regulator_put(of_hdmi_reg);
 			of_hdmi_reg = NULL;
-			return PTR_ERR(of_hdmi_pll);
+			return ret;
 		}
 	}
 	ret = regulator_enable(of_hdmi_pll);
 	if (ret < 0) {
 		pr_err("hdmi: couldn't enable regulator avdd_hdmi_pll\n");
+		regulator_disable(of_hdmi_reg);
 		return ret;
 	}
 	return 0;
