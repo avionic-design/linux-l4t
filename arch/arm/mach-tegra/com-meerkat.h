@@ -68,6 +68,8 @@ void tegra_meerkat_reserve(void);
 		"tegradc.0", NULL),					\
 	OF_DEV_AUXDATA("nvidia,tegra124-dc", TEGRA_DISPLAY2_BASE,	\
 		"tegradc.1", NULL),					\
+	OF_DEV_AUXDATA("nvidia,tegra124-hdmi", 0x54280000,		\
+		"hdmi", NULL),						\
 	OF_DEV_AUXDATA("nvidia,tegra124-nvavp", 0x60001000,		\
 		"nvavp", NULL),						\
 	OF_DEV_AUXDATA("nvidia,tegra124-pwm", 0x7000a000,		\

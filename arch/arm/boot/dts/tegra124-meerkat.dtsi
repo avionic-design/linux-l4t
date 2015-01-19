@@ -1604,11 +1604,57 @@
 		dc@54200000 {
 			avdd_hdmi-supply = <&vdd_3v3_hdmi>;
 			avdd_hdmi_pll-supply = <&vdd_hdmi_pll>;
+			nvidia,fb-bpp = <32>;
+			nvidia,emc-clk-rate = <204000000>;
+			nvidia,low-v-win = <2>;
+		};
+		dc@54240000 {
+			avdd_hdmi-supply = <&vdd_3v3_hdmi>;
+			avdd_hdmi_pll-supply = <&vdd_hdmi_pll>;
+			nvidia,fb-bpp = <32>;
+			nvidia,emc-clk-rate = <300000000>;
 		};
 		hdmi {
 			status = "disabled";
+
+			/* I2C bused for DDC */
 			nvidia,ddc-i2c-bus = <&i2c4>;
+
+			/* GPIO used for hotplug detection
+			 * WARNING: the flags given here are ignored.
+			 * hdmi-display/disp-default-out/nvidia,out-flags
+			 * must be used instead */
 			nvidia,hpd-gpio = <&gpio TEGRA_GPIO(N, 7) GPIO_ACTIVE_HIGH>;
+
+			/* Default display definition */
+			hdmi-display {
+				disp-default-out {
+					nvidia,out-type = <TEGRA_DC_OUT_HDMI>;
+					nvidia,out-flags = <TEGRA_DC_OUT_HOTPLUG_HIGH>;
+					nvidia,out-parent-clk = "pll_d2";
+					nvidia,out-max-pixclk = <3367>; /* KHZ2PICOS(297000) */
+					nvidia,out-align = <TEGRA_DC_ALIGN_MSB>;
+					nvidia,out-order = <TEGRA_DC_ORDER_RED_BLUE>;
+					nvidia,out-xres = <1920>;
+					nvidia,out-yres = <1080>;
+				};
+				/* At least one mode MUST be defined for the driver to work */
+				display-timings {
+					1080p {
+						clock-frequency = <148500000>;
+						nvidia,h-ref-to-sync = <1>;
+						nvidia,v-ref-to-sync = <1>;
+						hsync-len = <44>;
+						vsync-len = <5>;
+						hback-porch = <148>;
+						vback-porch = <36>;
+						hactive = <1920>;
+						vactive = <1080>;
+						hfront-porch = <88>;
+						vfront-porch = <4>;
+					};
+				};
+			};
 		};
 	};
 
