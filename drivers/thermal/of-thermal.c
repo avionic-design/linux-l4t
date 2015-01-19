@@ -429,6 +429,9 @@ thermal_zone_of_sensor_register(struct device *dev, int sensor_id,
 							 data,
 							 get_temp,
 							 get_trend);
+			if (!IS_ERR(tzd))
+				tzd->ops->set_mode(tzd, THERMAL_DEVICE_ENABLED);
+
 			of_node_put(sensor_specs.np);
 			of_node_put(child);
 			goto exit;
