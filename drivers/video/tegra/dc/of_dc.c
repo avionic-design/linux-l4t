@@ -1334,6 +1334,57 @@ struct device_node *parse_dsi_settings(struct platform_device *ndev,
 	return np_dsi_panel;
 }
 
+static int dc_hdmi_out_init(struct device *dev)
+{
+	int ret;
+
+	struct device_node *np_hdmi =
+		of_find_node_by_path(HDMI_NODE);
+
+	if (!np_hdmi || !of_device_is_available(np_hdmi)) {
+		pr_info("%s: no valid hdmi node\n", __func__);
+		return 0;
+	}
+
+	if (!of_hdmi_reg) {
+		of_hdmi_reg = regulator_get(dev, "avdd_hdmi");
+		if (IS_ERR_OR_NULL(of_hdmi_reg)) {
+			ret = of_hdmi_reg ? PTR_ERR(of_hdmi_reg) : -ENODEV;
+			pr_err("hdmi: couldn't get regulator avdd_hdmi\n");
+			of_hdmi_reg = NULL;
+			return ret;
+		}
+	}
+
+	if (!of_hdmi_pll) {
+		of_hdmi_pll = regulator_get(dev, "avdd_hdmi_pll");
+		if (IS_ERR_OR_NULL(of_hdmi_pll)) {
+			ret = of_hdmi_pll ? PTR_ERR(of_hdmi_pll) : -ENODEV;
+			pr_err("hdmi: couldn't get regulator avdd_hdmi_pll\n");
+			regulator_put(of_hdmi_reg);
+			of_hdmi_reg = NULL;
+			of_hdmi_pll = NULL;
+			return ret;
+		}
+	}
+
+	if (!of_hdmi_vddio) {
+		of_hdmi_vddio = regulator_get(dev, "vdd_hdmi_5v0");
+		if (IS_ERR_OR_NULL(of_hdmi_vddio)) {
+			ret = of_hdmi_vddio ? PTR_ERR(of_hdmi_vddio) : -ENODEV;
+			pr_err("hdmi: couldn't get regulator vdd_hdmi_5v0\n");
+			regulator_put(of_hdmi_reg);
+			of_hdmi_reg = NULL;
+			regulator_put(of_hdmi_pll);
+			of_hdmi_pll = NULL;
+			of_hdmi_vddio = NULL;
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int dc_hdmi_out_enable(struct device *dev)
 {
 	int ret;
@@ -1567,6 +1618,10 @@ struct tegra_dc_platform_data
 				}
 		}
 
+		err = dc_hdmi_out_init(&ndev->dev);
+		if (err)
+			return ERR_PTR(err);
+
 		pdata->default_out->enable = dc_hdmi_out_enable;
 		pdata->default_out->disable = dc_hdmi_out_disable;
 		pdata->default_out->hotplug_init = dc_hdmi_hotplug_init;
@@ -1755,7 +1810,7 @@ struct tegra_dc_platform_data
 	return pdata;
 
 fail_parse:
-	return NULL;
+	return ERR_PTR(-EINVAL);
 }
 #else
 struct tegra_dc_platform_data

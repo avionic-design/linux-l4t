@@ -2953,8 +2953,11 @@ static int tegra_dc_probe(struct platform_device *ndev)
 
 	if (np) {
 		dt_pdata = of_dc_parse_platform_data(ndev);
-		if (dt_pdata == NULL)
+		if (IS_ERR(dt_pdata)) {
+			ret = PTR_ERR(dt_pdata);
+			dev_err(&ndev->dev, "Failed to parse DT node: %d\n", ret);
 			goto err_free;
+		}
 
 #ifdef CONFIG_OF
 		irq = of_irq_to_resource(np, 0, NULL);
