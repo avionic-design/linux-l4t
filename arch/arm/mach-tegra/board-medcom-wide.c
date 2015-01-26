@@ -48,13 +48,13 @@ static struct sx8634_touch_platform_data medcom_wide_keypad1_touch_pdata = {
 	.caps = {
 		[1] = {
 			.mode = SX8634_CAP_MODE_BUTTON,
-			.keycode = KEY_INFO,
+			.keycode = KEY_HOME,
 			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
 			.threshold = SX8634_DEFAULT_THRESHOLD,
 		},
 		[2] = {
 			.mode = SX8634_CAP_MODE_BUTTON,
-			.keycode = KEY_HELP,
+			.keycode = KEY_INFO,
 			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
 			.threshold = SX8634_DEFAULT_THRESHOLD,
 		},
@@ -66,7 +66,7 @@ static struct sx8634_touch_platform_data medcom_wide_keypad1_touch_pdata = {
 		},
 		[4] = {
 			.mode = SX8634_CAP_MODE_BUTTON,
-			.keycode = KEY_UNKNOWN,
+			.keycode = KEY_LIGHTS_TOGGLE,
 			.sensitivity = SX8634_DEFAULT_SENSITIVITY,
 			.threshold = SX8634_DEFAULT_THRESHOLD,
 		},
