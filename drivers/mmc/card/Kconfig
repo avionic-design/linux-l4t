@@ -59,6 +59,14 @@ config MMC_BLOCK_DEFERRED_RESUME
 	  is requested. This will reduce overall resume latency and
 	  save power when theres an SD card inserted but not being used.
 
+config MMC_BLOCK_HIDE_RPMB_PARTITIONS
+	bool "Don't expose the RPMB partition"
+	depends on MMC_BLOCK
+	default n
+	help
+	  Say Y here if RPMB partitions are causing troubles but are
+	  not needed.
+
 config SDIO_UART
 	tristate "SDIO UART/GPS class support"
 	depends on TTY
