@@ -3995,6 +3995,8 @@ static struct tegra_sdhci_platform_data *sdhci_tegra_dt_parse_pdata(
 	of_property_read_u32(np, "trim-delay", &plat->trim_delay);
 	of_property_read_u32(np, "ddr-clk-limit", &plat->ddr_clk_limit);
 	of_property_read_u32(np, "max-clk-limit", &plat->max_clk_limit);
+	of_property_read_u32(np, "calib-3v3-offsets", &plat->calib_3v3_offsets);
+	of_property_read_u32(np, "calib-1v8-offsets", &plat->calib_1v8_offsets);
 
 	of_property_read_u32(np, "uhs_mask", &plat->uhs_mask);
 
