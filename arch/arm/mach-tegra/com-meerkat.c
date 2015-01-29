@@ -20,6 +20,7 @@
 #include <linux/nct1008.h>
 #include <linux/pid_thermal_gov.h>
 #include <linux/tegra-fuse.h>
+#include <linux/nvmap.h>
 
 #include <mach/io_dpd.h>
 #include <mach/edp.h>
@@ -94,6 +95,29 @@ static struct platform_device tegra_rtc_device = {
 	.id   = -1,
 	.resource = tegra_rtc_resources,
 	.num_resources = ARRAY_SIZE(tegra_rtc_resources),
+};
+
+static struct nvmap_platform_carveout meerkat_carveouts[] = {
+	[0] = {
+		.name = "iram",
+		.usage_mask = NVMAP_HEAP_CARVEOUT_IRAM,
+		.base = TEGRA_IRAM_BASE + TEGRA_RESET_HANDLER_SIZE,
+		.size = TEGRA_IRAM_SIZE - TEGRA_RESET_HANDLER_SIZE,
+		.dma_dev = &tegra_iram_dev,
+	},
+};
+
+static struct nvmap_platform_data meerkat_nvmap_data = {
+	.carveouts = meerkat_carveouts,
+	.nr_carveouts = ARRAY_SIZE(meerkat_carveouts),
+};
+
+static struct platform_device meerkat_nvmap_device = {
+	.name = "tegra-nvmap",
+	.id = -1,
+	.dev = {
+		.platform_data = &meerkat_nvmap_data,
+	},
 };
 
 static struct platform_device *meerkat_devices[] __initdata = {
@@ -321,6 +345,9 @@ void __init tegra_meerkat_dt_init(struct of_dev_auxdata *auxdata)
 	of_platform_populate(NULL, of_default_bus_match_table,
 			auxdata, &platform_bus);
 	platform_add_devices(meerkat_devices, ARRAY_SIZE(meerkat_devices));
+
+	if (platform_device_register(&meerkat_nvmap_device))
+		pr_err("nvmap device registration failed\n");
 
 	tegra_io_dpd_init();
 	tegra_init_suspend(&meerkat_suspend_data);
