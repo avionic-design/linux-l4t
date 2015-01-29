@@ -79,10 +79,10 @@ static ssize_t bgu_show_field(struct device *dev,
 	struct hid_report *report = bgu_get_report(bgu, attr->report);
 	struct hid_field *field = report ? report->field[attr->field] : NULL;
 
-	if (!field)
+	if (!field || !field->value)
 		return -ENOENT;
 
-	return sprintf(buf, "%ld\n", (long)*field->value);
+	return sprintf(buf, "%ld\n", field->value[attr->offset]);
 }
 
 static ssize_t bgu_store_field(struct device *dev,

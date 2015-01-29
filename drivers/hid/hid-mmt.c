@@ -60,7 +60,10 @@ static ssize_t mmt_show_field(struct device *dev,
 		container_of(dev_attr, struct mmt_attribute, devattr);
 	struct hid_field *field = mmt->report->field[attr->field];
 
-	return sprintf(buf, "%ld\n", (long)*field->value);
+	if (!field || !field->value)
+		return -ENOENT;
+
+	return sprintf(buf, "%ld\n", field->value[attr->offset]);
 }
 
 static ssize_t mmt_store_field(struct device *dev,
