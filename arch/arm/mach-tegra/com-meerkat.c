@@ -318,11 +318,6 @@ void __init tegra_meerkat_dt_init(struct of_dev_auxdata *auxdata)
 	/* FIXME: This should perhaps be called with the board name instead */
 	tegra_soc_device_init("Meerkat COM");
 
-#ifdef CONFIG_NVMAP_USE_CMA_FOR_CARVEOUT
-	carveout_linear_set(&tegra_generic_cma_dev);
-	carveout_linear_set(&tegra_vpr_cma_dev);
-#endif
-
 	of_platform_populate(NULL, of_default_bus_match_table,
 			auxdata, &platform_bus);
 	platform_add_devices(meerkat_devices, ARRAY_SIZE(meerkat_devices));
@@ -356,14 +351,8 @@ void __init tegra_meerkat_reserve(void)
 	ulong tmp;
 #endif /* CONFIG_TEGRA_HDMI_PRIMARY */
 
-#if defined(CONFIG_NVMAP_CONVERT_CARVEOUT_TO_IOVMM) || \
-		defined(CONFIG_TEGRA_NO_CARVEOUT)
 	ulong carveout_size = 0;
 	ulong fb2_size = SZ_16M;
-#else
-	ulong carveout_size = SZ_1G;
-	ulong fb2_size = SZ_4M;
-#endif
 	ulong fb1_size = SZ_16M + SZ_2M;
 	ulong vpr_size = 186 * SZ_1M;
 
