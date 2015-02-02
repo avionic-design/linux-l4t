@@ -148,6 +148,7 @@ static struct platform_device *meerkat_devices[] __initdata = {
 	&tegra_aes_device,
 #endif
 	&tegra_hier_ictlr_device,
+	&meerkat_nvmap_device,
 };
 
 static struct of_dev_auxdata meerkat_auxdata_lookup[] __initdata = {
@@ -345,9 +346,6 @@ void __init tegra_meerkat_dt_init(struct of_dev_auxdata *auxdata)
 	of_platform_populate(NULL, of_default_bus_match_table,
 			auxdata, &platform_bus);
 	platform_add_devices(meerkat_devices, ARRAY_SIZE(meerkat_devices));
-
-	if (platform_device_register(&meerkat_nvmap_device))
-		pr_err("nvmap device registration failed\n");
 
 	tegra_io_dpd_init();
 	tegra_init_suspend(&meerkat_suspend_data);
