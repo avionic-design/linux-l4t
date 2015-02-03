@@ -2,6 +2,7 @@
 
 #include <dt-bindings/display/tegra-dc.h>
 #include <dt-bindings/usb/tegra-ehci.h>
+#include <dt-bindings/usb/tegra-xhci.h>
 
 #include "tegra124-meerkat.dtsi"
 
@@ -48,6 +49,16 @@
 		nvidia,vbus-oc-map = <0x5>;
 
 		usb_vbus-supply = <&vdd_usb3_vbus>;
+	};
+
+	xusb@70090000 {
+		nvidia,gpio_ss1_sata = <0>;
+		nvidia,portmap = <(XUSB_MUX_USB2_P2 | XUSB_MUX_SS_P1)>;
+		nvidia,ss_portmap = <XUSB_PADCTL_SS_PORTMAP(DISABLE, P2)>;
+		nvidia,lane_owner = <2>; /* PCIe lane1 owner = USB3_SS port1 */
+		nvidia,ulpicap = <0>;
+		usb_vbus2-supply = <&vdd_usb3_vbus>;
+		status = "okay";
 	};
 
 	/* HDMI DDC */
