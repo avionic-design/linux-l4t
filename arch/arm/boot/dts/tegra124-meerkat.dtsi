@@ -1987,6 +1987,13 @@
 		avdd_pll_utmip-supply = <&vddio_1v8>;
 	};
 
+	xusb@70090000 {
+		hvdd_usb-supply = <&vdd_3v3_lp0>;
+		avdd_pll_utmip-supply = <&vddio_1v8>;
+		vddio_hsic-supply = <&avdd_csi_dsi>;
+		avddio_usb-supply= <&avdd_1v05_run>;
+	};
+
 	regulators {
 		compatible = "simple-bus";
 		#address-cells = <1>;
