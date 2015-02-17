@@ -2409,6 +2409,7 @@ static int tegra30_i2s_platform_remove(struct platform_device *pdev)
 
 static const struct of_device_id tegra30_i2s_of_match[] = {
 	{ .compatible = "nvidia,tegra30-i2s", },
+	{ .compatible = "nvidia,tegra124-i2s", },
 	{},
 };
 

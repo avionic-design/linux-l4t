@@ -499,6 +499,7 @@ static int tegra30_spdif_platform_remove(struct platform_device *pdev)
 
 static const struct of_device_id tegra30_spdif_of_match[] = {
 	{ .compatible = "nvidia,tegra30-spdif",},
+	{ .compatible = "nvidia,tegra124-spdif",},
 	{},
 };
 

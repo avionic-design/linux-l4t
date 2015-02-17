@@ -650,6 +650,16 @@ struct of_dev_auxdata ahub_auxdata[] = {
 	OF_DEV_AUXDATA("nvidia,tegra30-dam", 0x70080A00, "tegra30-dam.2", NULL),
 	OF_DEV_AUXDATA("nvidia,tegra30-spdif", 0x70080B00, "tegra30-spdif",
 		NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-i2s", 0x70301000, "tegra30-i2s.0", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-i2s", 0x70301100, "tegra30-i2s.1", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-i2s", 0x70301200, "tegra30-i2s.2", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-i2s", 0x70301300, "tegra30-i2s.3", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-i2s", 0x70301400, "tegra30-i2s.4", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-dam", 0x70302000, "tegra30-dam.0", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-dam", 0x70302200, "tegra30-dam.1", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-dam", 0x70302400, "tegra30-dam.2", NULL),
+	OF_DEV_AUXDATA("nvidia,tegra124-spdif", 0x70306000, "tegra30-spdif",
+		NULL),
 	{}
 };
 
@@ -954,6 +964,7 @@ static int tegra30_ahub_remove(struct platform_device *pdev)
 
 static const struct of_device_id tegra30_ahub_of_match[] = {
 	{ .compatible = "nvidia,tegra30-ahub", },
+	{ .compatible = "nvidia,tegra124-ahub", },
 	{},
 };
 
