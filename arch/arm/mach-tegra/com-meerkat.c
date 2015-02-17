@@ -138,8 +138,6 @@ static struct platform_device *meerkat_devices[] __initdata = {
 	&tegra_i2s_device3,
 	&tegra_i2s_device4,
 	&tegra_spdif_device,
-	&tegra_offload_device,
-	&tegra30_avp_audio_device,
 #if defined(CONFIG_CRYPTO_DEV_TEGRA_AES)
 	&tegra_aes_device,
 #endif
