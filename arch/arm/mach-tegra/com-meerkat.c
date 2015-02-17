@@ -129,9 +129,6 @@ static struct platform_device *meerkat_devices[] __initdata = {
 #if defined(CONFIG_TEGRA_WATCHDOG)
 	&tegra_wdt0_device,
 #endif
-#if defined(CONFIG_TEGRA_AVP)
-	&tegra_avp_device,
-#endif
 	&tegra_ahub_device,
 	&tegra_dam_device0,
 	&tegra_dam_device1,
