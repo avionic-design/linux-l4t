@@ -85,6 +85,7 @@
 			      0 142 0x04
 			      0 143 0x04>;
 		#dma-cells = <1>;
+		nvidia,memory-clients = <SWGID_PPCS>;
 	};
 
 	/*
@@ -316,12 +317,14 @@
 		reg = <0x0 0x70027000 0x0 0x00002000>,
 			<0x0 0x70021000 0x0 0x00001000>;
 		interrupts = <0 23 0x04>;
+		nvidia,memory-clients = <SWGID_SATA2>;
 		status = "disabled";
 	};
 
 	efuse@7000f800 {
 		compatible = "nvidia,tegra124-efuse";
 		reg = <0x0 0x7000f800 0x0 0x400>;
+		nvidia,memory-clients = <SWGID_PPCS>;
 	};
 
 	clocks {
@@ -370,6 +373,7 @@
 		nvidia,dma-request-selector = <&apbdma 1>, <&apbdma 2>,
 			<&apbdma 3>, <&apbdma 4>, <&apbdma 6>, <&apbdma 7>,
 			<&apbdma 12>, <&apbdma 13>, <&apbdma 14>, <&apbdma 29>;
+		nvidia,memory-clients = <SWGID_PPCS>;
 		status = "disabled";
 
 		#address-cells = <1>;
@@ -380,6 +384,7 @@
 		tegra_i2s0: i2s@70301000 {
 			compatible = "nvidia,tegra124-i2s";
 			reg = <0x70301000 0x100>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-cif-ids = <4 4>;
 			nvidia,ahub-i2s-id = <0>;
 			status = "disabled";
@@ -388,6 +393,7 @@
 		tegra_i2s1: i2s@70301100 {
 			compatible = "nvidia,tegra124-i2s";
 			reg = <0x70301100 0x100>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-cif-ids = <5 5>;
 			nvidia,ahub-i2s-id = <1>;
 			status = "disabled";
@@ -396,6 +402,7 @@
 		tegra_i2s2: i2s@70301200 {
 			compatible = "nvidia,tegra124-i2s";
 			reg = <0x70301200 0x100>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-cif-ids = <6 6>;
 			nvidia,ahub-i2s-id = <2>;
 			status = "disabled";
@@ -404,6 +411,7 @@
 		tegra_i2s3: i2s@70301300 {
 			compatible = "nvidia,tegra124-i2s";
 			reg = <0x70301300 0x100>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-cif-ids = <7 7>;
 			nvidia,ahub-i2s-id = <3>;
 			status = "disabled";
@@ -412,6 +420,7 @@
 		tegra_i2s4: i2s@70301400 {
 			compatible = "nvidia,tegra124-i2s";
 			reg = <0x70301400 0x100>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-cif-ids = <8 8>;
 			nvidia,ahub-i2s-id = <4>;
 			status = "disabled";
@@ -444,12 +453,14 @@
 		tegra_spdif: spdif@70306000 {
 			compatible = "nvidia,tegra124-spdif";
 			reg = <0x70306000 0x100>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			status = "disabled";
 		};
 
 		tegra_dam0: dam@70302000 {
 			compatible = "nvidia,tegra124-dam";
 			reg = <0x70302000 0x200>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-dam-id = <0>;
 			status = "disabled";
 		};
@@ -457,6 +468,7 @@
 		tegra_dam1: dam@70302200 {
 			compatible = "nvidia,tegra124-dam";
 			reg = <0x70302200 0x200>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-dam-id = <1>;
 			status = "disabled";
 		};
@@ -464,6 +476,7 @@
 		tegra_dam2: dam@70302400 {
 			compatible = "nvidia,tegra124-dam";
 			reg = <0x70302400 0x200>;
+			nvidia,memory-clients = <SWGID_PPCS>;
 			nvidia,ahub-dam-id = <2>;
 			status = "disabled";
 		};
@@ -615,6 +628,7 @@
 			compatible = "nvidia,tegra124-nvavp";
 			interrupts = <0 4 0x04>; /* mailbox AVP IRQ */
 			reg = <0x60001000 0x0000e200>;
+			nvidia,memory-clients = <SWGID_AVPC SWGID_A9AVP>;
 		};
 	};
 
@@ -629,6 +643,7 @@
 			      0 49 0x04
 			      0 97 0x04
 			      0 21 0x04>;
+		nvidia,memory-clients = <SWGID_XUSB_HOST>;
 		status = "disable";
 	};
 
@@ -690,12 +705,14 @@
 		reg = <0x0 0x70012000 0x0 0x2000 /* SE base */
 			0x0 0x7000e400 0x0 0x400>; /* PMC base */
 		interrupts = <0 58 0x04>;
+		nvidia,memory-clients = <SWGID_PPCS>;
 	};
 
 	usb@7d000000 {
 		compatible = "nvidia,tegra124-ehci", "nvidia,tegra20-ehci", "usb-ehci";
 		reg = <0x0 0x7d000000 0x0 0x4000>;
 		interrupts = <0 20 0x04>;
+		nvidia,memory-clients = <SWGID_PPCS>;
 		status = "disabled";
 	};
 
@@ -703,6 +720,7 @@
 		compatible = "nvidia,tegra124-ehci", "nvidia,tegra20-ehci", "usb-ehci";
 		reg = <0x0 0x7d004000 0x0 0x4000>;
 		interrupts = <0 21 0x04>;
+		nvidia,memory-clients = <SWGID_PPCS>;
 		status = "disabled";
 	};
 
@@ -710,6 +728,7 @@
 		compatible = "nvidia,tegra124-ehci", "nvidia,tegra20-ehci", "usb-ehci";
 		reg = <0x0 0x7d008000 0x0 0x4000>;
 		interrupts = <0 97 0x04>;
+		nvidia,memory-clients = <SWGID_PPCS>;
 		status = "disabled";
 	};
 
