@@ -36,6 +36,10 @@
 		status = "okay";
 	};
 
+	hda@70030000 {
+		status = "okay";
+	};
+
 	regulators {
 		vdd_5v0: regulator@100 {
 			compatible = "regulator-fixed";
