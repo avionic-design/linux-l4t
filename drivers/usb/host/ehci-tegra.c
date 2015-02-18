@@ -533,6 +533,220 @@ static DEVICE_ATTR(boost_enable, 0644,
 		   show_boost_enable, store_boost_enable);
 #endif
 
+#ifdef CONFIG_OF
+
+static int of_property_read_optional_u8(struct device_node *np,
+					const char *prop,
+					u8 *data)
+{
+	u32 val;
+	int err;
+
+	err = of_property_read_u32(np, prop, &val);
+	if (err >= 0) {
+		if (val > 0xFF)
+			return -ERANGE;
+		*data = val;
+	} else if (err != -EINVAL)
+		return err;
+
+	return 0;
+}
+
+static int tegra_ehci_parse_host_dt(struct platform_device *pdev,
+				struct tegra_usb_host_mode_data *hdata)
+{
+	struct device_node *np = pdev->dev.of_node;
+
+	hdata->vbus_gpio = of_get_named_gpio(np, "nvidia,vbus-gpio", 0);
+	if (hdata->vbus_gpio == -EPROBE_DEFER)
+		return hdata->vbus_gpio;
+	if (hdata->vbus_gpio < 0)
+		hdata->vbus_gpio = -1;
+
+	hdata->hot_plug =
+		of_property_read_bool(np, "nvidia,hotplug");
+	hdata->remote_wakeup_supported =
+		of_property_read_bool(np, "nvidia,remote-wakeup-supported");
+	hdata->power_off_on_suspend =
+		of_property_read_bool(np, "nvidia,power-off-on-suspend");
+	hdata->turn_off_vbus_on_lp0 =
+		of_property_read_bool(np, "nvidia,disable-vbus-on-lp0");
+	hdata->support_y_cable =
+		of_property_read_bool(np, "nvidia,support-y-cable");
+
+	return 0;
+}
+
+static int tegra_ehci_parse_utmi_dt(struct platform_device *pdev,
+				struct tegra_utmi_config *utmi)
+{
+	struct device_node *np = pdev->dev.of_node;
+	u32 val;
+	int err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,hssync-start-delay", &utmi->hssync_start_delay);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,elastic-limit", &utmi->elastic_limit);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,idle-wait-delay", &utmi->idle_wait_delay);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,term-range-adj", &utmi->term_range_adj);
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,xcvr-setup", &utmi->xcvr_setup);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,xcvr-lsfslew", &utmi->xcvr_lsfslew);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,xcvr-lsrslew", &utmi->xcvr_lsrslew);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,xcvr-setup-offset", &utmi->xcvr_setup_offset);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,xcvr-use-lsb", &utmi->xcvr_use_lsb);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,xcvr-use-fuses", &utmi->xcvr_use_fuses);
+	if (err)
+		return err;
+
+	err = of_property_read_optional_u8(
+		np, "nvidia,vbus-oc-map", &utmi->vbus_oc_map);
+	if (err)
+		return err;
+
+	err = of_property_read_u32(np, "nvidia,xcvr-hsslew-lsb", &val);
+	if (err >= 0)
+		utmi->xcvr_hsslew_lsb = val;
+	else if (err != -EINVAL)
+		return err;
+
+	err = of_property_read_u32(np, "nvidia,xcvr-hsslew-msb", &val);
+	if (err >= 0)
+		utmi->xcvr_hsslew_msb = val;
+	else if (err != -EINVAL)
+		return err;
+
+	return 0;
+}
+
+static void tegra_ehci_clear_pdata(void *data)
+{
+	struct platform_device *pdev = data;
+	pdev->dev.platform_data = NULL;
+}
+
+static int tegra_ehci_parse_dt(struct platform_device *pdev)
+{
+	struct device_node *np = pdev->dev.of_node;
+	struct tegra_usb_platform_data *pdata;
+	u32 val;
+	int err;
+
+	if (pdev->dev.platform_data)
+		return 0;
+
+	if (!np)
+		return -EINVAL;
+
+	pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+	if (!pdata)
+		return -ENOMEM;
+
+	pdata->port_otg =
+		of_property_read_bool(np, "nvidia,port-otg");
+	pdata->has_hostpc =
+		of_property_read_bool(np, "nvidia,has-hostpc");
+	pdata->unaligned_dma_buf_supported =
+		of_property_read_bool(np, "nvidia,unaligned-dma");
+	pdata->support_pmu_vbus =
+		of_property_read_bool(np, "nvidia,pmu-vbus");
+
+	err = of_property_read_u32(np, "nvidia,phy-interface", &val);
+	if (err) {
+		dev_err(&pdev->dev, "Failed to get phy-interface\n");
+		return err;
+	}
+	pdata->phy_intf = val;
+
+	err = of_property_read_u32(np, "nvidia,mode", &val);
+	if (err) {
+		dev_err(&pdev->dev, "Failed to get mode\n");
+		return err;
+	}
+	pdata->op_mode = val;
+
+	switch (pdata->op_mode) {
+	case TEGRA_USB_OPMODE_DEVICE:
+		dev_err(&pdev->dev, "Device mode from DT not yet supported\n");
+		return -EINVAL;
+	case TEGRA_USB_OPMODE_HOST:
+		err = tegra_ehci_parse_host_dt(pdev, &pdata->u_data.host);
+		break;
+	default:
+		dev_err(&pdev->dev, "Invalid device mode: %d\n",
+			pdata->op_mode);
+		return -EINVAL;
+	}
+
+	if (err) {
+		dev_err(&pdev->dev, "Failed to get mode config\n");
+		return err;
+	}
+
+	switch (pdata->phy_intf) {
+	case TEGRA_USB_PHY_INTF_UTMI:
+		err = tegra_ehci_parse_utmi_dt(pdev, &pdata->u_cfg.utmi);
+		break;
+	default:
+		dev_err(&pdev->dev, "Unsupported PHY type: %d\n",
+			pdata->phy_intf);
+		return -EINVAL;
+	}
+
+	if (err) {
+		dev_err(&pdev->dev, "Failed to get phy config\n");
+		return err;
+	}
+
+	/* Add the handler to clear platform data */
+	err = devm_add_action(&pdev->dev, tegra_ehci_clear_pdata, pdev);
+	if (err)
+		return err;
+	pdev->dev.platform_data = pdata;
+
+	return 0;
+}
+#else
+static int tegra_ehci_parse_dt(struct platform_device *pdev)
+{
+	return 0;
+}
+#endif
+
 static int tegra_ehci_probe(struct platform_device *pdev)
 {
 	struct resource *res;
@@ -549,6 +763,12 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 	 */
 	if (!pdev->dev.dma_mask)
 		pdev->dev.dma_mask = &tegra_ehci_dma_mask;
+
+	err = tegra_ehci_parse_dt(pdev);
+	if (err) {
+		dev_err(&pdev->dev, "Failed to parse DT\n");
+		return err;
+	}
 
 	pdata = dev_get_platdata(&pdev->dev);
 	if (!pdata) {
