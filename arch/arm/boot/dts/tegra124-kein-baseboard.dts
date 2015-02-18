@@ -1,6 +1,8 @@
 /dts-v1/;
 
 #include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/usb/tegra-ehci.h>
+
 #include "tegra124-meerkat.dtsi"
 
 / {
@@ -28,6 +30,23 @@
 	/* USB 3.0 */
 	usb@7d008000 {
 		status = "okay";
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+
+		nvidia,remote-wakeup-supported;
+		nvidia,power-off-on-suspend;
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+		nvidia,vbus-oc-map = <0x5>;
+
 		usb_vbus-supply = <&vdd_usb3_vbus>;
 	};
 
