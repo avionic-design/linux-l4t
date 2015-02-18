@@ -97,7 +97,13 @@ void tegra_meerkat_reserve(void);
 	OF_DEV_AUXDATA("nvidia,tegra124-hda", 0x70030000,		\
 		"tegra30-hda", NULL),					\
 	OF_DEV_AUXDATA("nvidia,tegra124-ahub", 0x70300000,		\
-		"tegra30-ahub", NULL)
+		"tegra30-ahub", NULL),					\
+	OF_DEV_AUXDATA("nvidia,tegra20-ehci", 0x7d000000,		\
+		"tegra-ehci.0", NULL),					\
+	OF_DEV_AUXDATA("nvidia,tegra20-ehci", 0x7d004000,		\
+		"tegra-ehci.1", NULL),					\
+	OF_DEV_AUXDATA("nvidia,tegra20-ehci", 0x7d008000,		\
+		"tegra-ehci.2", NULL)
 
 
 #endif
