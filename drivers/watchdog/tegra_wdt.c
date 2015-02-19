@@ -581,7 +581,10 @@ static int tegra_wdt_probe(struct platform_device *pdev)
 
 	wdt->irq = -1;
 	wdt->miscdev.parent = &pdev->dev;
-	if (pdev->id == -1) {
+	if (pdev->dev.of_node) {
+		wdt->miscdev.minor = MISC_DYNAMIC_MINOR;
+		wdt->miscdev.name = dev_name(&pdev->dev);
+	} else if (pdev->id == -1) {
 		wdt->miscdev.minor = WATCHDOG_MINOR;
 		wdt->miscdev.name = "watchdog";
 	} else {
@@ -958,6 +961,14 @@ static int tegra_wdt_resume(struct platform_device *pdev)
 }
 #endif
 
+static const struct of_device_id tegra_wdt_dt_match[] = {
+	{ .compatible = "nvidia,tegra20-wdt", },
+	{ .compatible = "nvidia,tegra30-wdt", },
+	{ .compatible = "nvidia,tegra124-wdt", },
+	{}
+};
+MODULE_DEVICE_TABLE(of, tegra_wdt_dt_match);
+
 static struct platform_driver tegra_wdt_driver = {
 	.probe		= tegra_wdt_probe,
 	.remove		= tegra_wdt_remove,
@@ -968,6 +979,7 @@ static struct platform_driver tegra_wdt_driver = {
 	.driver		= {
 		.owner	= THIS_MODULE,
 		.name	= "tegra_wdt",
+		.of_match_table = tegra_wdt_dt_match,
 	},
 };
 
