@@ -186,10 +186,17 @@ static int __exit tegra_hier_ictlr_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct of_device_id tegra_hier_ictlr_dt_match[] = {
+	{ .compatible = "nvidia,tegra124-hier-ictlr", },
+	{}
+};
+MODULE_DEVICE_TABLE(of, tegra_hier_ictlr_dt_match);
+
 static struct platform_driver tegra_hier_ictlr_driver = {
 	.driver = {
 		   .name = "tegra-hier-ictlr",
 		   .owner = THIS_MODULE,
+		   .of_match_table = tegra_hier_ictlr_dt_match,
 		   },
 	.probe = tegra_hier_ictlr_probe,
 	.remove = __exit_p(tegra_hier_ictrl_remove),
