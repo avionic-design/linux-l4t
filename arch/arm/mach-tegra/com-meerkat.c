@@ -103,9 +103,6 @@ static struct platform_device meerkat_nvmap_device = {
 };
 
 static struct platform_device *meerkat_devices[] __initdata = {
-#if defined(CONFIG_TEGRA_WATCHDOG)
-	&tegra_wdt0_device,
-#endif
 #if defined(CONFIG_CRYPTO_DEV_TEGRA_AES)
 	&tegra_aes_device,
 #endif
