@@ -56,6 +56,15 @@
 			      1 14 0xf04>;
 	};
 
+	pmu {
+		compatible = "arm,cortex-a15-pmu";
+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH
+			      0 145 IRQ_TYPE_LEVEL_HIGH
+			      0 146 IRQ_TYPE_LEVEL_HIGH
+			      0 147 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+
 	dfll@70110000 {
 			compatible = "nvidia,tegra124-dfll";
 			reg = <0x0 0x70110000 0x0 0x400>;
