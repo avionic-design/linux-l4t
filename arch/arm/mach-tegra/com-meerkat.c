@@ -79,26 +79,6 @@ static __initdata struct tegra_clk_init_table meerkat_clk_init_table[] = {
 	{ NULL,		NULL,		0,		0},
 };
 
-static struct resource tegra_rtc_resources[] = {
-	[0] = {
-		.start = TEGRA_RTC_BASE,
-		.end = TEGRA_RTC_BASE + TEGRA_RTC_SIZE - 1,
-		.flags = IORESOURCE_MEM,
-	},
-	[1] = {
-		.start = INT_RTC,
-		.end = INT_RTC,
-		.flags = IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device tegra_rtc_device = {
-	.name = "tegra_rtc",
-	.id   = -1,
-	.resource = tegra_rtc_resources,
-	.num_resources = ARRAY_SIZE(tegra_rtc_resources),
-};
-
 static struct nvmap_platform_carveout meerkat_carveouts[] = {
 	[0] = {
 		.name = "iram",
@@ -123,7 +103,6 @@ static struct platform_device meerkat_nvmap_device = {
 };
 
 static struct platform_device *meerkat_devices[] __initdata = {
-	&tegra_rtc_device,
 #if defined(CONFIG_TEGRA_WAKEUP_MONITOR)
 	&tegratab_tegra_wakeup_monitor_device,
 #endif

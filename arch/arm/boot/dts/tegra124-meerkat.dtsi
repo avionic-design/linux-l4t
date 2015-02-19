@@ -1918,6 +1918,10 @@
 		status = "disabled";
 	};
 
+	rtc {
+		status = "okay";
+	};
+
 	pmc { /* The PMC is missing an address */
 		status = "okay";
 		nvidia,invert-interrupt;
