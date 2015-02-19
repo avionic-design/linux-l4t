@@ -1664,6 +1664,10 @@
 		};
 	};
 
+	hier-ictlr@60004800 {
+		status = "okay";
+	};
+
 	wdt@60005100 {
 		status = "okay";
 	};
