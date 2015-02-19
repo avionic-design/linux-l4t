@@ -123,7 +123,6 @@ static struct platform_device meerkat_nvmap_device = {
 };
 
 static struct platform_device *meerkat_devices[] __initdata = {
-	&tegra_pmu_device,
 	&tegra_rtc_device,
 #if defined(CONFIG_TEGRA_WAKEUP_MONITOR)
 	&tegratab_tegra_wakeup_monitor_device,
