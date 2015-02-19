@@ -88,6 +88,14 @@
 		nvidia,memory-clients = <SWGID_PPCS>;
 	};
 
+	hier-ictlr@60004800 {
+		compatible = "nvidia,tegra124-hier-ictlr";
+		reg =  <0x0 0x60004800 0x0 0x0100
+			0x0 0x50060000 0x0 0x1000>;
+		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+
 	/*
 	 * There are two serial driver i.e. 8250 based simple serial
 	 * driver and APB DMA based serial driver for higher baudrate
