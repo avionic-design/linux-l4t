@@ -4429,8 +4429,7 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 	return 0;
 
 err_cd_irq_req:
-	if (gpio_is_valid(plat->cd_gpio))
-		gpio_free(plat->cd_gpio);
+	sdhci_remove_host(host, 0);
 err_add_host:
 	if (tegra_host->is_ddr_clk_set)
 		clk_disable_unprepare(tegra_host->ddr_clk);
@@ -4447,7 +4446,7 @@ err_clk_get:
 		gpio_free(plat->wp_gpio);
 err_wp_req:
 	if (gpio_is_valid(plat->cd_gpio))
-		free_irq(gpio_to_irq(plat->cd_gpio), host);
+		gpio_free(plat->cd_gpio);
 err_cd_req:
 	if (gpio_is_valid(plat->power_gpio))
 		gpio_free(plat->power_gpio);
