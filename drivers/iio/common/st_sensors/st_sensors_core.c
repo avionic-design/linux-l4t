@@ -197,8 +197,6 @@ int st_sensors_init_sensor(struct iio_dev *indio_dev)
 	int err;
 	struct st_sensor_data *sdata = iio_priv(indio_dev);
 
-	mutex_init(&sdata->tb.buf_lock);
-
 	err = st_sensors_set_enable(indio_dev, false);
 	if (err < 0)
 		goto init_error;
