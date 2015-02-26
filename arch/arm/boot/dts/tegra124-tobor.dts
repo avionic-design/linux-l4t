@@ -1,0 +1,284 @@
+/dts-v1/;
+
+#include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/usb/tegra-ehci.h>
+#include <dt-bindings/usb/tegra-xhci.h>
+
+#include "tegra124-meerkat.dtsi"
+
+/ {
+	model = "Avionic Design Kein Baseboard";
+	compatible = "ad,tobor", "ad,meerkat", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+
+	pinmux {
+		common {
+			uart3_rxd_pw7 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			uart3_txd_pw6 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			pi4 {
+				nvidia,function = "spi4";
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+		};
+	};
+
+	host1x {
+		dc@54200000 {
+			status = "okay";
+
+			nvidia,dc-connection = "external-display";
+			vdd_hdmi_5v0-supply = <&vdd_5v0_hdmi>;
+		};
+
+		hdmi {
+			status = "okay";
+		};
+	};
+
+	/* Use HS UART for the first 3 ports */
+	serial@70006000 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006040 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006200 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006300 {
+		status = "okay";
+	};
+
+	/* GEN 2 */
+	i2c@7000c400 {
+		status = "okay";
+
+		tmp103@70 {
+			compatible = "ti,tmp103";
+			reg = <0x70>;
+		};
+	};
+
+	/* HDMI DDC */
+	i2c@7000c700 {
+		status = "okay";
+	};
+
+	/* SPI4 */
+	spi@7000da00 {
+		status = "okay";
+		spi-max-frequency = <25000000>;
+
+		lsm330d@0 {
+			compatible = "st,lsm330d_accel";
+			reg = <0>;
+			spi-max-frequency = <10000000>;
+
+			controller-data {
+				nvidia,enable-hw-based-cs;
+			};
+		};
+		lsm330d@1 {
+			compatible = "st,lsm330d_gyro";
+			reg = <1>;
+			spi-max-frequency = <10000000>;
+
+			controller-data {
+				nvidia,enable-hw-based-cs;
+			};
+		};
+
+	};
+
+	/* HDMI audio */
+	hda@70030000 {
+		status = "okay";
+	};
+
+	/* MMC card slot */
+	sdhci@700b0400 {
+		status = "okay";
+		vddio_sd_slot-supply = <&vdd_3v3_sd>;
+	};
+
+	/* Recovery USB */
+	usb@7d000000 {
+		status = "okay";
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+
+		nvidia,hotplug;
+		nvidia,remote-wakeup-supported;
+		nvidia,power-off-on-suspend;
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+		nvidia,vbus-oc-map = <0x5>;
+
+		usb_vbus-supply = <&vdd_vbus_client>;
+	};
+
+	/* USB1 */
+	usb@7d004000 {
+		status = "okay";
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+
+		nvidia,hotplug;
+		nvidia,remote-wakeup-supported;
+		nvidia,power-off-on-suspend;
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+		nvidia,vbus-oc-map = <0x5>;
+
+		usb_vbus-supply = <&vdd_vbus_usb1>;
+	};
+
+	regulators {
+		vsys: regulator@50 {
+			compatible = "regulator-fixed";
+			reg = <50>;
+			regulator-name = "VSYS";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
+			regulator-name = "+5V_SOM";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&vsys>;
+		};
+
+		vdd_3v3: regulator@102 {
+			compatible = "regulator-fixed";
+			reg = <102>;
+			regulator-name = "+3V3_SOM";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			vin-supply = <&vsys>;
+		};
+
+		vdd_5v0_ext: regulator@103 {
+			compatible = "regulator-fixed";
+			reg = <103>;
+			regulator-name = "+5V_EXT";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&vsys>;
+		};
+
+		vdd_3v3_ext: regulator@104 {
+			compatible = "regulator-fixed";
+			reg = <104>;
+			regulator-name = "+3V3_EXT";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			vin-supply = <&vsys>;
+		};
+
+		vdd_1v8_ext: regulator@105 {
+			compatible = "regulator-fixed";
+			reg = <105>;
+			regulator-name = "+1V8_EXT";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			vin-supply = <&vddio_1v8>;
+		};
+
+		vdd_5v0_hdmi: regulator@106 {
+			compatible = "regulator-fixed";
+			reg = <106>;
+			regulator-name = "HDMI_VCC";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&vdd_5v0_ext>;
+			gpio = <&gpio TEGRA_GPIO(H, 1) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
+		vdd_3v3_sd: regulator@107 {
+			compatible = "regulator-fixed";
+			reg = <107>;
+			regulator-name = "+3V3_SD";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			vin-supply = <&vdd_3v3_ext>;
+			gpio = <&gpio TEGRA_GPIO(R, 0) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
+		vdd_1v5_mpcie: regulator@108 {
+			compatible = "regulator-fixed";
+			reg = <108>;
+			regulator-name = "+1V5_mPCIe";
+			regulator-min-microvolt = <1500000>;
+			regulator-max-microvolt = <1500000>;
+			vin-supply = <&vdd_3v3_ext>;
+		};
+
+		vdd_3v3_mpcie: regulator@109 {
+			compatible = "regulator-fixed";
+			reg = <109>;
+			regulator-name = "+3V3_mPCIe";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			vin-supply = <&vdd_3v3_ext>;
+		};
+
+		vdd_vbus_client: regulator@110 {
+			compatible = "regulator-fixed";
+			reg = <110>;
+			regulator-name = "USB_CLIENT_VBUS";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&vdd_5v0_ext>;
+			gpio = <&gpio TEGRA_GPIO(N, 4) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+		};
+
+		vdd_vbus_usb1: regulator@111 {
+			compatible = "regulator-fixed";
+			reg = <111>;
+			regulator-name = "USB1_VCC";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&vdd_5v0_ext>;
+			gpio = <&gpio TEGRA_GPIO(N, 5) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+		};
+	};
+ };
