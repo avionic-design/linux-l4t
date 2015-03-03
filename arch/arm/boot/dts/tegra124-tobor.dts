@@ -25,6 +25,25 @@
 				nvidia,function = "spi4";
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+
+			/* FAN_PWM */
+			ph0 {
+				nvidia,function = "pwm0";
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* Disable pu3 which is muxed to pwm0 as per
+			 * "safe" function. We use pwm0 per ph0
+			 * instead. */
+			pu3 {
+				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+			};
+
+			/* LCD_BL_PWM */
+			ph3 {
+				nvidia,function = "pwm3";
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 		};
 	};
 
