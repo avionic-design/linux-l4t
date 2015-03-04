@@ -1942,6 +1942,15 @@
 		nvidia,sys-clock-req-active-high;
 	};
 
+	sata@0x70020000 {
+		nvidia,enable-sata-port;
+		nvidia,sata-connector-type = <STANDARD_SATA>;
+		avdd_sata_pll-supply =<&vdd_1v05_run>;
+		avdd_sata-supply = <&vdd_1v05_run>;
+		hvdd_sata-supply = <&vdd_3v3_lp0>;
+		vddio_pex_sata-supply = <&vdd_1v05_run>;
+	};
+
 	efuse@7000f800 {
 		vpp_fuse-supply = <&vpp_fuse>;
 	};
