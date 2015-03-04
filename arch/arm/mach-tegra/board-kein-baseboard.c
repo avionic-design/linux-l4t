@@ -26,7 +26,7 @@
 #include "com-meerkat.h"
 
 static const char * const kein_baseboard_dt_board_compat[] = {
-	"ad,kein-baseboard",
+	"ad,meerkat",
 	NULL
 };
 
@@ -40,7 +40,7 @@ void __init kein_baseboard_init(void)
 	tegra_meerkat_dt_init(kein_baseboard_auxdata_lookup);
 }
 
-DT_MACHINE_START(JETSON_TK1, "kein-baseboard")
+DT_MACHINE_START(MEERKAT_DT, "Avionic Design Meerkat (Device Tree)")
 	.atag_offset	= 0x100,
 	.smp		= smp_ops(tegra_smp_ops),
 	.map_io		= tegra_map_common_io,
