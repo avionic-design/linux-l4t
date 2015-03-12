@@ -7,7 +7,7 @@
 #include "tegra124-meerkat.dtsi"
 
 / {
-	model = "Avionic Design Kein Baseboard";
+	model = "Avionic Design Tobor";
 	compatible = "ad,tobor", "ad,meerkat", "nvidia,tegra124";
 	nvidia,dtsfilename = __FILE__;
 
