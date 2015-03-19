@@ -21,10 +21,8 @@
 	};
 
 	pinmux {
-		pinctrl-names = "default", "drive", "unused";
+		pinctrl-names = "default";
 		pinctrl-0 = <&pinmux_default>;
-		pinctrl-1 = <&drive_default>;
-		pinctrl-2 = <&pinmux_unused_lowpower>;
 
 		pinmux_default: common {
 			dap_mclk1_pw4 {
@@ -1463,9 +1461,7 @@
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
-		};
 
-		pinmux_unused_lowpower: unused_lowpower {
 			dap3_sclk_pp3 {
 				nvidia,pins = "dap3_sclk_pp3";
 				nvidia,function = "safe";
@@ -1569,9 +1565,7 @@
 				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
 				nvidia,tristate = <TEGRA_PIN_ENABLE>;
 			};
-		};
 
-		drive_default: drive {
 			drive_sdio1 {
 				nvidia,pins = "drive_sdio1";
 				nvidia,high-speed-mode = <TEGRA_PIN_ENABLE>;
