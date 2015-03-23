@@ -4843,7 +4843,7 @@ static int tegra_dc_dsi_init(struct tegra_dc *dc)
 	dsi->avdd_dsi_csi =  regulator_get(&dc->ndev->dev, "avdd_dsi_csi");
 	if (IS_ERR_OR_NULL(dsi->avdd_dsi_csi)) {
 		dev_err(&dc->ndev->dev, "dsi: avdd_dsi_csi reg get failed\n");
-		err = -ENODEV;
+		err = PTR_ERR(dsi->avdd_dsi_csi);
 		goto err_reg;
 	}
 
