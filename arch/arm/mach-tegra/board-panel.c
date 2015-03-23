@@ -212,6 +212,10 @@ struct device_node *tegra_panel_get_dt_node(
 		np_panel = of_find_compatible_node(NULL, NULL, "s,wqxga-10-1");
 		break;
 	case 0:
+		if (pdata && dc_out)
+			tegra_panel_register_ops(dc_out,
+				&panel_generic_ops);
+		np_panel = of_find_compatible_node(NULL, NULL, "none,panel-generic");
 		/* No warning on unknown boards */
 		break;
 	default:
