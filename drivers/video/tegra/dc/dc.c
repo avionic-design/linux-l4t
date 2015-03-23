@@ -3132,12 +3132,6 @@ static int tegra_dc_probe(struct platform_device *ndev)
 		tegra_dc_init_lut_defaults(&win->lut);
 	}
 
-	ret = tegra_dc_set(dc, ndev->id);
-	if (ret < 0) {
-		dev_err(&ndev->dev, "can't add dc\n");
-		goto err_put_clk;
-	}
-
 	platform_set_drvdata(ndev, dc);
 
 	if (dc->pdata->default_out) {
@@ -3219,6 +3213,13 @@ static int tegra_dc_probe(struct platform_device *ndev)
 	if (IS_ERR_OR_NULL(dc->ext)) {
 		dev_warn(&ndev->dev, "Failed to enable Tegra DC extensions.\n");
 		dc->ext = NULL;
+	}
+
+	/* Activate the DC port in the state table */
+	ret = tegra_dc_set(dc, ndev->id);
+	if (ret < 0) {
+		dev_err(&ndev->dev, "can't add dc\n");
+		goto err_disable_dc;
 	}
 
 	/* interrupt handler must be registered before tegra_fb_register() */
