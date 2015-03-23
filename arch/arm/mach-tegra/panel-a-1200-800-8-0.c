@@ -238,7 +238,7 @@ fail:
 	return err;
 }
 
-static int dsi_a_1200_800_8_0_disable(void)
+static int dsi_a_1200_800_8_0_disable(struct device *dev)
 {
 	if (gpio_is_valid(dsi_a_1200_800_8_0_pdata.dsi_panel_rst_gpio))
 		gpio_set_value(dsi_a_1200_800_8_0_pdata.dsi_panel_rst_gpio, 0);

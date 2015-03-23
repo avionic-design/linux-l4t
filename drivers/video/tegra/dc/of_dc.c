@@ -1431,7 +1431,7 @@ static int dc_hdmi_out_enable(struct device *dev)
 	return 0;
 }
 
-static int dc_hdmi_out_disable(void)
+static int dc_hdmi_out_disable(struct device *dev)
 {
 	if (of_hdmi_reg) {
 		regulator_disable(of_hdmi_reg);

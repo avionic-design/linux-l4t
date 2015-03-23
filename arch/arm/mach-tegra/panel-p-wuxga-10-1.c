@@ -341,7 +341,7 @@ fail:
 	return err;
 }
 
-static int dsi_p_wuxga_10_1_disable(void)
+static int dsi_p_wuxga_10_1_disable(struct device *dev)
 {
 	if (gpio_is_valid(dsi_p_wuxga_10_1_pdata.dsi_panel_rst_gpio))
 		gpio_set_value(dsi_p_wuxga_10_1_pdata.dsi_panel_rst_gpio, 0);

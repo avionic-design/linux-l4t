@@ -541,7 +541,7 @@ static struct tegra_dsi_out dsi_j_1440_810_5_8_pdata = {
 	.ulpm_not_supported = true,
 };
 
-static int dsi_j_1440_810_5_8_disable(void)
+static int dsi_j_1440_810_5_8_disable(struct device *dev)
 {
 	gpio_direction_output(dsi_j_1440_810_5_8_pdata.dsi_panel_rst_gpio, 0);
 	usleep_range(3000, 5000);

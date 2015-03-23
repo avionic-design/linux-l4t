@@ -245,7 +245,7 @@ static int ardbeg_hdmi_enable(struct device *dev)
 	return 0;
 }
 
-static int ardbeg_hdmi_disable(void)
+static int ardbeg_hdmi_disable(struct device *dev)
 {
 	if (ardbeg_hdmi_reg) {
 		regulator_disable(ardbeg_hdmi_reg);
