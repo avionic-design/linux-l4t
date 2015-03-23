@@ -1703,6 +1703,7 @@
 			ams,major-rev = <1>;
 			ams,minor-rev = <2>;
 			ams,system-power-controller;
+			ams,enable-ac-ok-power-on;
 			ams,extcon-name = "as3722-extcon";
 			ams,enable-adc1-continuous-mode;
 			ams,enable-low-voltage-range;
