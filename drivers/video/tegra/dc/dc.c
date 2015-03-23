@@ -3140,17 +3140,6 @@ static int tegra_dc_probe(struct platform_device *ndev)
 
 	platform_set_drvdata(ndev, dc);
 
-#ifdef CONFIG_SWITCH
-	dc->modeset_switch.name = dev_name(&ndev->dev);
-	dc->modeset_switch.state = 0;
-	dc->modeset_switch.print_state = switch_modeset_print_mode;
-	ret = switch_dev_register(&dc->modeset_switch);
-	if (ret < 0)
-		dev_err(&ndev->dev, "failed to register switch driver\n");
-#endif
-
-	tegra_dc_feature_register(dc);
-
 	if (dc->pdata->default_out) {
 #ifdef CONFIG_FRAMEBUFFER_CONSOLE
 		if (dc->pdata->default_out->hotplug_init)
@@ -3166,6 +3155,17 @@ static int tegra_dc_probe(struct platform_device *ndev)
 			"No default output specified.  Leaving output disabled.\n");
 	}
 	dc->mode_dirty = false; /* ignore changes tegra_dc_set_out has done */
+
+#ifdef CONFIG_SWITCH
+	dc->modeset_switch.name = dev_name(&ndev->dev);
+	dc->modeset_switch.state = 0;
+	dc->modeset_switch.print_state = switch_modeset_print_mode;
+	ret = switch_dev_register(&dc->modeset_switch);
+	if (ret < 0)
+		dev_err(&ndev->dev, "failed to register switch driver\n");
+#endif
+
+	tegra_dc_feature_register(dc);
 
 #ifdef CONFIG_FRAMEBUFFER_CONSOLE
 	if (dc->out && dc->out->n_modes &&
