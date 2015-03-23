@@ -5,6 +5,7 @@
 #include <dt-bindings/usb/tegra-xhci.h>
 
 #include "tegra124-meerkat.dtsi"
+#include "panel-auo-b101uan01.dtsi"
 
 / {
 	model = "Avionic Design Kitt";
@@ -13,6 +14,15 @@
 
 	pinmux {
 		common {
+			ph2 {
+				nvidia,function = "pwm2";
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+			ph3 {
+				nvidia,pins = "ph3";
+				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 			dap2_din_pa4 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
@@ -28,8 +38,33 @@
 		};
 	};
 
+	display_bl: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&tegra_pwm 2 1000000>;
+		brightness-levels = <0 4 8 16 32 64 128 255>;
+		default-brightness-level = <7>;
+	};
+
 	host1x {
 		dc@54200000 {
+			status = "okay";
+
+			/* controller needs to be enabled on probe for panel
+			   initialisation to work */
+			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
+			nvidia,dc-connection = "internal-lcd";
+		};
+
+		dsi {
+			nvidia,dsi-controller-vs = <DSI_VS_1>;
+			status = "okay";
+			panel: panel-auo-b101uan01 {
+				enable-gpios = <&gpio TEGRA_GPIO(H, 3) GPIO_ACTIVE_HIGH>;
+				backlight = <&display_bl>;
+			};
+		};
+
+		dc@54240000 {
 			status = "okay";
 
 			nvidia,dc-connection = "external-display";
