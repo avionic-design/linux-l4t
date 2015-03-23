@@ -1604,6 +1604,7 @@
 		dc@54200000 {
 			avdd_hdmi-supply = <&vdd_3v3_hdmi>;
 			avdd_hdmi_pll-supply = <&vdd_hdmi_pll>;
+			avdd_dsi_csi-supply = <&avdd_dsi_csi>;
 			nvidia,fb-bpp = <32>;
 			nvidia,emc-clk-rate = <204000000>;
 			nvidia,low-v-win = <2>;
@@ -1611,6 +1612,7 @@
 		dc@54240000 {
 			avdd_hdmi-supply = <&vdd_3v3_hdmi>;
 			avdd_hdmi_pll-supply = <&vdd_hdmi_pll>;
+			avdd_dsi_csi-supply = <&avdd_dsi_csi>;
 			nvidia,fb-bpp = <32>;
 			nvidia,emc-clk-rate = <300000000>;
 		};
