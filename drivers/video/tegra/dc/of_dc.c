@@ -1657,10 +1657,12 @@ struct tegra_dc_platform_data
 			goto fail_parse;
 	}
 
-	err = parse_tmds_config(ndev, np_target_disp,
-			pdata->default_out);
-		if (err)
-			goto fail_parse;
+	if (pdata->default_out->type == TEGRA_DC_OUT_HDMI) {
+		err = parse_tmds_config(ndev, np_target_disp,
+				pdata->default_out);
+			if (err)
+				goto fail_parse;
+	}
 
 	timings_np = of_get_child_by_name(np_target_disp,
 		"display-timings");
