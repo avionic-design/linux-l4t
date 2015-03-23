@@ -143,6 +143,7 @@ obj-y                                   += board-panel.o
 obj-y                                   += panel-p-wuxga-10-1.o
 obj-y                                   += panel-lgd-wxga-7-0.o
 obj-y                                   += panel-s-wqxga-10-1.o
+obj-y                                   += panel-generic.o
 
 obj-${CONFIG_MACH_ARDBEG}               += board-ardbeg.o
 obj-${CONFIG_MACH_ARDBEG}               += board-ardbeg-sdhci.o
