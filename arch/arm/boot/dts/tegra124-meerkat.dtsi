@@ -1863,7 +1863,7 @@
 					regulator-max-microvolt = <1800000>;
 				};
 
-				avdd_csi_dsi: ldo2 {
+				avdd_dsi_csi: ldo2 {
 					regulator-name = "+1.2V_GEN_AVDD";
 					regulator-min-microvolt = <1200000>;
 					regulator-max-microvolt = <1200000>;
@@ -1984,7 +1984,7 @@
 	xusb@70090000 {
 		hvdd_usb-supply = <&vdd_3v3_lp0>;
 		avdd_pll_utmip-supply = <&vddio_1v8>;
-		vddio_hsic-supply = <&avdd_csi_dsi>;
+		vddio_hsic-supply = <&avdd_dsi_csi>;
 		avddio_usb-supply= <&avdd_1v05_run>;
 	};
 
@@ -2079,7 +2079,7 @@
 		pwrdet_uart-supply = <&vddio_1v8>;
 		pwrdet_bb-supply = <&vddio_1v8>;
 		pwrdet_audio-supply = <&vddio_1v8>;
-		pwrdet_mipi-supply = <&avdd_csi_dsi>;
+		pwrdet_mipi-supply = <&avdd_dsi_csi>;
 		pwrdet_cam-supply = <&avdd_1v8_cam_run>;
 		pwrdet_pex_ctl-supply = <&vdd_1v05_run>;
 		pwrdet_sdmmc1-supply = <&vddio_1v8>;
