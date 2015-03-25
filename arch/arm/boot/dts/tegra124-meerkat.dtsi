@@ -1689,6 +1689,9 @@
 	i2c@7000d000 {
 		status = "okay";
 
+		/* Required for PMIC access via i2c during shutdown: */
+		nvidia,bit-banging-xfer-after-shutdown;
+
 		pmic: pmic@40 {
 			compatible = "ams,as3722";
 			reg = <0x40>;
