@@ -23,6 +23,7 @@
 
 			pi4 {
 				nvidia,function = "spi4";
+				nvidia,pull = <TEGRA_PIN_PULL_UP>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
