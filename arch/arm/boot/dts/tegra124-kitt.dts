@@ -3,6 +3,7 @@
 #include <dt-bindings/display/tegra-dc.h>
 #include <dt-bindings/usb/tegra-ehci.h>
 #include <dt-bindings/usb/tegra-xhci.h>
+#include <dt-bindings/pci/tegra-pcie.h>
 
 #include "tegra124-meerkat.dtsi"
 #include "panel-auo-b101uan01.dtsi"
@@ -43,6 +44,13 @@
 		pwms = <&tegra_pwm 2 1000000>;
 		brightness-levels = <0 4 8 16 32 64 128 255>;
 		default-brightness-level = <7>;
+	};
+
+	pcie-controller {
+		nvidia,port0_status = <1>;
+		nvidia,port1_status = <1>;
+		nvidia,lanes = <TEGRA_PCIE_LANES_X2_X1>;
+		status = "okay";
 	};
 
 	host1x {
