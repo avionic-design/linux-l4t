@@ -1793,6 +1793,17 @@ static int __init tegra_lane_owner_info(char *id)
 
 int tegra_get_lane_owner_info(void)
 {
+	struct device_node *np = of_find_node_by_path("/pcie-controller");
+	if (np) {
+		u32 val;
+		int err = of_property_read_u32(np, "nvidia,lanes", &val);
+		if (!err)
+			return val << 1;
+		else if (err != -EINVAL)
+			pr_warn("PCI: Failed to read DT node "
+				"/pcie-controller/nvidia,lanes\n");
+	}
+
 	return lane_owner_info;
 }
 
