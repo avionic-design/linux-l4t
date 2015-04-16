@@ -122,6 +122,12 @@
 
 	};
 
+	pcie-controller {
+		nvidia,port0_status = <1>;
+		nvidia,port1_status = <1>;
+		status = "okay";
+	};
+
 	/* HDMI audio */
 	hda@70030000 {
 		status = "okay";
