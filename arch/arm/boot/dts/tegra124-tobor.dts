@@ -3,6 +3,7 @@
 #include <dt-bindings/display/tegra-dc.h>
 #include <dt-bindings/usb/tegra-ehci.h>
 #include <dt-bindings/usb/tegra-xhci.h>
+#include <dt-bindings/pci/tegra-pcie.h>
 
 #include "tegra124-meerkat.dtsi"
 
@@ -124,7 +125,8 @@
 
 	pcie-controller {
 		nvidia,port0_status = <1>;
-		nvidia,port1_status = <1>;
+		nvidia,port1_status = <0>;
+		nvidia,lanes = <TEGRA_PCIE_LANES_X2_X1>;
 		status = "okay";
 	};
 
