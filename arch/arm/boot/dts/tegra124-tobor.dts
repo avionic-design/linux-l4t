@@ -209,8 +209,6 @@
 		nvidia,xcvr-setup-offset = <0>;
 		nvidia,xcvr-use-fuses = <1>;
 		nvidia,vbus-oc-map = <0x5>;
-
-		usb_vbus-supply = <&vdd_vbus_usb1>;
 	};
 
 	regulators {
