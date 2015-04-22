@@ -1680,6 +1680,7 @@
 
 	i2c@7000c500 {
 		status = "disabled";
+		pull-ups-supply = <&avdd_1v8_cam_run>;
 	};
 
 	i2c@7000c700 {
