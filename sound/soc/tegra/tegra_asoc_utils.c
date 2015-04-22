@@ -522,6 +522,9 @@ EXPORT_SYMBOL_GPL(tegra_asoc_utils_register_ctls);
 int tegra_asoc_utils_init(struct tegra_asoc_utils_data *data,
 			  struct device *dev, struct snd_soc_card *card)
 {
+	char *extern_clock = "extern1";
+	char *clk_out = "clk_out_1";
+	int ext_clock_id = 1;
 	int ret;
 
 	data->dev = dev;
@@ -582,10 +585,39 @@ int tegra_asoc_utils_init(struct tegra_asoc_utils_data *data,
 		goto err;
 	}
 
+	if (dev->of_node) {
+		ret = of_property_read_u32(dev->of_node, "nvidia,extern-clk-id",
+				&ext_clock_id);
+		if (ret == -EINVAL)
+			ext_clock_id = 1;
+		else if (ret)
+			dev_err(data->dev, "Can't read nvidia,extern-clk-id: %d\n",
+					ret);
+
+		switch (ext_clock_id) {
+			case 3:
+				clk_out = "clk_out_3";
+				extern_clock = "extern3";
+				break;
+			case 2:
+				clk_out = "clk_out_2";
+				extern_clock = "extern2";
+				break;
+			case 1:
+				/* it's the preset */
+				break;
+			default:
+				dev_err(data->dev, "Invalid extern-clk-id specified in dt: %d\n",
+						ext_clock_id);
+				ext_clock_id = 1;
+		}
+	}
+
 	if (data->soc == TEGRA_ASOC_UTILS_SOC_TEGRA20)
 		data->clk_cdev1 = clk_get_sys(NULL, "cdev1");
-	else
-		data->clk_cdev1 = clk_get_sys("extern1", NULL);
+	else {
+		data->clk_cdev1 = clk_get_sys(extern_clock, NULL);
+	}
 
 	if (IS_ERR(data->clk_cdev1)) {
 		dev_err(data->dev, "Can't retrieve clk cdev1\n");
@@ -596,7 +628,7 @@ int tegra_asoc_utils_init(struct tegra_asoc_utils_data *data,
 	if (data->soc == TEGRA_ASOC_UTILS_SOC_TEGRA20)
 		data->clk_out1 = ERR_PTR(-ENOENT);
 	else {
-		data->clk_out1 = clk_get_sys("clk_out_1", "extern1");
+		data->clk_out1 = clk_get_sys(clk_out, extern_clock);
 		if (IS_ERR(data->clk_out1)) {
 			dev_err(data->dev, "Can't retrieve clk out1\n");
 			ret = PTR_ERR(data->clk_out1);
