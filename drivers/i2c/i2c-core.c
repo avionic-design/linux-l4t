@@ -42,6 +42,7 @@
 #include <linux/rwsem.h>
 #include <linux/pm_runtime.h>
 #include <linux/acpi.h>
+#include <linux/regulator/consumer.h>
 #include <asm/uaccess.h>
 
 #include "i2c-core.h"
@@ -996,6 +997,7 @@ static int __process_new_adapter(struct device_driver *d, void *data)
 
 static int i2c_register_adapter(struct i2c_adapter *adap)
 {
+	struct regulator *pulls_supply;
 	int res = 0;
 
 	/* Can't register until after driver model init */
@@ -1030,6 +1032,25 @@ static int i2c_register_adapter(struct i2c_adapter *adap)
 	res = device_register(&adap->dev);
 	if (res)
 		goto out_list;
+
+	/* Get optional pull-ups regulator and enable it */
+	pulls_supply = devm_regulator_get(&adap->dev, "pull-ups");
+	if (IS_ERR(pulls_supply)) {
+		if (PTR_ERR(pulls_supply) != -ENODEV) {
+			dev_dbg(&adap->dev,
+				"Failed to get pull ups regulator\n");
+			res = PTR_ERR(pulls_supply);
+			goto dev_unregister;
+		}
+	} else {
+		res = regulator_enable(pulls_supply);
+		if (res) {
+			dev_err(&adap->dev,
+				"Failed to enable pull-ups regulator\n");
+			goto dev_unregister;
+		}
+		adap->pulls_supply = pulls_supply;
+	}
 
 	dev_dbg(&adap->dev, "adapter [%s] registered\n", adap->name);
 
@@ -1085,6 +1106,10 @@ exit_recovery:
 
 	return 0;
 
+dev_unregister:
+	init_completion(&adap->dev_released);
+	device_unregister(&adap->dev);
+	wait_for_completion(&adap->dev_released);
 out_list:
 	mutex_lock(&core_lock);
 	idr_remove(&i2c_adapter_idr, adap->nr);
@@ -1277,6 +1302,10 @@ void i2c_del_adapter(struct i2c_adapter *adap)
 	class_compat_remove_link(i2c_adapter_compat_class, &adap->dev,
 				 adap->dev.parent);
 #endif
+
+	/* power down the pull ups */
+	if (adap->pulls_supply)
+		WARN_ON(regulator_disable(adap->pulls_supply));
 
 	/* device name is gone after device_unregister */
 	dev_dbg(&adap->dev, "adapter [%s] unregistered\n", adap->name);

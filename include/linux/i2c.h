@@ -48,6 +48,7 @@ union i2c_smbus_data;
 struct i2c_board_info;
 
 struct module;
+struct regulator;
 
 #if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
 /*
@@ -434,6 +435,8 @@ struct i2c_adapter {
 	struct list_head userspace_clients;
 
 	struct i2c_bus_recovery_info *bus_recovery_info;
+
+	struct regulator *pulls_supply;
 };
 #define to_i2c_adapter(d) container_of(d, struct i2c_adapter, dev)
 

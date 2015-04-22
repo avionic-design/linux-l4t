@@ -1,0 +1,14 @@
+I2C busses
+
+I2C busses can be described with a node for the I2C master device
+and a set of child nodes for each I2C slave on the bus.
+
+The SPI master node requires the following properties:
+- #address-cells  - number of cells required to define a chip select
+                    address on the I2C bus.
+- #size-cells     - should be zero.
+- compatible      - name of I2C bus controller following generic names
+                    recommended practice.
+
+Optional property:
+- pull-ups-supply : regulator for bus pull ups
