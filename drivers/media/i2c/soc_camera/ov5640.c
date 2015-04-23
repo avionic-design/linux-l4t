@@ -1388,6 +1388,16 @@ static int ov5640_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
 	return 0;
 }
 
+static int ov5640_g_mbus_config(struct v4l2_subdev *sd,
+				struct v4l2_mbus_config *cfg)
+{
+	cfg->type = V4L2_MBUS_CSI2;
+	cfg->flags = V4L2_MBUS_CSI2_2_LANE | V4L2_MBUS_CSI2_CHANNEL_0 |
+					V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK;
+
+	return 0;
+}
+
 static int ov5640_cropcap(struct v4l2_subdev *sd, struct v4l2_cropcap *a)
 {
 	a->bounds.left		= 0;
@@ -1464,6 +1474,7 @@ static struct v4l2_subdev_video_ops ov5640_video_ops = {
 	.s_mbus_fmt		= ov5640_s_fmt,
 	.try_mbus_fmt		= ov5640_try_fmt,
 	.enum_mbus_fmt		= ov5640_enum_fmt,
+	.g_mbus_config		= ov5640_g_mbus_config,
 	.cropcap		= ov5640_cropcap,
 	.g_crop			= ov5640_g_crop,
 };
