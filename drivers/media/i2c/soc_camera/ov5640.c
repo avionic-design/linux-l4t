@@ -1560,9 +1560,16 @@ static const struct i2c_device_id ov5640_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, ov5640_id);
 
+static const struct of_device_id ov5640_of_match[] = {
+	{ .compatible = "ov,ov5640" },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, ov5640_of_match);
+
 static struct i2c_driver ov5640_i2c_driver = {
 	.driver = {
 		.name = "ov5640",
+		.of_match_table = ov5640_of_match,
 	},
 	.probe    = ov5640_probe,
 	.remove   = ov5640_remove,
