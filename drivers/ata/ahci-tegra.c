@@ -756,7 +756,7 @@ int tegra_ahci_get_rails(struct regulator *regulators[])
 		if (IS_ERR_OR_NULL(reg)) {
 			pr_err("%s: can't get regulator %s\n",
 				__func__, sata_power_rails[i]);
-			WARN_ON(1);
+			WARN_ON(PTR_ERR(reg) != -EPROBE_DEFER);
 			ret = PTR_ERR(reg);
 			goto exit;
 		}
