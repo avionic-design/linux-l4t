@@ -1511,6 +1511,7 @@ static int ov5640_probe(struct i2c_client *client,
 	v4l2_i2c_subdev_init(&priv->subdev, client, &ov5640_subdev_ops);
 
 	priv->client = client;
+	i2c_set_clientdata(client, priv);
 
 	priv->ident = V4L2_IDENT_OV5640;
 
@@ -1548,6 +1549,8 @@ static int ov5640_probe(struct i2c_client *client,
 
 static int ov5640_remove(struct i2c_client *client)
 {
+	struct ov5640_priv *priv = i2c_get_clientdata(client);
+	v4l2_device_unregister_subdev(&priv->subdev);
 	return 0;
 }
 
