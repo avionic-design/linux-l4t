@@ -1871,7 +1871,7 @@
 				};
 
 				avdd_dsi_csi: ldo2 {
-					regulator-name = "+1.2V_GEN_AVDD";
+					regulator-name = "+1V2_GEN_AVDD";
 					regulator-min-microvolt = <1200000>;
 					regulator-max-microvolt = <1200000>;
 					regulator-boot-on;
@@ -1879,7 +1879,7 @@
 				};
 
 				ldo3 {
-					regulator-name = "+1.05V_LP0_VDD_RTC";
+					regulator-name = "+1V05_LDO_VDD_RTC";
 					regulator-min-microvolt = <1000000>;
 					regulator-max-microvolt = <1000000>;
 					regulator-always-on;
