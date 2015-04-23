@@ -730,6 +730,13 @@ static int pca953x_probe(struct i2c_client *client,
 	int ret;
 	u32 invert = 0;
 
+	if (!id) {
+		dev_err(&client->dev,
+			"Unknown device ID, fix the device name: %s\n",
+			client->name);
+		return -EINVAL;
+	}
+
 	chip = devm_kzalloc(&client->dev,
 			sizeof(struct pca953x_chip), GFP_KERNEL);
 	if (chip == NULL)
