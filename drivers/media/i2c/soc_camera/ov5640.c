@@ -1190,8 +1190,12 @@ static int ov5640_read_reg(struct i2c_client *client, u16 addr, u8 *val)
 
 	err = i2c_transfer(client->adapter, msg, 2);
 
-	if (err != 2)
-		return -EINVAL;
+	if (err != 2) {
+		dev_err(&client->dev,
+			"I2C transfer to read 0x%04x failed: %d\n",
+			addr, err);
+		return err < 0 ? err : -EINVAL;
+	}
 
 	*val = data[2];
 
