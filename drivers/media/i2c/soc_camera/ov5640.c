@@ -1543,6 +1543,12 @@ static int ov5640_probe(struct i2c_client *client,
 
 	ov5640_set_default_fmt(priv);
 
+	ret = v4l2_async_register_subdev(&priv->subdev);
+	if (ret) {
+		dev_info(&client->dev, "Failed to register async subdev\n");
+		return ret;
+	}
+
 	dev_info(&client->dev, "Chip ID 0x%04x\n", priv->chip_id);
 	return ret;
 }
@@ -1550,6 +1556,7 @@ static int ov5640_probe(struct i2c_client *client,
 static int ov5640_remove(struct i2c_client *client)
 {
 	struct ov5640_priv *priv = i2c_get_clientdata(client);
+	v4l2_async_unregister_subdev(&priv->subdev);
 	v4l2_device_unregister_subdev(&priv->subdev);
 	return 0;
 }
