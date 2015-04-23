@@ -1,0 +1,178 @@
+/dts-v1/;
+
+#include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/usb/tegra-ehci.h>
+#include <dt-bindings/pci/tegra-pcie.h>
+
+#include "tegra124-meerkat.dtsi"
+
+/ {
+	model = "Avionic Design Twobit";
+	compatible = "ad,twobit", "ad,meerkat", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+
+	host1x {
+		dc@54200000 {
+			status = "okay";
+
+			nvidia,dc-connection = "external-display";
+			vdd_hdmi_5v0-supply = <&vdd_5v0>;
+		};
+
+		hdmi {
+			status = "okay";
+		};
+	};
+
+	serial@70006300 {
+		status = "okay";
+	};
+
+	/* GEN 1 */
+	i2c@7000c000 {
+		status = "okay";
+
+		io_expander: tca6416@20 {
+			/* The board has an NXP chip, but it is the same one */
+			compatible = "ti,tca6416";
+			reg = <0x20>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	/* GEN 2 */
+	i2c@7000c400 {
+		status = "okay";
+
+		pca9552@60 {
+			compatible = "nxp,pca9552";
+			reg = <0x60>;
+		};
+	};
+
+	/* HDMI DDC */
+	i2c@7000c700 {
+		status = "okay";
+	};
+
+	/* SATA */
+	sata@0x70020000 {
+		status = "okay";
+		vdd_sata-supply = <&vdd_sata>;
+	};
+
+	/* HDMI Audio */
+	hda@70030000 {
+		status = "okay";
+	};
+
+	pcie-controller {
+		status = "okay";
+		nvidia,port0_status = <0>;
+		nvidia,port1_status = <1>;
+		nvidia,lanes = <TEGRA_PCIE_LANES_X4_X1>;
+	};
+
+	/* USB2 */
+	usb@7d000000 {
+		status = "okay";
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+
+		nvidia,hotplug;
+		nvidia,remote-wakeup-supported;
+		nvidia,power-off-on-suspend;
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+		nvidia,vbus-oc-map = <0x5>;
+
+		usb_vbus-supply = <&vdd_5v0>;
+	};
+
+	regulators {
+		vcc_ext: regulator@50 {
+			compatible = "regulator-fixed";
+			reg = <50>;
+			regulator-name = "VccExt";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
+			regulator-name = "+5V";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&vcc_ext>;
+		};
+
+		vdd_3v3: regulator@102 {
+			compatible = "regulator-fixed";
+			reg = <102>;
+			regulator-name = "+3V3";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			vin-supply = <&vcc_ext>;
+		};
+
+		vdd_1v0: regulator@103 {
+			compatible = "regulator-fixed";
+			reg = <103>;
+			regulator-name = "+1V";
+			regulator-min-microvolt = <1000000>;
+			regulator-max-microvolt = <1000000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		vdd_1v1: regulator@104 {
+			compatible = "regulator-fixed";
+			reg = <104>;
+			regulator-name = "+1V1";
+			regulator-min-microvolt = <1100000>;
+			regulator-max-microvolt = <1100000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		vdd_1v2: regulator@105 {
+			compatible = "regulator-fixed";
+			reg = <105>;
+			regulator-name = "+1V2";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		vdd_1v8: regulator@106 {
+			compatible = "regulator-fixed";
+			reg = <106>;
+			regulator-name = "+1V8";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		vdd_sata: regulator@107 {
+			compatible = "regulator-fixed";
+			reg = <107>;
+			regulator-name = "VDD_SATA";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			vin-supply = <&vcc_ext>;
+			gpio = <&gpio TEGRA_GPIO(EE, 2) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+	};
+};
