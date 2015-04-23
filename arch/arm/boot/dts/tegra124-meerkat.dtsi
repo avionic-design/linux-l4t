@@ -1601,6 +1601,10 @@
 	};
 
 	host1x {
+		vi {
+			avdd_dsi_csi-supply = <&avdd_dsi_csi>;
+		};
+
 		dc@54200000 {
 			avdd_hdmi-supply = <&vdd_3v3_hdmi>;
 			avdd_hdmi_pll-supply = <&vdd_hdmi_pll>;
