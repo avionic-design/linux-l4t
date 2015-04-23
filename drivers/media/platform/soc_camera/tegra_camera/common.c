@@ -931,6 +931,7 @@ static int tegra_camera_probe(struct platform_device *pdev)
 	if (IS_ERR_OR_NULL(cam->reg)) {
 		dev_err(&pdev->dev, "%s: couldn't get regulator %s, err %ld\n",
 			__func__, cam->regulator_name, PTR_ERR(cam->reg));
+		err = PTR_ERR(cam->reg);
 		cam->reg = NULL;
 		goto exit;
 	}
