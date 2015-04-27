@@ -252,6 +252,8 @@
 #define MEM_BASE_0		(PREFETCH_MEM_BASE_0 + PREFETCH_MEM_SIZE_0)
 #define MEM_SIZE_0		(SZ_1G - MEM_BASE_0)
 
+/* Number of bus supported */
+#define MAX_TEGRA_PCI_BUS	16
 
 #define DEBUG 0
 #if DEBUG
@@ -448,7 +450,6 @@ free:
 
 /*
  * Look up a virtual address mapping for the specified bus number.
- * If no such mapping existis, try to create one.
  */
 static void __iomem *tegra_pcie_bus_map(unsigned int busnr)
 {
@@ -458,13 +459,8 @@ static void __iomem *tegra_pcie_bus_map(unsigned int busnr)
 		if (bus->nr == busnr)
 			return bus->area->addr;
 
-	bus = tegra_pcie_bus_alloc(busnr);
-	if (IS_ERR(bus))
-		return NULL;
-
-	list_add_tail(&bus->list, &tegra_pcie.busses);
-
-	return bus->area->addr;
+	dev_err(tegra_pcie.dev, "Failed to get bus mapping\n");
+	return NULL;
 }
 
 int tegra_pcie_read_conf(struct pci_bus *bus, unsigned int devfn,
@@ -596,6 +592,8 @@ DECLARE_PCI_FIXUP_FINAL(PCI_ANY_ID, PCI_ANY_ID, tegra_pcie_relax_enable);
 
 static void tegra_pcie_preinit(void)
 {
+	int i;
+
 	PR_FUNC_LINE;
 	pcie_mem_space.name = "PCIe MEM Space";
 	pcie_mem_space.start = MEM_BASE_0;
@@ -612,6 +610,14 @@ static void tegra_pcie_preinit(void)
 	if (request_resource(&iomem_resource, &pcie_prefetch_mem_space))
 		panic("can't allocate PCIe PREFETCH MEM space");
 
+	for (i = 1 ; i <= MAX_TEGRA_PCI_BUS; i++) {
+		struct tegra_pcie_bus *bus = tegra_pcie_bus_alloc(i);
+		if (IS_ERR(bus))
+			dev_err(tegra_pcie.dev,
+				"Failed to allocated data for bus %d\n", i);
+		else
+			list_add_tail(&bus->list, &tegra_pcie.busses);
+	}
 }
 
 static int tegra_pcie_setup(int nr, struct pci_sys_data *sys)
