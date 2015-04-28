@@ -396,3 +396,14 @@ config SND_SOC_TEGRA_DUMMY
 	  Say Y or M here if you want to add support for SoC audio on Tegra
 	  boards that doesn't use codecs (like SPDIF).
 	  One such board is a customer board called Sandman.
+
+config SND_SOC_TEGRA_TLV320DAC3100
+	tristate "SoC Audio support for Tegra boards using a TLV320DAC3100"
+	depends on SND_SOC_TEGRA && I2C
+	select SND_SOC_TEGRA20_I2S if ARCH_TEGRA_2x_SOC
+	select SND_SOC_TEGRA30_I2S if !ARCH_TEGRA_2x_SOC
+	select SND_SOC_TEGRA30_DAM if !ARCH_TEGRA_2x_SOC
+	select SND_SOC_TLV320DAC3100
+	help
+	  Say Y or M here if you want to add support for SoC audio using the
+	  TLV320DAC3100
