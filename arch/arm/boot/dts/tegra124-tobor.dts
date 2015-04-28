@@ -46,6 +46,17 @@
 				nvidia,function = "pwm3";
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+
+			/* i2s3 (DAP4) / DAC */
+			dap4_dout_pp6 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+			dap4_fs_pp4 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+			dap4_sclk_pp7 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 		};
 	};
 
@@ -80,6 +91,16 @@
 
 	serial@70006300 {
 		status = "okay";
+	};
+
+	/* GEN 1 */
+	i2c@7000c000 {
+		status = "okay";
+
+		tlv320dac3100: tlv320dac3100@18 {
+			compatible = "ti,tlv320dac3100";
+			reg = <0x18>;
+		};
 	};
 
 	/* GEN 2 */
@@ -209,6 +230,38 @@
 		nvidia,xcvr-setup-offset = <0>;
 		nvidia,xcvr-use-fuses = <1>;
 		nvidia,vbus-oc-map = <0x5>;
+	};
+
+	avp-audio {
+		compatible = "nvidia,tegra124-avp-audio", "nvidia,tegra30-avp-audio";
+	};
+
+	audio-offload {
+		compatible = "nvidia,tegra-offload";
+	};
+
+	ahub {
+		status = "okay";
+
+		tegra_i2s3: i2s@70301300 {
+			status = "okay";
+		};
+	};
+
+	sound@0 {
+		compatible = "nvidia,tegra-audio-tlv320dac3100";
+		reg = <0>;
+		nvidia,model = "Tobor TLV320DAC3100";
+
+		nvidia,audio-routing =
+			"Headphone", "HPL",
+			"Headphone", "HPR";
+
+		nvidia,memory-clients = <14>;
+		nvidia,i2s-controller = <&tegra_i2s3>;
+		nvidia,i2s-is-master;
+		nvidia,audio-codec = <&tlv320dac3100>;
+		nvidia,extern-clk-id = <3>;
 	};
 
 	regulators {
