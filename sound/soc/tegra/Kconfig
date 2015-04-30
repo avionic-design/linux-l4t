@@ -407,3 +407,8 @@ config SND_SOC_TEGRA_TLV320DAC3100
 	help
 	  Say Y or M here if you want to add support for SoC audio using the
 	  TLV320DAC3100
+
+config SND_SOC_TEGRA_TOBOR_ADC
+	tristate "SoC Audio support for the ADC on the Tobor board"
+	depends on SND_SOC_TEGRA
+	select SND_SOC_CS53L30

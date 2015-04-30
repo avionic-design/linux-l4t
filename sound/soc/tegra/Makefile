@@ -47,6 +47,7 @@ snd-soc-tegra-max98090-objs := tegra_max98090.o
 snd-soc-tegra-dmic-rev1-objs := tegra_dmic_rev1.o
 snd-soc-tegra-dummy-objs := tegra_dummy_machine.o
 snd-soc-tegra-tlv320dac3100-objs := tegra_tlv320dac3100.o
+snd-soc-tegra-tobor-adc-objs := tegra_tobor_adc.o
 
 obj-$(CONFIG_SND_SOC_TEGRA_WM8753) += snd-soc-tegra-wm8753.o
 obj-$(CONFIG_SND_SOC_TEGRA_WM8903) += snd-soc-tegra-wm8903.o
@@ -67,3 +68,4 @@ obj-$(CONFIG_SND_SOC_TEGRA_MAX98090) += snd-soc-tegra-max98090.o
 obj-$(CONFIG_SND_SOC_TEGRA_DMIC_REV1) += snd-soc-tegra-dmic-rev1.o
 obj-$(CONFIG_SND_SOC_TEGRA_DUMMY) += snd-soc-tegra-dummy.o
 obj-$(CONFIG_SND_SOC_TEGRA_TLV320DAC3100) += snd-soc-tegra-tlv320dac3100.o
+obj-$(CONFIG_SND_SOC_TEGRA_TOBOR_ADC) += snd-soc-tegra-tobor-adc.o
