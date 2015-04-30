@@ -252,6 +252,10 @@ config SND_SOC_CS4270_VD33_ERRATA
 config SND_SOC_CS4271
 	tristate
 
+config SND_SOC_CS53L30
+	tristate
+	depends on I2C
+
 config SND_SOC_CX20442
 	tristate
 	depends on TTY
