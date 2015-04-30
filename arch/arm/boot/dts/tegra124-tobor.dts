@@ -47,6 +47,19 @@
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
+			/* i2s1 (DAP2) / ADC */
+			dap2_din_pa4 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			dap2_fs_pa2 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			dap2_sclk_pa3 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
 			/* i2s3 (DAP4) / DAC */
 			dap4_dout_pp6 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
@@ -100,6 +113,20 @@
 		tlv320dac3100: tlv320dac3100@18 {
 			compatible = "ti,tlv320dac3100";
 			reg = <0x18>;
+		};
+
+		adc1: adc@48 {
+			compatible = "cirrus,cs53l30";
+			reg = <0x48>;
+
+			#sound-dai-cells = <0>;
+		};
+
+		adc2: adc@49 {
+			compatible = "cirrus,cs53l30";
+			reg = <0x49>;
+
+			#sound-dai-cells = <0>;
 		};
 	};
 
@@ -243,6 +270,10 @@
 	ahub {
 		status = "okay";
 
+		i2s@70301100 {
+			status = "okay";
+		};
+
 		tegra_i2s3: i2s@70301300 {
 			status = "okay";
 		};
@@ -262,6 +293,29 @@
 		nvidia,i2s-is-master;
 		nvidia,audio-codec = <&tlv320dac3100>;
 		nvidia,extern-clk-id = <3>;
+	};
+
+	sound@1 {
+		compatible = "ad,tobor-adc";
+		reg = <1>;
+		nvidia,model = "Tobor ADC";
+
+		nvidia,audio-routing =
+			"A IN1", "Mic 1",
+			"A IN2", "Mic 2",
+			"A IN3", "Mic 3",
+			"A IN4", "Mic 4",
+			"B IN1", "Mic 5",
+			"B IN2", "Mic 6",
+			"B IN3", "Loopback",
+			"B IN4", "Loopback";
+
+		nvidia,memory-clients = <SWGID_PPCS>;
+		nvidia,i2s-controller = <&tegra_i2s1>;
+		nvidia,i2s-is-master;
+		sound-dai = <&adc1>, <&adc2>;
+
+		adc-enable-gpio = <&gpio TEGRA_GPIO(T, 0) GPIO_ACTIVE_LOW>;
 	};
 
 	regulators {
