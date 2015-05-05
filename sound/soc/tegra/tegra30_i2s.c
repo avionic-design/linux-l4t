@@ -560,7 +560,10 @@ static int tegra30_i2s_hw_params(struct snd_pcm_substream *substream,
 	srate = params_rate(params);
 
 	if (reg_ctrl & TEGRA30_I2S_CTRL_MASTER_ENABLE) {
-		i2sclock = srate * params_channels(params) * sample_size;
+		if (reg_ctrl & TEGRA30_I2S_CTRL_FRAME_FORMAT_FSYNC)
+			i2sclock = srate * params_channels(params) * sample_size;
+		else /* Plain I2S mode is 2 channels in any case */
+			i2sclock = srate * 2 * sample_size;
 
 		/* Additional "* 4" is needed for FSYNC mode */
 		if (reg_ctrl & TEGRA30_I2S_CTRL_FRAME_FORMAT_FSYNC)
