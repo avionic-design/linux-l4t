@@ -285,25 +285,6 @@ static int tegra30_i2s_set_fmt(struct snd_soc_dai *dai,
 	return 0;
 }
 
-static void tegra30_i2s_set_channel_bit_count(struct tegra30_i2s *i2s,
-				int i2sclock, int srate)
-{
-	int sym_bitclk, bitcnt;
-	unsigned int mask, val;
-
-	bitcnt = (i2sclock / (2 * srate)) - 1;
-	sym_bitclk = !(i2sclock % (2 * srate));
-
-	mask = TEGRA30_I2S_TIMING_CHANNEL_BIT_COUNT_MASK;
-	val = bitcnt << TEGRA30_I2S_TIMING_CHANNEL_BIT_COUNT_SHIFT;
-
-	mask |= TEGRA30_I2S_TIMING_NON_SYM_ENABLE;
-	if (!sym_bitclk)
-		val |= TEGRA30_I2S_TIMING_NON_SYM_ENABLE;
-
-	regmap_update_bits(i2s->regmap, TEGRA30_I2S_TIMING, mask, val);
-}
-
 static void tegra30_i2s_set_data_offset(struct tegra30_i2s *i2s)
 {
 	unsigned int mask, val;
@@ -428,7 +409,9 @@ static int tegra30_i2s_tdm_hw_params(struct snd_pcm_substream *substream,
 	/* Run ahub clock greater than i2sclock */
 	tegra30_ahub_clock_set_rate(i2sclock*2);
 
-	tegra30_i2s_set_channel_bit_count(i2s, i2sclock*2, srate);
+	/* TODO: Apply NON_SYM_EN once we know if it is needed */
+	regmap_write(i2s->regmap, TEGRA30_I2S_TIMING,
+		i2s->dsp_config.num_slots * i2s->dsp_config.slot_width - 1);
 
 	i2s_client_ch = i2s->dsp_config.num_slots;
 	i2s_audio_ch = i2s->dsp_config.num_slots;
