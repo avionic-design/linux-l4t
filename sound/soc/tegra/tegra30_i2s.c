@@ -969,8 +969,17 @@ int tegra30_i2s_set_tdm_slot(struct snd_soc_dai *cpu_dai,
 	i2s->dsp_config.slot_width = slot_width;
 	i2s->dsp_config.tx_mask = tx_mask;
 	i2s->dsp_config.rx_mask = rx_mask;
-	i2s->dsp_config.rx_data_offset = 0;
-	i2s->dsp_config.tx_data_offset = 0;
+
+	switch (i2s->daifmt) {
+	case SND_SOC_DAIFMT_DSP_A:
+		i2s->dsp_config.rx_data_offset = 1;
+		i2s->dsp_config.tx_data_offset = 1;
+		break;
+	default:
+		i2s->dsp_config.rx_data_offset = 0;
+		i2s->dsp_config.tx_data_offset = 0;
+		break;
+	}
 
 	return 0;
 }
