@@ -394,6 +394,7 @@ static int tegra30_i2s_tdm_hw_params(struct snd_pcm_substream *substream,
 	int i2s_client_ch, i2s_audio_ch;
 	int i2s_audio_bits = 0, i2s_client_bits = 0;
 	int i2sclock, srate;
+	int pack_mode;
 	int ret;
 
 	srate = params_rate(params);
@@ -422,11 +423,13 @@ static int tegra30_i2s_tdm_hw_params(struct snd_pcm_substream *substream,
 		i2s_audio_bits = TEGRA30_AUDIOCIF_BITS_16;
 		i2s_client_bits = TEGRA30_AUDIOCIF_BITS_16;
 		val = TEGRA30_I2S_CTRL_BIT_SIZE_16;
+		pack_mode = TEGRA30_AHUB_CHANNEL_CTRL_RX_PACK_16;
 		break;
 	case 32:
 		i2s_audio_bits = TEGRA30_AUDIOCIF_BITS_32;
 		i2s_client_bits = TEGRA30_AUDIOCIF_BITS_32;
 		val = TEGRA30_I2S_CTRL_BIT_SIZE_32;
+		pack_mode = 0;
 		break;
 	default:
 		dev_err(dev, "unknown slot_width %d\n",
@@ -462,7 +465,8 @@ static int tegra30_i2s_tdm_hw_params(struct snd_pcm_substream *substream,
 		tegra30_ahub_set_tx_cif_bits(i2s->playback_fifo_cif,
 						i2s_audio_bits,
 						i2s_client_bits);
-		tegra30_ahub_set_tx_fifo_pack_mode(i2s->playback_fifo_cif, 0);
+		tegra30_ahub_set_tx_fifo_pack_mode(i2s->playback_fifo_cif,
+						pack_mode);
 
 	} else {
 		val |= TEGRA30_AUDIOCIF_CTRL_DIRECTION_TX;
@@ -475,7 +479,8 @@ static int tegra30_i2s_tdm_hw_params(struct snd_pcm_substream *substream,
 		tegra30_ahub_set_rx_cif_bits(i2s->capture_fifo_cif,
 						i2s_audio_bits,
 						i2s_client_bits);
-		tegra30_ahub_set_rx_fifo_pack_mode(i2s->capture_fifo_cif, 0);
+		tegra30_ahub_set_rx_fifo_pack_mode(i2s->capture_fifo_cif,
+						pack_mode);
 	}
 
 	tegra30_i2s_set_slot_control(i2s, substream->stream);
