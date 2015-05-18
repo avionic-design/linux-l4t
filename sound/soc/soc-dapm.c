@@ -2233,8 +2233,7 @@ int snd_soc_dapm_sync(struct snd_soc_dapm_context *dapm)
 EXPORT_SYMBOL_GPL(snd_soc_dapm_sync);
 
 static int snd_soc_dapm_add_route(struct snd_soc_dapm_context *dapm,
-				  const struct snd_soc_dapm_route *route,
-				  unsigned int prefixed)
+				  const struct snd_soc_dapm_route *route)
 {
 	struct snd_soc_dapm_path *path;
 	struct snd_soc_dapm_widget *wsource = NULL, *wsink = NULL, *w;
@@ -2246,7 +2245,7 @@ static int snd_soc_dapm_add_route(struct snd_soc_dapm_context *dapm,
 	char prefixed_source[80];
 	int ret = 0;
 
-	if (dapm->codec && dapm->codec->name_prefix && !prefixed) {
+	if (dapm->codec && dapm->codec->name_prefix) {
 		snprintf(prefixed_sink, sizeof(prefixed_sink), "%s %s",
 			 dapm->codec->name_prefix, route->sink);
 		sink = prefixed_sink;
@@ -2465,7 +2464,7 @@ int snd_soc_dapm_add_routes(struct snd_soc_dapm_context *dapm,
 
 	mutex_lock_nested(&dapm->card->dapm_mutex, SND_SOC_DAPM_CLASS_INIT);
 	for (i = 0; i < num; i++) {
-		r = snd_soc_dapm_add_route(dapm, route, false);
+		r = snd_soc_dapm_add_route(dapm, route);
 		if (r < 0) {
 			dev_err(dapm->dev, "ASoC: Failed to add route %s -> %s -> %s\n",
 				route->source,
@@ -3463,7 +3462,7 @@ int snd_soc_dapm_link_dai_widgets(struct snd_soc_card *card)
 				dev_dbg(dai->dev, "%s -> %s\n",
 					 r.source, r.sink);
 
-				snd_soc_dapm_add_route(w->dapm, &r, true);
+				snd_soc_dapm_add_route(w->dapm, &r);
 			}
 
 			if (dai->driver->capture.stream_name &&
@@ -3474,7 +3473,7 @@ int snd_soc_dapm_link_dai_widgets(struct snd_soc_card *card)
 				dev_dbg(dai->dev, "%s -> %s\n",
 					r.source, r.sink);
 
-				snd_soc_dapm_add_route(w->dapm, &r, true);
+				snd_soc_dapm_add_route(w->dapm, &r);
 			}
 		}
 	}
