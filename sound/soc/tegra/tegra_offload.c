@@ -701,13 +701,20 @@ static int codec_put_switch(struct snd_kcontrol *kcontrol,
 {
 	struct snd_soc_dapm_widget_list *wlist = snd_kcontrol_chip(kcontrol);
 	struct snd_soc_dapm_widget *widget = wlist->widgets[0];
+	struct snd_soc_dapm_update update = {
+		.kcontrol = kcontrol,
+		.reg = -1,
+		.val = ucontrol->value.integer.value[0],
+	};
 
 	if (ucontrol->value.integer.value[0]) {
 		codec = ucontrol->value.integer.value[0];
-		snd_soc_dapm_mixer_update_power(widget, kcontrol, 1);
+		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
+						&update);
 	} else {
 		codec = ucontrol->value.integer.value[0];
-		snd_soc_dapm_mixer_update_power(widget, kcontrol, 0);
+		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
+						&update);
 	}
 	return 1;
 }
@@ -724,13 +731,20 @@ static int spk_put_switch(struct snd_kcontrol *kcontrol,
 {
 	struct snd_soc_dapm_widget_list *wlist = snd_kcontrol_chip(kcontrol);
 	struct snd_soc_dapm_widget *widget = wlist->widgets[0];
+	struct snd_soc_dapm_update update = {
+		.kcontrol = kcontrol,
+		.reg = -1,
+		.val = ucontrol->value.integer.value[0],
+	};
 
 	if (ucontrol->value.integer.value[0]) {
 		spk = ucontrol->value.integer.value[0];
-		snd_soc_dapm_mixer_update_power(widget, kcontrol, 1);
+		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
+						&update);
 	} else {
 		spk = ucontrol->value.integer.value[0];
-		snd_soc_dapm_mixer_update_power(widget, kcontrol, 0);
+		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
+						&update);
 	}
 	return 1;
 }
