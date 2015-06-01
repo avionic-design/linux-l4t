@@ -1116,7 +1116,7 @@ static int soc_camera_init_i2c(struct soc_camera_device *icd,
 ei2cnd:
 	i2c_put_adapter(adap);
 ei2cga:
-	return -ENODEV;
+	return -EPROBE_DEFER;
 }
 
 static void soc_camera_free_i2c(struct soc_camera_device *icd)
