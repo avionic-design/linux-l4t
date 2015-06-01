@@ -1,0 +1,64 @@
+/dts-v1/;
+
+#include <dt-bindings/pci/tegra-pcie.h>
+
+#include "tegra124-meerkat.dtsi"
+
+/ {
+	model = "Elber PLink Baseboard";
+	compatible = "elber,plink", "ad,meerkat", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+
+	serial@70006300 {
+		status = "okay";
+	};
+
+	pcie-controller {
+		nvidia,port0_status = <1>;
+		nvidia,port1_status = <1>;
+		nvidia,lanes = <TEGRA_PCIE_LANES_X2_X1>;
+		status = "okay";
+	};
+
+	i2c@7000c400 {
+		status = "okay";
+	};
+
+	spi@7000d400 {
+		status = "okay";
+	};
+
+	regulators {
+		vsys: regulator@100 {
+			compatible = "regulator-fixed";
+			reg = <100>;
+			regulator-name = "VSYS";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
+			regulator-name = "+VDD_5V";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+
+		vdd_3v3: regulator@102 {
+			compatible = "regulator-fixed";
+			reg = <102>;
+			regulator-name = "+VDD_3V3";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+	};
+};

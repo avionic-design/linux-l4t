@@ -259,7 +259,8 @@ dtb-$(CONFIG_ARCH_TEGRA) += tegra20-harmony.dtb \
 	tegra124-twobit.dtb \
 	tegra124-kalamos.dtb \
 	tegra124-ws-base-board.dtb \
-	tegra124-wizarm.dtb
+	tegra124-wizarm.dtb \
+	tegra124-plink.dtb
 dtb-$(CONFIG_ARCH_VERSATILE) += versatile-ab.dtb \
 	versatile-pb.dtb
 dtb-$(CONFIG_ARCH_VEXPRESS) += vexpress-v2p-ca5s.dtb \
