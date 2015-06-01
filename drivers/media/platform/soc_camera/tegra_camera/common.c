@@ -970,13 +970,13 @@ static int tegra_camera_probe(struct platform_device *pdev)
 	if (err) {
 		dev_err(&pdev->dev, "%s: nvhost init failed %d\n",
 				__func__, err);
-		goto exit_free_syncpts;
+		goto exit_nvhost_deinit;
 	}
 
 	cam->alloc_ctx = vb2_dma_contig_init_ctx(&pdev->dev);
 	if (IS_ERR(cam->alloc_ctx)) {
 		err = PTR_ERR(cam->alloc_ctx);
-		goto exit_free_syncpts;
+		goto exit_nvhost_client_deinit;
 	}
 
 	platform_set_drvdata(pdev, cam);
@@ -991,6 +991,13 @@ static int tegra_camera_probe(struct platform_device *pdev)
 exit_cleanup_alloc_ctx:
 	platform_set_drvdata(pdev, cam->ndata);
 	vb2_dma_contig_cleanup_ctx(cam->alloc_ctx);
+exit_nvhost_client_deinit:
+	nvhost_client_device_release(pdev);
+	/* HACK: nvhost_client_device_release() call nvhost_module_deinit() */
+	if (0) {
+exit_nvhost_deinit:
+		nvhost_module_deinit(pdev);
+	}
 exit_free_syncpts:
 	cam->ops->free_syncpts(cam);
 exit:
