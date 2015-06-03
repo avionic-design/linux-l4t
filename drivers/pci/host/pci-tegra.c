@@ -1050,35 +1050,29 @@ static int tegra_pcie_enable_controller(void)
 	return ret;
 }
 
-#ifdef USE_REGULATORS
 static int tegra_pcie_enable_regulators(void)
 {
+	struct regulator *reg;
+	int err = 0;
+
 	PR_FUNC_LINE;
 	if (tegra_pcie.power_rails_enabled) {
 		pr_debug("PCIE: Already power rails enabled");
 		return 0;
 	}
-	tegra_pcie.power_rails_enabled = 1;
 
 	if (tegra_pcie.regulator_hvdd == NULL) {
-		pr_info("PCIE.C: %s : regulator hvdd_pex\n", __func__);
-		tegra_pcie.regulator_hvdd =
-			regulator_get(tegra_pcie.dev, "hvdd_pex");
-		if (IS_ERR(tegra_pcie.regulator_hvdd)) {
-			pr_err("%s: unable to get hvdd_pex regulator\n",
-					__func__);
-			tegra_pcie.regulator_hvdd = 0;
-		}
+		reg = devm_regulator_get(tegra_pcie.dev, "hvdd-pex");
+		if (IS_ERR(reg) && PTR_ERR(reg) != -ENODEV)
+			return PTR_ERR(reg);
+		tegra_pcie.regulator_hvdd = reg;
 	}
 
 	if (tegra_pcie.regulator_pexio == NULL) {
-		pr_info("PCIE.C: %s : regulator pexio\n", __func__);
-		tegra_pcie.regulator_pexio =
-			regulator_get(tegra_pcie.dev, "avdd_pex_pll");
-		if (IS_ERR(tegra_pcie.regulator_pexio)) {
-			pr_err("%s: unable to get pexio regulator\n", __func__);
-			tegra_pcie.regulator_pexio = 0;
-		}
+		reg = devm_regulator_get(tegra_pcie.dev, "avddio-pex");
+		if (IS_ERR(reg) && PTR_ERR(reg) != -ENODEV)
+			return PTR_ERR(reg);
+		tegra_pcie.regulator_pexio = reg;
 	}
 
 	/*SATA and PCIE use same PLLE, In default configuration,
@@ -1086,23 +1080,37 @@ static int tegra_pcie_enable_regulators(void)
 	* So if use default board, you have to turn on (LDO2) AVDD_PLLE.
 	 */
 	if (tegra_pcie.regulator_avdd_plle == NULL) {
-		pr_info("PCIE.C: %s : regulator avdd_plle\n", __func__);
-		tegra_pcie.regulator_avdd_plle = regulator_get(tegra_pcie.dev,
-						"avdd_pll_erefe");
-		if (IS_ERR(tegra_pcie.regulator_avdd_plle)) {
-			pr_err("%s: unable to get avdd_plle regulator\n",
-				__func__);
-			tegra_pcie.regulator_avdd_plle = 0;
-		}
+		reg = devm_regulator_get(tegra_pcie.dev, "avdd-pll-erefe");
+		if (IS_ERR(reg) && PTR_ERR(reg) != -ENODEV)
+			return PTR_ERR(reg);
+		tegra_pcie.regulator_avdd_plle = reg;
 	}
-	if (tegra_pcie.regulator_hvdd)
-		regulator_enable(tegra_pcie.regulator_hvdd);
-	if (tegra_pcie.regulator_pexio)
-		regulator_enable(tegra_pcie.regulator_pexio);
-	if (tegra_pcie.regulator_avdd_plle)
-		regulator_enable(tegra_pcie.regulator_avdd_plle);
+
+	if (!IS_ERR(tegra_pcie.regulator_hvdd)) {
+		err = regulator_enable(tegra_pcie.regulator_hvdd);
+		if (err)
+			return err;
+	}
+	if (!IS_ERR(tegra_pcie.regulator_pexio)) {
+		err = regulator_enable(tegra_pcie.regulator_pexio);
+		if (err)
+			goto disable_hvdd;
+	}
+	if (!IS_ERR(tegra_pcie.regulator_avdd_plle)) {
+		err = regulator_enable(tegra_pcie.regulator_avdd_plle);
+		if (err)
+			goto disable_pexio;
+	}
+
+	tegra_pcie.power_rails_enabled = 1;
 
 	return 0;
+
+disable_pexio:
+	WARN_ON(regulator_disable(tegra_pcie.regulator_pexio));
+disable_hvdd:
+	WARN_ON(regulator_disable(tegra_pcie.regulator_hvdd));
+	return err;
 }
 
 static int tegra_pcie_disable_regulators(void)
@@ -1114,21 +1122,20 @@ static int tegra_pcie_disable_regulators(void)
 		pr_debug("PCIE: Already power rails disabled");
 		goto err_exit;
 	}
-	if (tegra_pcie.regulator_hvdd)
+	if (!IS_ERR(tegra_pcie.regulator_hvdd))
 		err = regulator_disable(tegra_pcie.regulator_hvdd);
 	if (err)
 		goto err_exit;
-	if (tegra_pcie.regulator_pexio)
+	if (!IS_ERR(tegra_pcie.regulator_pexio))
 		err = regulator_disable(tegra_pcie.regulator_pexio);
 	if (err)
 		goto err_exit;
-	if (tegra_pcie.regulator_avdd_plle)
+	if (!IS_ERR(tegra_pcie.regulator_avdd_plle))
 		err = regulator_disable(tegra_pcie.regulator_avdd_plle);
 	tegra_pcie.power_rails_enabled = 0;
 err_exit:
 	return err;
 }
-#endif
 
 static int tegra_pcie_power_ungate(void)
 {
@@ -1276,10 +1283,15 @@ static int tegra_pcie_power_on(void)
 		tegra_io_dpd_disable(&pexclk1_io);
 		tegra_io_dpd_disable(&pexclk2_io);
 	}
+	err = tegra_pcie_enable_regulators();
+	if (err) {
+		pr_err("PCIE: Failed to enable regulators\n");
+		goto pm_put;
+	}
 	err = tegra_pcie_power_ungate();
 	if (err) {
 		pr_err("PCIE: Failed to power ungate\n");
-		goto pm_put;
+		goto disable_regulators;
 	}
 	err = tegra_pcie_map_resources();
 	if (err) {
@@ -1297,6 +1309,8 @@ static int tegra_pcie_power_on(void)
 
 power_gate:
 	tegra_powergate_partition_with_clk_off(TEGRA_POWERGATE_PCIE);
+disable_regulators:
+	tegra_pcie_disable_regulators();
 pm_put:
 	pm_runtime_put(tegra_pcie.dev);
 	return err;
@@ -1324,6 +1338,10 @@ static int tegra_pcie_power_off(bool all)
 	if (tegra_pcie.pcie_emc)
 		clk_disable(tegra_pcie.pcie_emc);
 	err = tegra_powergate_partition_with_clk_off(TEGRA_POWERGATE_PCIE);
+	if (err)
+		goto err_exit;
+
+	err = tegra_pcie_disable_regulators();
 	if (err)
 		goto err_exit;
 
@@ -1893,6 +1911,12 @@ static int __init tegra_pcie_init(void)
 	PR_FUNC_LINE;
 	INIT_LIST_HEAD(&tegra_pcie.busses);
 	INIT_WORK(&tegra_pcie.hotplug_detect, work_hotplug_handler);
+
+	/* Clear the regulators to make sure they are not stale pointer */
+	tegra_pcie.regulator_hvdd = NULL;
+	tegra_pcie.regulator_pexio = NULL;
+	tegra_pcie.regulator_avdd_plle = NULL;
+
 	err = tegra_pcie_get_resources();
 	if (err) {
 		pr_err("PCIE: get resources failed\n");
