@@ -619,7 +619,13 @@ void tegra_fb_update_monspecs(struct tegra_fb_info *fb_info,
 	/* Restoring to state running. */
 	fb_info->info->state =  FBINFO_STATE_RUNNING;
 #ifdef CONFIG_FRAMEBUFFER_CONSOLE
+	/* We must release the FB info lock before taking the console lock
+	 * to avoid a deadlock with other code path taking both lock. */
+	mutex_unlock(&fb_info->info->lock);
+
 	console_lock();
+	mutex_lock(&fb_info->info->lock);
+
 	fb_notifier_call_chain(FB_EVENT_NEW_MODELIST, &event);
 	dcmode.pclk          = specs->modedb[0].pixclock;
 	dcmode.pclk          = PICOS2KHZ(dcmode.pclk);
@@ -637,11 +643,13 @@ void tegra_fb_update_monspecs(struct tegra_fb_info *fb_info,
 	tegra_dc_set_mode(fb_info->win.dc, &dcmode);
 	fb_videomode_to_var(&fb_info->info->var, &specs->modedb[0]);
 	fb_notifier_call_chain(FB_EVENT_MODE_CHANGE_ALL, &event);
+
+	mutex_unlock(&fb_info->info->lock);
 	console_unlock();
 #else
 	fb_notifier_call_chain(FB_EVENT_NEW_MODELIST, &event);
-#endif
 	mutex_unlock(&fb_info->info->lock);
+#endif
 }
 
 static ssize_t nvdps_show(struct device *device,
