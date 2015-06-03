@@ -1266,9 +1266,8 @@ static int tegra_pcie_power_on(void)
 	PR_FUNC_LINE;
 	if (tegra_pcie.pcie_power_enabled) {
 		pr_debug("PCIE: Already powered on");
-		goto err_exit;
+		return 0;
 	}
-	tegra_pcie.pcie_power_enabled = 1;
 	pm_runtime_get_sync(tegra_pcie.dev);
 
 	if (!tegra_platform_is_fpga()) {
@@ -1280,12 +1279,12 @@ static int tegra_pcie_power_on(void)
 	err = tegra_pcie_power_ungate();
 	if (err) {
 		pr_err("PCIE: Failed to power ungate\n");
-		goto err_exit;
+		goto pm_put;
 	}
 	err = tegra_pcie_map_resources();
 	if (err) {
 		pr_err("PCIE: Failed to map resources\n");
-		goto err_exit;
+		goto power_gate;
 	}
 	if (tegra_platform_is_fpga()) {
 		err = tegra_pcie_fpga_phy_init();
@@ -1293,9 +1292,13 @@ static int tegra_pcie_power_on(void)
 			pr_err("PCIE: Failed to initialize FPGA Phy\n");
 	}
 
-err_exit:
-	if (err)
-		pm_runtime_put(tegra_pcie.dev);
+	tegra_pcie.pcie_power_enabled = 1;
+	return 0;
+
+power_gate:
+	tegra_powergate_partition_with_clk_off(TEGRA_POWERGATE_PCIE);
+pm_put:
+	pm_runtime_put(tegra_pcie.dev);
 	return err;
 }
 
@@ -1362,12 +1365,18 @@ static int tegra_pcie_clocks_get(void)
 static void tegra_pcie_clocks_put(void)
 {
 	PR_FUNC_LINE;
-	if (tegra_pcie.pcie_xclk)
+	if (tegra_pcie.pcie_xclk) {
 		clk_put(tegra_pcie.pcie_xclk);
-	if (tegra_pcie.pcie_mselect)
+		tegra_pcie.pcie_xclk = NULL;
+	}
+	if (tegra_pcie.pcie_mselect) {
 		clk_put(tegra_pcie.pcie_mselect);
-	if (tegra_pcie.pcie_emc)
+		tegra_pcie.pcie_mselect = NULL;
+	}
+	if (tegra_pcie.pcie_emc) {
 		clk_put(tegra_pcie.pcie_emc);
+		tegra_pcie.pcie_emc = NULL;
+	}
 }
 
 static int tegra_pcie_get_resources(void)
@@ -1386,19 +1395,20 @@ static int tegra_pcie_get_resources(void)
 	err = tegra_pcie_power_on();
 	if (err) {
 		pr_err("PCIE: Failed to power on: %d\n", err);
-		goto err_pwr_on;
+		goto err_clk_get;
 	}
 	err = clk_set_rate(tegra_pcie.pcie_mselect, tegra_pcie_mselect_rate);
 	if (err)
-		return err;
+		goto err_pwr_on;
 
 	err = clk_set_rate(tegra_pcie.pcie_xclk, tegra_pcie_xclk_rate);
 	if (err)
-		return err;
+		goto err_pwr_on;
 
 	err = clk_set_rate(tegra_pcie.pcie_emc, tegra_pcie_emc_rate);
 	if (err)
-		return err;
+		goto err_pwr_on;
+
 	err = request_irq(INT_PCIE_INTR, tegra_pcie_isr,
 			IRQF_SHARED, "PCIE", &tegra_pcie);
 	if (err) {
@@ -1973,8 +1983,10 @@ static int __init tegra_pcie_probe(struct platform_device *pdev)
 	pm_runtime_enable(tegra_pcie.dev);
 
 	ret = tegra_pcie_init();
-	if (ret)
+	if (ret) {
 		tegra_pd_remove_device(tegra_pcie.dev);
+		pm_runtime_disable(tegra_pcie.dev);
+	}
 
 	return ret;
 }
