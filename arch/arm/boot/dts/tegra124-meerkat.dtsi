@@ -1817,11 +1817,7 @@
 					regulator-name = "+1V05_RUN";
 					regulator-min-microvolt = <1050000>;
 					regulator-max-microvolt = <1050000>;
-/* CHECK, not in mainline
-					regulator-always-on;
-					regulator-boot-on;
 					ams,ext-control = <AS3722_EXT_CONTROL_ENABLE1>;
-*/
 				};
 
 				vddio_1v8: sd5 {
