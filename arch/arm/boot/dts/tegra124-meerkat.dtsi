@@ -1664,6 +1664,12 @@
 		};
 	};
 
+	pcie-controller {
+		hvdd-pex-supply = <&vdd_3v3_lp0>;
+		avddio-pex-supply = <&vdd_1v05_run>;
+		avdd-pll-erefe-supply = <&avdd_1v05_run>;
+	};
+
 	hier-ictlr@60004800 {
 		status = "okay";
 	};
