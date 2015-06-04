@@ -1,0 +1,124 @@
+/dts-v1/;
+
+#include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/usb/tegra-xhci.h>
+
+#include "tegra124-meerkat.dtsi"
+
+/ {
+	model = "Parrot Kalamos";
+	compatible = "parrot,kalamos", "ad,meerkat", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+
+	host1x {
+		dc@54200000 {
+			status = "okay";
+
+			nvidia,dc-connection = "external-display";
+			vdd_hdmi_5v0-supply = <&vdd_5v0>;
+		};
+
+		hdmi {
+			status = "okay";
+		};
+	};
+
+	serial@70006040 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006300 {
+		status = "okay";
+	};
+
+	/* HDMI DDC */
+	i2c@7000c700 {
+		status = "okay";
+	};
+
+	xusb@70090000 {
+		status = "okay";
+		nvidia,gpio_ss1_sata = <0>;
+		nvidia,portmap = <(XUSB_MUX_USB2_P0 | XUSB_MUX_SS_P0)>;
+		nvidia,ss_portmap = <XUSB_PADCTL_SS_PORTMAP(P0, DISABLE)>;
+		nvidia,lane_owner = <1>; /* PCIe lane0 owner = USB3_SS port0 */
+		nvidia,ulpicap = <0>;
+		usb_vbus0-supply = <&vdd_usb_hs_vbus>;
+	};
+
+	sensorhub {
+		compatible = "parrot,sensorhub";
+
+		reset-gpio = <&gpio TEGRA_GPIO(R, 6) GPIO_ACTIVE_LOW>;
+		boot0-gpio = <&gpio TEGRA_GPIO(U, 1) GPIO_ACTIVE_HIGH>;
+	};
+
+	regulators {
+		vdd_vbat: regulator@100 {
+			compatible = "regulator-fixed";
+			reg = <100>;
+			regulator-name = "VBAT_PROTECT";
+			regulator-min-microvolt = <36000000>;
+			regulator-max-microvolt = <36000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
+			regulator-name = "5V_BOARD";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_vbat>;
+		};
+
+		vdd_3v3: regulator@102 {
+			compatible = "regulator-fixed";
+			reg = <102>;
+			regulator-name = "3V3_BOARD";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_vbat>;
+		};
+
+		vdd_usb_hs_vbus: regulator@103 {
+			compatible = "regulator-fixed";
+			reg = <103>;
+			regulator-name = "USB_HS_VBUS";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio TEGRA_GPIO(FF, 1) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+			vin-supply = <&vdd_5v0>;
+		};
+
+		vdd_2v8_cam: regulator@104 {
+			compatible = "regulator-fixed";
+			reg = <104>;
+			regulator-name = "2V8_CAM";
+			regulator-min-microvolt = <2800000>;
+			regulator-max-microvolt = <2800000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		vdd_1v8_cam: regulator@105 {
+			compatible = "regulator-fixed";
+			reg = <105>;
+			regulator-name = "1V8_CAM";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_3v3>;
+		};
+	};
+};
