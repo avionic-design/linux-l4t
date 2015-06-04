@@ -1482,10 +1482,10 @@
 
 			ph0 {
 				nvidia,pins = "ph0";
-				nvidia,function = "safe";
+				nvidia,function = "pwm0";
 				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
 			pi1 {
@@ -2124,6 +2124,15 @@
 		};
 	};
 
+	cpu_fan: pwm-fan {
+		compatible = "pwm-fan";
+		status = "disabled";
+		pwms = <&tegra_pwm 0 40000>;
+
+		#cooling-cells = <2>;
+		cooling-levels = <0>, <128>, <192>, <255>;
+	};
+
 	thermal-zones {
 		com_thermal: com-thermal {
 			polling-delay-passive = <250>;
@@ -2139,11 +2148,42 @@
 			thermal-sensors = <&com_temperature_sensor 1>;
 
 			trips {
+				cpu_alert0: cpu-alert0 {
+					temperature = <25000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+				cpu_alert1: cpu-alert1 {
+					temperature = <60000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+				cpu_alert2: cpu-alert2 {
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
 				cpu_crit: cpu-crit {
 					temperature = <95000>;
 					hysteresis = <1000>;
 					type = "critical";
 				};
+			};
+
+			cooling-maps {
+				map0 {
+					trip = <&cpu_alert0>;
+					cooling-device = <&cpu_fan 1 1>;
+				};
+				map1 {
+					trip = <&cpu_alert1>;
+					cooling-device = <&cpu_fan 1 2>;
+				};
+				map2 {
+					trip = <&cpu_alert2>;
+					cooling-device = <&cpu_fan 2 THERMAL_NO_LIMIT>;
+				};
+
 			};
 		};
 	};
