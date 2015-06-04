@@ -57,7 +57,7 @@ static struct pwm_fan_platform_data fan_data_delta_6k = {
 };
 
 static struct platform_device pwm_fan_therm_cooling_device_delta_6k = {
-	.name = "pwm-fan",
+	.name = "nv-pwm-fan",
 	.id = -1,
 	.num_resources = 0,
 	.dev = {

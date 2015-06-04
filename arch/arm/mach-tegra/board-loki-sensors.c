@@ -520,7 +520,7 @@ static struct therm_fan_est_data fan_est_data = {
 				},
 			},
 	},
-	.cdev_type = "pwm-fan",
+	.cdev_type = "nv-pwm-fan",
 	.tzp = &fan_tzp,
 };
 

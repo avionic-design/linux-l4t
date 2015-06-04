@@ -881,7 +881,7 @@ static int pwm_fan_resume(struct platform_device *pdev)
 static struct platform_driver pwm_fan_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
-		.name = "pwm-fan",
+		.name = "nv-pwm-fan",
 	},
 	.probe = pwm_fan_probe,
 	.remove = pwm_fan_remove,
