@@ -1050,6 +1050,8 @@ static struct snd_soc_dai_link tegra_rt5639_dai[NUM_DAI_LINKS] = {
 		.codec_name = "snd-soc-dummy",
 
 		.dynamic = 1,
+		.dpcm_playback = 1,
+		.dpcm_capture = 1,
 	},
 	[DAI_LINK_COMPR_OFFLOAD_FE] = {
 		.name = "offload-compr",
@@ -1062,6 +1064,7 @@ static struct snd_soc_dai_link tegra_rt5639_dai[NUM_DAI_LINKS] = {
 		.codec_name = "snd-soc-dummy",
 
 		.dynamic = 1,
+		.dpcm_playback = 1,
 	},
 	[DAI_LINK_PCM_OFFLOAD_CAPTURE_FE] = {
 		.name = "offload-pcm-capture",
