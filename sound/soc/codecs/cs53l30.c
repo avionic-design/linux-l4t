@@ -8,8 +8,10 @@
  */
 
 #include <linux/module.h>
+#include <linux/delay.h>
 #include <linux/i2c.h>
 #include <linux/regmap.h>
+#include <linux/gpio/consumer.h>
 #include <sound/soc.h>
 #include <sound/tlv.h>
 #include <sound/pcm_params.h>
@@ -108,6 +110,7 @@ struct cs53l30 {
 	struct device *dev;
 	struct snd_soc_codec *codec;
 	struct regmap *regmap;
+	struct gpio_desc *reset_gpio;
 
 	const struct cs53l30_clock_config *clock_config;
 	unsigned int dai_fmt;
@@ -686,6 +689,18 @@ static int cs53l30_i2c_probe(
 		return PTR_ERR(adc->regmap);
 	}
 
+	/* Hard reset the chip if possible */
+	adc->reset_gpio = devm_gpiod_get_optional(&client->dev, "reset",
+						GPIOD_OUT_HIGH);
+	if (IS_ERR(adc->reset_gpio)) {
+		dev_err(&client->dev, "Failed to get reset GPIO: %ld\n",
+			PTR_ERR(adc->reset_gpio));
+		return PTR_ERR(adc->reset_gpio);
+	} else if (adc->reset_gpio) {
+		usleep_range(1, 1000);
+		gpiod_set_value(adc->reset_gpio, 0);
+	}
+
 	/* TODO: Add power up sequence:
 	 * - Assert reset
 	 * - Power up VP and VA
@@ -736,7 +751,13 @@ static int cs53l30_i2c_probe(
 
 static int cs53l30_i2c_remove(struct i2c_client *client)
 {
+	struct cs53l30 *adc = i2c_get_clientdata(client);
+
 	snd_soc_unregister_codec(&client->dev);
+
+	if (adc->reset_gpio)
+		gpiod_set_value(adc->reset_gpio, 1);
+
 	return 0;
 }
 
