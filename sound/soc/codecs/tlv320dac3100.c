@@ -15,6 +15,7 @@
 #include <linux/delay.h>
 #include <linux/i2c.h>
 #include <linux/regmap.h>
+#include <linux/gpio/consumer.h>
 #include <sound/soc.h>
 #include <sound/tlv.h>
 #include <sound/pcm_params.h>
@@ -83,6 +84,7 @@ struct dac3100 {
 	struct device *dev;
 	struct snd_soc_codec *codec;
 	struct regmap *regmap;
+	struct gpio_desc *reset_gpio;
 
 	unsigned clkin_rate;
 	unsigned clkin_src;
@@ -550,7 +552,19 @@ static int dac3100_i2c_probe(struct i2c_client *client,
 
 	i2c_set_clientdata(client, dac);
 
-	/* Reset the chip */
+	/* Hard reset the chip if possible */
+	dac->reset_gpio = devm_gpiod_get_optional(&client->dev, "reset",
+						GPIOD_OUT_HIGH);
+	if (IS_ERR(dac->reset_gpio)) {
+		dev_err(&client->dev, "Failed to get reset GPIO: %ld\n",
+			PTR_ERR(dac->reset_gpio));
+		return PTR_ERR(dac->reset_gpio);
+	} else if (dac->reset_gpio) {
+		usleep_range(1, 1000);
+		gpiod_set_value(dac->reset_gpio, 0);
+	}
+
+	/* Soft reset the chip to also check the I2C bus */
 	err = regmap_write(dac->regmap, DAC3100_RESET, 1);
 	if (err) {
 		dev_err(&client->dev, "Failed to reset: %d\n", err);
@@ -566,7 +580,13 @@ static int dac3100_i2c_probe(struct i2c_client *client,
 
 static int dac3100_i2c_remove(struct i2c_client *i2c)
 {
+	struct dac3100 *dac = i2c_get_clientdata(i2c);
+
 	snd_soc_unregister_codec(&i2c->dev);
+
+	if (dac->reset_gpio)
+		gpiod_set_value(dac->reset_gpio, 1);
+
 	return 0;
 }
 
