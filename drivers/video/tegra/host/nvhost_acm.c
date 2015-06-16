@@ -656,6 +656,7 @@ void nvhost_module_deinit(struct platform_device *dev)
 		kobject_put(pdata->power_kobj);
 	}
 }
+EXPORT_SYMBOL(nvhost_module_deinit);
 
 #ifdef CONFIG_PM
 const struct dev_pm_ops nvhost_module_pm_ops = {
