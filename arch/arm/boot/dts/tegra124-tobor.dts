@@ -113,6 +113,8 @@
 		tlv320dac3100: tlv320dac3100@18 {
 			compatible = "ti,tlv320dac3100";
 			reg = <0x18>;
+
+			reset-gpio = <&gpio TEGRA_GPIO(R, 5) GPIO_ACTIVE_LOW>;
 		};
 
 		adc1: adc@48 {
@@ -120,6 +122,7 @@
 			reg = <0x48>;
 
 			#sound-dai-cells = <0>;
+			reset-gpio = <&gpio TEGRA_GPIO(X, 6) GPIO_ACTIVE_LOW>;
 		};
 
 		adc2: adc@49 {
@@ -127,6 +130,7 @@
 			reg = <0x49>;
 
 			#sound-dai-cells = <0>;
+			reset-gpio = <&gpio TEGRA_GPIO(X, 5) GPIO_ACTIVE_LOW>;
 		};
 	};
 
