@@ -4385,7 +4385,8 @@ static int tegra_xhci_probe(struct platform_device *pdev)
 	}
 
 	if (tegra->bdata->portmap & TEGRA_XUSB_USB2_P0) {
-		tegra->transceiver = usb_get_phy(USB_PHY_TYPE_USB2);
+		tegra->transceiver = devm_usb_get_phy(
+			&pdev->dev, USB_PHY_TYPE_USB2);
 		if (IS_ERR_OR_NULL(tegra->transceiver)) {
 			dev_err(&pdev->dev, "failed to get usb phy\n");
 			tegra->transceiver = NULL;
