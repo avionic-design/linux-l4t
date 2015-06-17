@@ -3749,8 +3749,8 @@ tegra_xhci_resume(struct platform_device *pdev)
 	disable_irq_wake(tegra->usb2_irq);
 	tegra->lp0_exit = true;
 
-	regulator_enable(tegra->xusb_s1p05v_reg);
-	regulator_enable(tegra->xusb_s1p8v_reg);
+	WARN_ON(regulator_enable(tegra->xusb_s1p05v_reg));
+	WARN_ON(regulator_enable(tegra->xusb_s1p8v_reg));
 	tegra_usb2_clocks_init(tegra);
 
 	return 0;
@@ -4193,7 +4193,7 @@ static struct of_device_id tegra_xhci_of_match[] = {
 };
 
 static ssize_t hsic_power_show(struct device *dev,
-			struct kobj_attribute *attr, char *buf)
+			struct device_attribute *attr, char *buf)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct tegra_xhci_hcd *tegra = platform_get_drvdata(pdev);
@@ -4208,7 +4208,7 @@ static ssize_t hsic_power_show(struct device *dev,
 }
 
 static ssize_t hsic_power_store(struct device *dev,
-			struct kobj_attribute *attr, const char *buf, size_t n)
+			struct device_attribute *attr, const char *buf, size_t n)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct tegra_xhci_hcd *tegra = platform_get_drvdata(pdev);
@@ -4258,12 +4258,12 @@ static int hsic_power_create_file(struct tegra_xhci_hcd *tegra)
 	int err;
 
 	for_each_enabled_hsic_pad(p, tegra) {
-		attr_name(tegra->hsic_power_attr[p]) = kzalloc(16, GFP_KERNEL);
-		if (!attr_name(tegra->hsic_power_attr[p]))
+		char *name = devm_kzalloc(&tegra->pdev->dev, 16, GFP_KERNEL);
+		if (!name)
 			return -ENOMEM;
 
-		snprintf(attr_name(tegra->hsic_power_attr[p]), 16,
-			"hsic%d_power", p);
+		snprintf(name, 16, "hsic%d_power", p);
+		attr_name(tegra->hsic_power_attr[p]) = name;
 		tegra->hsic_power_attr[p].show = hsic_power_show;
 		tegra->hsic_power_attr[p].store = hsic_power_store;
 		tegra->hsic_power_attr[p].attr.mode = (S_IRUGO | S_IWUSR);
@@ -4288,7 +4288,6 @@ static int tegra_xhci_probe(struct platform_device *pdev)
 	unsigned pad;
 	u32 val;
 	int ret;
-	int irq;
 	const struct tegra_xusb_soc_config *soc_config;
 	const struct of_device_id *match;
 
@@ -4347,7 +4346,7 @@ static int tegra_xhci_probe(struct platform_device *pdev)
 					tegra->pdata->pretend_connect_0;
 		tegra->bdata->lane_owner = tegra->pdata->lane_owner;
 	}
-	if (tegra->bdata->portmap == NULL)
+	if (!tegra->bdata->portmap)
 		return -ENODEV;
 	tegra->soc_config = soc_config;
 	tegra->ss_pwr_gated = false;
