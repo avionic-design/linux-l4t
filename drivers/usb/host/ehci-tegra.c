@@ -578,6 +578,43 @@ static int tegra_ehci_parse_host_dt(struct platform_device *pdev,
 	return 0;
 }
 
+static int tegra_ehci_parse_device_dt(struct platform_device *pdev,
+				struct tegra_usb_dev_mode_data *ddata)
+{
+	struct device_node *np = pdev->dev.of_node;
+	u32 val;
+	int err;
+
+	ddata->vbus_gpio = of_get_named_gpio(np, "nvidia,vbus-gpio", 0);
+	if (ddata->vbus_gpio == -EPROBE_DEFER)
+		return ddata->vbus_gpio;
+	if (ddata->vbus_gpio < 0)
+		ddata->vbus_gpio = -1;
+
+	ddata->charging_supported =
+		of_property_read_bool(np, "nvidia,charging-supported");
+	ddata->remote_wakeup_supported =
+		of_property_read_bool(np, "nvidia,remote-wakeup-supported");
+	ddata->is_xhci =
+		of_property_read_bool(np, "nvidia,is-xhci");
+
+	if (ddata->charging_supported) {
+		err = of_property_read_u32(np, "nvidia,dcp-current-limit", &val);
+		if (err >= 0)
+			ddata->dcp_current_limit_ma = val;
+		else if (err != -EINVAL)
+			return err;
+
+		err = of_property_read_u32(np, "nvidia,qc2-current-limit", &val);
+		if (err >= 0)
+			ddata->qc2_current_limit_ma = val;
+		else if (err != -EINVAL)
+			return err;
+	}
+
+	return 0;
+}
+
 static int tegra_ehci_parse_utmi_dt(struct platform_device *pdev,
 				struct tegra_utmi_config *utmi)
 {
@@ -701,8 +738,8 @@ static int tegra_ehci_parse_dt(struct platform_device *pdev)
 
 	switch (pdata->op_mode) {
 	case TEGRA_USB_OPMODE_DEVICE:
-		dev_err(&pdev->dev, "Device mode from DT not yet supported\n");
-		return -EINVAL;
+		err = tegra_ehci_parse_device_dt(pdev, &pdata->u_data.dev);
+		break;
 	case TEGRA_USB_OPMODE_HOST:
 		err = tegra_ehci_parse_host_dt(pdev, &pdata->u_data.host);
 		break;
