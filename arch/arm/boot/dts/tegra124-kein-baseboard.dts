@@ -34,6 +34,7 @@
 		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
 		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
 
+		nvidia,hotplug;
 		nvidia,remote-wakeup-supported;
 		nvidia,power-off-on-suspend;
 
