@@ -1361,6 +1361,12 @@ static struct tegra_io_dpd pexclk2_io = {
 #ifdef CONFIG_NV_SENSORHUB
 static int __init tegra_jetson_sensorhub_init(void)
 {
+	struct board_info board_info;
+
+	/* This should only be used on nvidia boards */
+	tegra_get_board_info(&board_info);
+	if (!board_info.board_id)
+		return 0;
 
 	if (gpio_request(SENSOR_HUB_RST, "sensor_hub_rst"))
 		pr_warn("%s:%d: gpio_request failed", __func__, __LINE__);
