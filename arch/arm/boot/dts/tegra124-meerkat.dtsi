@@ -2124,6 +2124,6 @@
 		pwrdet_sdmmc1-supply = <&vddio_1v8>;
 		pwrdet_sdmmc3-supply = <&vddio_sdmmc3>;
 		pwrdet_sdmmc4-supply = <&vddio_1v8>;
-		//pwrdet_hv-supply = <>; FIXME: Find what this is!
+		pwrdet_hv-supply = <&vdd_3v3_lp0>;
 	};
 };
