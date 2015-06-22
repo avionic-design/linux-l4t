@@ -6,6 +6,7 @@
 #include <dt-bindings/pci/tegra-pcie.h>
 
 #include "tegra124-meerkat.dtsi"
+#include "panel-n-720-1280-5.dtsi"
 
 / {
 	model = "Avionic Design Tobor All In One";
@@ -72,6 +73,39 @@
 			};
 			dap4_sclk_pp7 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+		};
+	};
+
+	display_bl: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&tegra_pwm 3 1000000>;
+		brightness-levels = <0 4 8 16 32 64 128 255>;
+		default-brightness-level = <7>;
+	};
+
+	host1x {
+		/* DSI Panel */
+		/* tegradc.0 */
+		dc@54200000 {
+			status = "okay";
+			/* Critical to be enabled for panel init */
+			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
+			nvidia,dc-connection = "internal-lcd";
+			nvidia,cmu-enable = <1>;
+			panel = <&panel>;
+		};
+
+		dsi {
+			nvidia,dsi-controller-vs = <DSI_VS_1>;
+			status = "okay";
+			panel: panel-n-720-1280-5 {
+				status = "okay";
+				enable-gpios = <&gpio TEGRA_GPIO(R, 2) GPIO_ACTIVE_HIGH>;
+				reset-gpios = <&gpio TEGRA_GPIO(W, 2) GPIO_ACTIVE_LOW>;
+				reset-hold = <20>;
+				reset-settle = <40>;
+				backlight = <&display_bl>;
 			};
 		};
 	};
