@@ -24,7 +24,7 @@ void tamonten_adnp_init(int i2c_bus, int irq,
 			u32 *platform_id, int platform_id_count);
 #else
 static inline void tamonten_adnp_init(int i2c_bus, int irq,
-				u32 *platform_id, int platform_id_count);
+				u32 *platform_id, int platform_id_count)
 {}
 #endif
 
