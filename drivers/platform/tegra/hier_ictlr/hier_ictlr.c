@@ -177,6 +177,7 @@ static int tegra_hier_ictlr_probe(struct platform_device *pdev)
 	tegra_hier_ictlr_create_sysfs(pdev);
 
 	dev_notice(&pdev->dev, "probed\n");
+
 	return 0;
 }
 
