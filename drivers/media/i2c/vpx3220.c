@@ -579,7 +579,6 @@ MODULE_DEVICE_TABLE(i2c, vpx3220_id);
 
 static struct i2c_driver vpx3220_driver = {
 	.driver = {
-		.owner	= THIS_MODULE,
 		.name	= "vpx3220",
 	},
 	.probe		= vpx3220_probe,

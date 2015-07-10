@@ -2120,7 +2120,6 @@ MODULE_DEVICE_TABLE(i2c, adv7604_id);
 
 static struct i2c_driver adv7604_driver = {
 	.driver = {
-		.owner = THIS_MODULE,
 		.name = "adv7604",
 	},
 	.probe = adv7604_probe,

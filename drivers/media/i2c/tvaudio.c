@@ -2055,7 +2055,6 @@ MODULE_DEVICE_TABLE(i2c, tvaudio_id);
 
 static struct i2c_driver tvaudio_driver = {
 	.driver = {
-		.owner	= THIS_MODULE,
 		.name	= "tvaudio",
 	},
 	.probe		= tvaudio_probe,
