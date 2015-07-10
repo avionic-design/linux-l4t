@@ -203,7 +203,6 @@ static int vcnl4000_remove(struct i2c_client *client)
 static struct i2c_driver vcnl4000_driver = {
 	.driver = {
 		.name   = VCNL4000_DRV_NAME,
-		.owner  = THIS_MODULE,
 	},
 	.probe  = vcnl4000_probe,
 	.remove = vcnl4000_remove,
