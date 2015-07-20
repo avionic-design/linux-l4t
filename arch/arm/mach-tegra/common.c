@@ -330,7 +330,7 @@ static enum audio_codec_type audio_codec_name;
 static enum image_type board_image_type = system_image;
 static int max_cpu_current;
 static int max_core_current;
-static int emc_max_dvfs;
+static int emc_max_dvfs = -1;
 static unsigned int memory_type;
 static int usb_port_owner_info;
 static int lane_owner_info;
@@ -1384,7 +1384,13 @@ early_param("core_edp_ma", tegra_max_core_current);
 
 int get_emc_max_dvfs(void)
 {
-	return emc_max_dvfs;
+	/* Allow DVFS if the EMC controller is enabled */
+	if (emc_max_dvfs < 0) {
+		return of_device_is_available(
+			of_find_compatible_node(
+				NULL, NULL, "nvidia,tegra12-emc"));
+	}
+	return max(0, emc_max_dvfs);
 }
 static int __init tegra_emc_max_dvfs(char *options)
 {
