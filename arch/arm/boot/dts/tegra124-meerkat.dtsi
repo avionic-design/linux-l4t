@@ -1966,6 +1966,14 @@
 		nvidia,sys-clock-req-active-high;
 	};
 
+	emc: memory-controller@7001b000 {
+		compatible = "nvidia,tegra12-emc";
+		reg = <0x0 0x7001b000 0x0 0x800>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		nvidia,use-ram-code;
+	};
+
 	sata@0x70020000 {
 		nvidia,enable-sata-port;
 		nvidia,sata-connector-type = <STANDARD_SATA>;
@@ -2127,3 +2135,7 @@
 		pwrdet_hv-supply = <&vdd_3v3_lp0>;
 	};
 };
+
+/* Include the memory configs, these must be afterwards to
+ * allow using the 'emc' label. */
+#include "tegra124-meerkat-emc.dtsi"

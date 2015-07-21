@@ -35,6 +35,7 @@
 #include "dvfs.h"
 #include "gpio-names.h"
 #include "pm.h"
+#include "tegra12_emc.h"
 
 static __initdata struct tegra_clk_init_table meerkat_clk_init_table[] = {
 	/* name		parent		rate		enabled */
@@ -307,6 +308,7 @@ void __init tegra_meerkat_dt_init(struct of_dev_auxdata *auxdata)
 
 	tegra_io_dpd_init();
 	tegra_init_suspend(&meerkat_suspend_data);
+	tegra12_emc_init();
 	tegra_meerkat_edp_init();
 	isomgr_init();
 
