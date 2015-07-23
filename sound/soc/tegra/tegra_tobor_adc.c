@@ -54,11 +54,11 @@ static int tobor_adc_asoc_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_card *card = runtime->card;
 	int channels = params_channels(params);
 	int srate = params_rate(params);
-	const int mclk = 12288000;
 	unsigned int rx_mask = 0;
 	int total_channels = 0;
 	int channel_base = 0;
 	int slot_width;
+	int mclk;
 	int err;
 	int i;
 
@@ -89,6 +89,32 @@ static int tobor_adc_asoc_hw_params(struct snd_pcm_substream *substream,
 		break;
 	default:
 		dev_err(card->dev, "Unsupported sample format\n");
+		return -EINVAL;
+	}
+
+	/* We can't just use any rate otherwise the MCLK might not get
+	 * properly rounded, leading to wrong playback frequency.
+	 * This is because the parent of the MCLK is set according to
+	 * the samplerate, so we also choose an MCLK that is a multiple
+	 * of the rate that will be set for the MCLK parent.
+	 */
+	switch (srate) {
+	case 11025:
+	case 22050:
+	case 44100:
+	case 88200:
+		mclk = 11289600;
+		break;
+	case 8000:
+	case 16000:
+	case 32000:
+	case 48000:
+	case 64000:
+	case 96000:
+	case 192000:
+		mclk = 12288000;
+		break;
+	default:
 		return -EINVAL;
 	}
 

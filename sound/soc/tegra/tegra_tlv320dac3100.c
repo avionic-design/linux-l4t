@@ -40,7 +40,32 @@ static int tegra_tlv320dac3100_asoc_hw_params(struct snd_pcm_substream *substrea
 	int err;
 
 	srate = params_rate(params);
-	mclk = 512 * srate;
+
+	/* We can't just use any rate otherwise the MCLK might not get
+	 * properly rounded, leading to wrong playback frequency.
+	 * This is because the parent of the MCLK is set according to
+	 * the samplerate, so we also choose an MCLK that is a multiple
+	 * of the rate that will be set for the MCLK parent.
+	 */
+	switch (srate) {
+	case 11025:
+	case 22050:
+	case 44100:
+	case 88200:
+		mclk = 11289600;
+		break;
+	case 8000:
+	case 16000:
+	case 32000:
+	case 48000:
+	case 64000:
+	case 96000:
+	case 192000:
+		mclk = 12288000;
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	err = tegra_asoc_utils_set_rate(&tlv320dac3100->util_data, srate, mclk);
 	if (err < 0) {
