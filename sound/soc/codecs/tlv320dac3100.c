@@ -16,6 +16,7 @@
 #include <linux/i2c.h>
 #include <linux/regmap.h>
 #include <linux/gpio/consumer.h>
+#include <linux/log2.h>
 #include <sound/soc.h>
 #include <sound/tlv.h>
 #include <sound/pcm_params.h>
@@ -31,6 +32,10 @@
 #define DAC3100_RESET			DAC3100_REG(0, 1)
 
 #define DAC3100_CLOCK_GEN_MUX		DAC3100_REG(0, 4)
+#define DAC3100_PLL_P_R			DAC3100_REG(0, 5)
+#define DAC3100_PLL_J			DAC3100_REG(0, 6)
+#define DAC3100_PLL_D_MSB		DAC3100_REG(0, 7)
+#define DAC3100_PLL_D_LSB		DAC3100_REG(0, 8)
 
 #define DAC3100_DAC_NDAC		DAC3100_REG(0, 11)
 #define DAC3100_DAC_MDAC		DAC3100_REG(0, 12)
@@ -76,6 +81,9 @@
 #define DAC3100_MICBIAS			DAC3100_REG(1, 46)
 
 #define DAC3100_DAC_COEF_RAM		DAC3100_REG(8, 1)
+
+#define DAC3100_PLL_CLK_MIN	80000000
+#define DAC3100_PLL_CLK_MAX	110000000
 
 #define DAC3100_DAC_MOD_CLK_MIN	2800000
 #define DAC3100_DAC_MOD_CLK_MAX	6200000
@@ -294,7 +302,10 @@ static int dac3100_hw_params(struct snd_pcm_substream *substream,
 	int dosr, dosr_round;
 	int mdiv, ndac, mdac;
 	int filter, pb, rc;
+	int jd = 10000;
 	int word_len;
+	int clkmux;
+	int clkin;
 	int err;
 
 	/* Check the word length */
@@ -361,28 +372,66 @@ static int dac3100_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
+	/* If the mclk is not a multiple of the samplerate
+	 * we need to use the fractional PLL to produce such a rate */
+	if (dac->clkin_rate % fs) {
+		/* The PLL output must be between 80 and 110MHz */
+		int mult = roundup_pow_of_two(DAC3100_PLL_CLK_MIN / fs);
+		while (mult <= 1024 * 128 * 128 &&
+				fs * mult <= DAC3100_PLL_CLK_MAX) {
+			u64 c = (u64)fs * mult * 10000;
+			if (!do_div(c, dac->clkin_rate) && c >= 10000) {
+				jd = c;
+				break;
+			}
+			mult *= 2;
+		}
+
+		if (mult > 1024 * 128 * 128 ||
+				fs * mult > DAC3100_PLL_CLK_MAX) {
+			dev_err(codec->dev,
+				"Couldn't setup fractional divider\n");
+			return -EINVAL;
+		}
+		clkin = fs * mult;
+	} else {
+		clkin = dac->clkin_rate;
+		/* Check that the clock is fast enough, if not add a multiplier */
+		if (clkin < rc * fs * 32) {
+			int mult = DIV_ROUND_UP(80000000, clkin);
+
+			/* Check that we are still in the range of the PLL */
+			if (clkin * mult > 110000000 || mult < 4 || mult > 63) {
+				dev_err(codec->dev, "Couldn't find multiplier\n");
+				return -EINVAL;
+			}
+
+			jd = mult * 10000;
+			clkin *= mult;
+		}
+	}
+
 	/* Find the highest possible DOSR value */
 	dosr = DAC3100_DAC_MOD_CLK_MAX / fs;
 	dosr = dosr / dosr_round * dosr_round;
 
-	/* Look for a DOSR value that is a multiple of FS */
-	while (dosr * fs > DAC3100_DAC_MOD_CLK_MIN) {
-		int mod = dac->clkin_rate % (dosr * fs);
-		if (mod == 0)
+	/* Look for a DOSR value that is a multiple of FS
+	 * and need an acceptable divider */
+	while (dosr * fs >= DAC3100_DAC_MOD_CLK_MIN) {
+		mdiv = clkin / (dosr * fs);
+		if (mdiv * dosr * fs == clkin && mdiv < 128 * 128)
 			break;
 		dosr -= dosr_round;
 	}
 
-	/* TODO: Fallback on using the PLL to generate the clock */
-	if (dosr * fs <= DAC3100_DAC_MOD_CLK_MIN) {
+	if (dosr * fs < DAC3100_DAC_MOD_CLK_MIN) {
 		dev_err(codec->dev, "Failed to find clock setup\n");
 		return -EINVAL;
 	}
 
-	mdiv = dac->clkin_rate / (dosr * fs);
-
-	for (mdac = rc * 32 / dosr; mdac <= 128; mdac++) {
-		if (mdiv % mdac == 0)
+	/* Get the smallest possible MDAC with a valid NDAC */
+	for (mdac = max(rc * 32 / dosr, 1); mdac <= 128; mdac++) {
+		if (mdiv % mdac == 0 && mdiv / mdac <= 128)
 			break;
 	}
 
@@ -393,21 +442,65 @@ static int dac3100_hw_params(struct snd_pcm_substream *substream,
 
 	ndac = mdiv / mdac;
 
-	dev_dbg(codec->dev,
-		"codec settings: sysclk=%d, ndac=%d, mdac=%d, dosr=%d, pb=%d, rc=%d\n",
-		dac->clkin_rate, ndac, mdac, dosr, pb, rc);
+	if (clkin / ndac > 48000000) {
+		dev_err(codec->dev, "Failed to find divider setup\n");
+		return -EINVAL;
+	}
 
-	/* Setup the clocks */
-	err = snd_soc_write(codec, DAC3100_CLOCK_GEN_MUX, dac->clkin_src & 3);
+	dev_dbg(codec->dev, "codec settings: sysclk=%d, clkin=%d, "
+		"jd=%d, ndac=%d, mdac=%d, dosr=%d, pb=%d, rc=%d\n",
+		dac->clkin_rate, clkin, jd, ndac, mdac, dosr, pb, rc);
+
+	/* Make sure the dividers and PLL are stopped */
+	err = snd_soc_write(codec, DAC3100_DAC_MDAC, 0);
 	if (err)
 		goto error;
-	err = snd_soc_write(codec, DAC3100_DAC_NDAC, ndac | BIT(7));
+	err = snd_soc_write(codec, DAC3100_DAC_NDAC, 0);
 	if (err)
 		goto error;
-	err = snd_soc_write(codec, DAC3100_DAC_MDAC, mdac | BIT(7));
+	err = snd_soc_write(codec, DAC3100_PLL_P_R, 0x11);
+	if (err)
+		goto error;
+
+	/* Setup the clock mux */
+	clkmux = dac->clkin_src & 3;
+	if (jd > 10000)
+		clkmux = (clkmux << 2) | 3;
+
+	err = snd_soc_write(codec, DAC3100_CLOCK_GEN_MUX, clkmux);
+	if (err)
+		goto error;
+
+	/* Setup the PLL if needed */
+	if (jd > 10000) {
+		err = snd_soc_write(codec, DAC3100_PLL_J, jd / 10000);
+		if (err)
+			goto error;
+
+		err = snd_soc_write(codec, DAC3100_PLL_D_MSB,
+				(jd % 10000) >> 8);
+		if (err)
+			goto error;
+		err = snd_soc_write(codec, DAC3100_PLL_D_LSB,
+				(jd % 10000) & 0xFF);
+		if (err)
+			goto error;
+
+		/* Start the PLL and wait for the lock */
+		err = snd_soc_write(codec, DAC3100_PLL_P_R, 0x91);
+		if (err)
+			goto error;
+		msleep(10);
+	}
+
+	/* Configure the dividers */
+	err = snd_soc_write(codec, DAC3100_DAC_NDAC, (ndac & 0x7f) | BIT(7));
+	if (err)
+		goto error_stop_pll;
+	err = snd_soc_write(codec, DAC3100_DAC_MDAC, (mdac & 0x7f) | BIT(7));
 	if (err)
 		goto error_ndac;
-	err = snd_soc_write(codec, DAC3100_DAC_DOSR_MSB, dosr >> 8);
+	err = snd_soc_write(codec, DAC3100_DAC_DOSR_MSB, (dosr >> 8) & 3);
 	if (err)
 		goto error_mdac;
 	err = snd_soc_write(codec, DAC3100_DAC_DOSR_LSB, dosr & 0xff);
@@ -431,6 +524,8 @@ error_mdac:
 	snd_soc_write(codec, DAC3100_DAC_MDAC, 0);
 error_ndac:
 	snd_soc_write(codec, DAC3100_DAC_NDAC, 0);
+error_stop_pll:
+	snd_soc_write(codec, DAC3100_PLL_P_R, 0x11);
 error:
 	return err;
 }
