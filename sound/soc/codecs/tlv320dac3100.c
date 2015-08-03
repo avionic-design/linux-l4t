@@ -417,7 +417,7 @@ static int dac3100_hw_params(struct snd_pcm_substream *substream,
 	/* Setup the word size */
 	err = snd_soc_update_bits(codec, DAC3100_CODEC_IFACE_CTRL1,
 				3 << 4, word_len << 4);
-	if (err)
+	if (err < 0)
 		goto error_mdac;
 
 	/* Setup the processing block */
