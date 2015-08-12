@@ -426,6 +426,8 @@ void *tegra_emc_dt_parse_pdata(struct platform_device *pdev)
 				tegra_bct_strapping);
 			return NULL;
 		}
+		dev_info(&pdev->dev, "Found EMC table for ram-code 0x%02x\n",
+			tegra_bct_strapping);
 	} else
 		tnp = of_node_get(np);
 
