@@ -1492,7 +1492,7 @@ static void tegra_xhci_cfg(struct tegra_xhci_hcd *tegra)
 	writel(0x80, tegra->ipfs_base + IPFS_XUSB_HOST_CLKGATE_HYSTERESIS_0);
 }
 
-static int tegra_xusb_regulator_init(struct tegra_xhci_hcd *tegra,
+static int tegra_xusb_regulator_get(struct tegra_xhci_hcd *tegra,
 		struct platform_device *pdev)
 {
 	const struct tegra_xusb_regulator_name *supply =
@@ -1507,13 +1507,6 @@ static int tegra_xusb_regulator_init(struct tegra_xhci_hcd *tegra,
 			, PTR_ERR(tegra->xusb_s3p3v_reg));
 		err = PTR_ERR(tegra->xusb_s3p3v_reg);
 		goto err_null_regulator;
-	} else {
-		err = regulator_enable(tegra->xusb_s3p3v_reg);
-		if (err < 0) {
-			dev_err(&pdev->dev,
-				"3p3v: regulator enable failed:%d\n", err);
-			goto err_null_regulator;
-		}
 	}
 
 	/* enable utmi vbuses */
@@ -1531,13 +1524,6 @@ static int tegra_xusb_regulator_init(struct tegra_xhci_hcd *tegra,
 					"%s regulator not found: %ld.",
 					reg_name, PTR_ERR(reg));
 				err = PTR_ERR(reg);
-			} else {
-				err = regulator_enable(reg);
-				if (err < 0) {
-					dev_err(&pdev->dev,
-					"%s: regulator enable failed: %d\n",
-					reg_name, err);
-				}
 			}
 			if (err)
 				goto err_put_utmi_vbus_reg;
@@ -1552,13 +1538,6 @@ static int tegra_xusb_regulator_init(struct tegra_xhci_hcd *tegra,
 			, PTR_ERR(tegra->xusb_s1p8v_reg));
 		err = PTR_ERR(tegra->xusb_s1p8v_reg);
 		goto err_put_utmi_vbus_reg;
-	} else {
-		err = regulator_enable(tegra->xusb_s1p8v_reg);
-		if (err < 0) {
-			dev_err(&pdev->dev,
-			"1p8v: regulator enable failed:%d\n", err);
-			goto err_put_utmi_vbus_reg;
-		}
 	}
 
 	tegra->xusb_s1p05v_reg =
@@ -1568,13 +1547,6 @@ static int tegra_xusb_regulator_init(struct tegra_xhci_hcd *tegra,
 			, PTR_ERR(tegra->xusb_s1p05v_reg));
 		err = PTR_ERR(tegra->xusb_s1p05v_reg);
 		goto err_put_s1p8v_reg;
-	} else {
-		err = regulator_enable(tegra->xusb_s1p05v_reg);
-		if (err < 0) {
-			dev_err(&pdev->dev,
-			"1p05v: regulator enable failed:%d\n", err);
-			goto err_put_s1p8v_reg;
-		}
 	}
 
 	return err;
@@ -1594,6 +1566,61 @@ err_null_regulator:
 	tegra->xusb_s1p05v_reg = NULL;
 	tegra->xusb_s3p3v_reg = NULL;
 	tegra->xusb_s1p8v_reg = NULL;
+	return err;
+}
+
+static int tegra_xusb_regulator_enable(struct tegra_xhci_hcd *tegra,
+		struct platform_device *pdev)
+{
+	const struct tegra_xusb_regulator_name *supply =
+				&tegra->soc_config->supply;
+	int i, err;
+
+	err = regulator_enable(tegra->xusb_s3p3v_reg);
+	if (err < 0) {
+		dev_err(&pdev->dev,
+			"3p3v: regulator enable failed:%d\n", err);
+		return err;
+	}
+
+	for (i = 0; i < XUSB_UTMI_COUNT; i++) {
+		if (BIT(XUSB_UTMI_INDEX + i) & tegra->bdata->portmap) {
+			if (i == 0 && tegra->transceiver)
+				continue;
+			err = regulator_enable(tegra->xusb_utmi_vbus_regs[i]);
+			if (err < 0) {
+				dev_err(&pdev->dev,
+					"%s: regulator enable failed: %d\n",
+					supply->utmi_vbuses[i], err);
+				goto err_disable_utmi_vbus_reg;
+			}
+		}
+	}
+
+	err = regulator_enable(tegra->xusb_s1p8v_reg);
+	if (err < 0) {
+		dev_err(&pdev->dev,
+			"1p8v: regulator enable failed:%d\n", err);
+		goto err_disable_utmi_vbus_reg;
+	}
+
+	err = regulator_enable(tegra->xusb_s1p05v_reg);
+	if (err < 0) {
+		dev_err(&pdev->dev,
+			"1p05v: regulator enable failed:%d\n", err);
+		goto err_disable_s1p8v_reg;
+	}
+
+	return 0;
+
+err_disable_s1p8v_reg:
+	regulator_disable(tegra->xusb_s1p8v_reg);
+err_disable_utmi_vbus_reg:
+	for (i--; i >= 0; i--)
+		if (i > 0 || !tegra->transceiver)
+			regulator_disable(tegra->xusb_utmi_vbus_regs[i]);
+	regulator_disable(tegra->xusb_s3p3v_reg);
+
 	return err;
 }
 
@@ -4386,6 +4413,13 @@ static int tegra_xhci_probe(struct platform_device *pdev)
 		return ret;
 	}
 
+	ret = tegra_xusb_regulator_get(tegra, pdev);
+	if (ret) {
+		if (ret != -EPROBE_DEFER)
+			dev_err(&pdev->dev, "failed to get regulators\n");
+		return ret;
+	}
+
 	ret = init_firmware(tegra);
 	if (ret < 0) {
 		dev_err(&pdev->dev, "failed to init firmware\n");
@@ -4433,7 +4467,7 @@ static int tegra_xhci_probe2(struct tegra_xhci_hcd *tegra)
 	/* Enable power rails to the PAD,VBUS
 	 * and pull-up voltage.Initialize the regulators
 	 */
-	ret = tegra_xusb_regulator_init(tegra, pdev);
+	ret = tegra_xusb_regulator_enable(tegra, pdev);
 	if (ret) {
 		dev_err(&pdev->dev, "failed to initialize xusb regulator\n");
 		if (ret == -ENODEV) {
