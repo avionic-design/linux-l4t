@@ -1226,6 +1226,14 @@ static struct snd_soc_card snd_soc_tegra_rt5639 = {
 	.fully_routed = true,
 };
 
+static struct regulator *tegra_rt5639_get_regulator(
+	struct platform_device *pdev, const char *id)
+{
+	struct regulator *reg = devm_regulator_get(&pdev->dev, id);
+
+	return (PTR_ERR(reg) == -ENODEV) ? NULL : reg;
+}
+
 static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 {
 	struct snd_soc_card *card = &snd_soc_tegra_rt5639;
@@ -1244,8 +1252,9 @@ static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 	if (pdev->dev.platform_data) {
 		pdata = pdev->dev.platform_data;
 	} else if (np) {
-		pdata = kzalloc(sizeof(struct tegra_asoc_platform_data),
-			GFP_KERNEL);
+		pdata = devm_kzalloc(&pdev->dev,
+				sizeof(struct tegra_asoc_platform_data),
+				GFP_KERNEL);
 		if (!pdata) {
 			dev_err(&pdev->dev, "Can't allocate tegra_asoc_platform_data struct\n");
 			return -ENOMEM;
@@ -1317,11 +1326,11 @@ static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 			pdata->codec_dai_name;
 	}
 
-	machine = kzalloc(sizeof(struct tegra_rt5639), GFP_KERNEL);
+	machine = devm_kzalloc(&pdev->dev,
+			sizeof(struct tegra_rt5639),
+			GFP_KERNEL);
 	if (!machine) {
 		dev_err(&pdev->dev, "Can't allocate tegra_rt5639 struct\n");
-		if (np)
-			kfree(pdata);
 		return -ENOMEM;
 	}
 
@@ -1342,58 +1351,69 @@ static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 	machine->bias_level = SND_SOC_BIAS_STANDBY;
 	machine->clock_enabled = 1;
 
-	ret = tegra_asoc_utils_init(&machine->util_data, &pdev->dev, card);
-	if (ret)
-		goto err_free_machine;
-
 	/*
 	*codec_reg - its a GPIO (in the form of a fixed regulator) that enables
 	*the basic(I2C) power for the codec and must be ON always
 	*/
 	if (!gpio_is_valid(pdata->gpio_ldo1_en)) {
-		machine->codec_reg = regulator_get(&pdev->dev, "ldoen");
+		machine->codec_reg = tegra_rt5639_get_regulator(pdev, "ldoen");
 		if (IS_ERR(machine->codec_reg))
-			machine->codec_reg = 0;
-		else
-			ret = regulator_enable(machine->codec_reg);
+			return PTR_ERR(machine->codec_reg);
 	}
 
 	/*
 	*digital_reg - provided the digital power for the codec and must be
 	*ON always
 	*/
-	machine->digital_reg = regulator_get(&pdev->dev, "dbvdd");
+	machine->digital_reg = tegra_rt5639_get_regulator(pdev, "dbvdd");
 	if (IS_ERR(machine->digital_reg))
-		machine->digital_reg = 0;
-	else
-		ret = regulator_enable(machine->digital_reg);
+		return PTR_ERR(machine->digital_reg);
 
 	/*
 	*analog_reg - provided the analog power for the codec and must be
 	*ON always
 	*/
-	machine->analog_reg = regulator_get(&pdev->dev, "avdd");
+	machine->analog_reg = tegra_rt5639_get_regulator(pdev, "avdd");
 	if (IS_ERR(machine->analog_reg))
-		machine->analog_reg = 0;
-	else
-		ret = regulator_enable(machine->analog_reg);
+		return PTR_ERR(machine->analog_reg);
 
 	/*
 	*spk_reg - provided the speaker power and can be turned ON
 	*on need basis, when required
 	*/
-	machine->spk_reg = regulator_get(&pdev->dev, "spkvdd");
+	machine->spk_reg = tegra_rt5639_get_regulator(pdev, "spkvdd");
 	if (IS_ERR(machine->spk_reg))
-		machine->spk_reg = 0;
+		return PTR_ERR(machine->spk_reg);
 
 	/*
 	*dmic_reg - provided the DMIC power and can be turned ON
 	*on need basis, when required
 	*/
-	machine->dmic_reg = regulator_get(&pdev->dev, "dmicvdd");
+	machine->dmic_reg = tegra_rt5639_get_regulator(pdev, "dmicvdd");
 	if (IS_ERR(machine->dmic_reg))
-		machine->dmic_reg = 0;
+		return PTR_ERR(machine->dmic_reg);
 
+	if (machine->codec_reg) {
+		ret = regulator_enable(machine->codec_reg);
+		if (ret)
+			return ret;
+	}
+
+	if (machine->digital_reg) {
+		ret = regulator_enable(machine->digital_reg);
+		if (ret)
+			goto err_disable_codec_reg;
+	}
+
+	if (machine->analog_reg) {
+		ret = regulator_enable(machine->analog_reg);
+		if (ret)
+			goto err_disable_digital_reg;
+	}
+
+	ret = tegra_asoc_utils_init(&machine->util_data, &pdev->dev, card);
+	if (ret)
+		goto err_disable_analog_reg;
 
 #ifdef CONFIG_SWITCH
 	/* Addd h2w swith class support */
@@ -1492,29 +1512,17 @@ err_unregister_switch:
 	tegra_asoc_switch_unregister(&tegra_rt5639_headset_switch);
 err_fini_utils:
 #endif
-	if (machine->digital_reg) {
-		regulator_disable(machine->digital_reg);
-		regulator_put(machine->digital_reg);
-	}
-	if (machine->analog_reg) {
-		regulator_disable(machine->analog_reg);
-		regulator_put(machine->analog_reg);
-	}
-	if (machine->spk_reg)
-		regulator_put(machine->spk_reg);
-	if (machine->dmic_reg)
-		regulator_put(machine->dmic_reg);
-	if (machine->codec_reg) {
-		regulator_disable(machine->codec_reg);
-		regulator_put(machine->codec_reg);
-	}
-
 	tegra_asoc_utils_fini(&machine->util_data);
-err_free_machine:
-	if (np)
-		kfree(machine->pdata);
 
-	kfree(machine);
+err_disable_analog_reg:
+	if (machine->analog_reg)
+		regulator_disable(machine->analog_reg);
+err_disable_digital_reg:
+	if (machine->digital_reg)
+		regulator_disable(machine->digital_reg);
+err_disable_codec_reg:
+	if (machine->codec_reg)
+		regulator_disable(machine->codec_reg);
 
 	return ret;
 }
@@ -1524,30 +1532,18 @@ static int tegra_rt5639_driver_remove(struct platform_device *pdev)
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
 	struct tegra_rt5639 *machine = snd_soc_card_get_drvdata(card);
 	struct tegra_asoc_platform_data *pdata = machine->pdata;
-	struct device_node *np = pdev->dev.of_node;
 
 	if (machine->gpio_requested & GPIO_HP_DET)
 		snd_soc_jack_free_gpios(&tegra_rt5639_hp_jack,
 					1,
 					&tegra_rt5639_hp_jack_gpio);
 
-	if (machine->digital_reg) {
+	if (machine->digital_reg)
 		regulator_disable(machine->digital_reg);
-		regulator_put(machine->digital_reg);
-	}
-	if (machine->analog_reg) {
+	if (machine->analog_reg)
 		regulator_disable(machine->analog_reg);
-		regulator_put(machine->analog_reg);
-	}
-	if (machine->spk_reg)
-		regulator_put(machine->spk_reg);
-
-	if (machine->dmic_reg)
-		regulator_put(machine->dmic_reg);
-	if (machine->codec_reg) {
+	if (machine->codec_reg)
 		regulator_disable(machine->codec_reg);
-		regulator_put(machine->codec_reg);
-	}
 
 	if (gpio_is_valid(pdata->gpio_ldo1_en)) {
 		gpio_set_value(pdata->gpio_ldo1_en, 0);
@@ -1561,12 +1557,7 @@ static int tegra_rt5639_driver_remove(struct platform_device *pdev)
 #ifdef CONFIG_SWITCH
 	tegra_asoc_switch_unregister(&tegra_rt5639_headset_switch);
 #endif
-	if (np)
-		kfree(machine->pdata);
-
 	sysedp_free_consumer(machine->sysedpc);
-
-	kfree(machine);
 
 	return 0;
 }
