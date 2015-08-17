@@ -1251,6 +1251,14 @@ static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 			return -ENOMEM;
 		}
 
+		card->dev = &pdev->dev;
+		card->dapm_routes = NULL;
+		card->num_dapm_routes = 0;
+		ret = snd_soc_of_parse_audio_routing(card,
+						     "nvidia,audio-routing");
+		if (ret)
+			return ret;
+
 		of_property_read_string(np, "nvidia,codec_name",
 					&pdata->codec_name);
 
@@ -1271,17 +1279,22 @@ static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 		pdata->gpio_spkr_en = pdata->gpio_hp_mute =
 		pdata->gpio_int_mic_en = pdata->gpio_ext_mic_en = -1;
 
-		of_property_read_u32_array(np, "nvidia,i2s-param-hifi", val32,
-							   ARRAY_SIZE(val32));
+		of_property_read_u32_array(np, "nvidia,i2s-param-hifi", val32, 3);
 		pdata->i2s_param[HIFI_CODEC].audio_port_id = (int)val32[0];
 		pdata->i2s_param[HIFI_CODEC].is_i2s_master = (int)val32[1];
 		pdata->i2s_param[HIFI_CODEC].i2s_mode = (int)val32[2];
 
-		of_property_read_u32_array(np, "nvidia,i2s-param-bt", val32,
-							   ARRAY_SIZE(val32));
+		of_property_read_u32_array(np, "nvidia,i2s-param-bt", val32, 3);
 		pdata->i2s_param[BT_SCO].audio_port_id = (int)val32[0];
 		pdata->i2s_param[BT_SCO].is_i2s_master = (int)val32[1];
 		pdata->i2s_param[BT_SCO].i2s_mode = (int)val32[2];
+
+		card->dai_link[DAI_LINK_HIFI].codec_of_node =
+			of_parse_phandle(np, "nvidia,audio-codec", 0);
+		card->dai_link[DAI_LINK_HIFI].cpu_of_node =
+			of_parse_phandle(np, "nvidia,i2s-controller", 0);
+
+		card->num_links = 1;
 	}
 
 	if (!pdata) {
@@ -1293,6 +1306,8 @@ static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 		card->dai_link[DAI_LINK_HIFI].codec_name = pdata->codec_name;
 		card->dai_link[DAI_LINK_I2S_OFFLOAD_BE].codec_name =
 			pdata->codec_name;
+	} else if (card->dai_link[DAI_LINK_HIFI].codec_of_node) {
+		card->dai_link[DAI_LINK_HIFI].codec_name = NULL;
 	}
 
 	if (pdata->codec_dai_name) {
@@ -1410,10 +1425,17 @@ static int tegra_rt5639_driver_probe(struct platform_device *pdev)
 	}
 
 	codec_id = pdata->i2s_param[HIFI_CODEC].audio_port_id;
-	tegra_rt5639_dai[DAI_LINK_HIFI].cpu_dai_name =
-	tegra_rt5639_i2s_dai_name[codec_id];
-	tegra_rt5639_dai[DAI_LINK_HIFI].platform_name =
-	tegra_rt5639_i2s_dai_name[codec_id];
+	if (tegra_rt5639_dai[DAI_LINK_HIFI].cpu_of_node) {
+		tegra_rt5639_dai[DAI_LINK_HIFI].cpu_dai_name = NULL;
+		tegra_rt5639_dai[DAI_LINK_HIFI].platform_name = NULL;
+		tegra_rt5639_dai[DAI_LINK_HIFI].platform_of_node =
+			tegra_rt5639_dai[DAI_LINK_HIFI].cpu_of_node;
+	} else {
+		tegra_rt5639_dai[DAI_LINK_HIFI].cpu_dai_name =
+			tegra_rt5639_i2s_dai_name[codec_id];
+		tegra_rt5639_dai[DAI_LINK_HIFI].platform_name =
+			tegra_rt5639_i2s_dai_name[codec_id];
+	}
 	tegra_rt5639_dai[DAI_LINK_I2S_OFFLOAD_BE].cpu_dai_name =
 	tegra_rt5639_i2s_dai_name[codec_id];
 
