@@ -2018,6 +2018,11 @@
 		avdd_pll_utmip-supply = <&vddio_1v8>;
 	};
 
+	udc@7d000000 {
+		avdd_usb-supply = <&vdd_3v3_lp0>;
+		avdd_pll_utmip-supply = <&vddio_1v8>;
+	};
+
 	usb@7d004000 {
 		avdd_usb-supply = <&vdd_3v3_lp0>;
 		avdd_pll_utmip-supply = <&vddio_1v8>;
