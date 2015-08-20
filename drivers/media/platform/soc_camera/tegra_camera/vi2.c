@@ -1069,7 +1069,7 @@ static int vi2_mipi_calibration(struct tegra_camera_dev *cam)
 	if (!mipi_cal)
 		return -ENOMEM;
 
-	regs = devm_regmap_init_mmio(&pdev->dev, mipi_cal, &mipi_cal_config);
+	regs = regmap_init_mmio(&pdev->dev, mipi_cal, &mipi_cal_config);
 	if (IS_ERR(regs)) {
 		dev_err(&pdev->dev, "regmap init failed\n");
 		iounmap(mipi_cal);
@@ -1156,6 +1156,9 @@ static int vi2_mipi_calibration(struct tegra_camera_dev *cam)
 	regmap_update_bits(regs, CILD_MIPI_CAL_CONFIG_2, CLKSELD, CLKSELD);
 	regmap_update_bits(regs, CILE_MIPI_CAL_CONFIG, SELE, 0);
 	regmap_update_bits(regs, CSIE_MIPI_CAL_CONFIG_2, CLKSELE, 0);
+
+	regmap_exit(regs);
+	iounmap(mipi_cal);
 
 	/* Disable clocks */
 	if (clk_mipi_cal)
