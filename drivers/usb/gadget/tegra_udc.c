@@ -33,6 +33,8 @@
 #include <linux/platform_device.h>
 #include <linux/dmapool.h>
 #include <linux/delay.h>
+#include <linux/of.h>
+#include <linux/of_gpio.h>
 #include <linux/regulator/consumer.h>
 #include <linux/extcon.h>
 #include <linux/workqueue.h>
@@ -2793,6 +2795,14 @@ static int tegra_udc_ep_setup(struct tegra_udc *udc)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+#include "../tegra_dt.c"
+#else
+static int tegra_usb_parse_dt(struct platform_device *pdev)
+{
+	return 0;
+}
+#endif
 
 /* Driver probe function
  * all intialization operations implemented here except enabling usb_intr reg
@@ -2806,6 +2816,12 @@ static int tegra_udc_probe(struct platform_device *pdev)
 	int instance = pdev->id;
 	int err = -ENODEV;
 	DBG("%s(%d) BEGIN\n", __func__, __LINE__);
+
+	err = tegra_usb_parse_dt(pdev);
+	if (err) {
+		dev_err(&pdev->dev, "Failed to parse DT\n");
+		return err;
+	}
 
 	the_udc = udc = kzalloc(sizeof(struct tegra_udc), GFP_KERNEL);
 	if (udc == NULL) {
@@ -3218,6 +3234,10 @@ static int tegra_udc_resume(struct platform_device *pdev)
 	return 0;
 }
 
+static struct of_device_id tegra_udc_of_match[] = {
+	{ .compatible = "nvidia,tegra20-udc", },
+	{ },
+};
 
 static struct platform_driver tegra_udc_driver = {
 	.probe   = tegra_udc_probe,
@@ -3226,6 +3246,7 @@ static struct platform_driver tegra_udc_driver = {
 	.resume  = tegra_udc_resume,
 	.driver  = {
 		.name = (char *)driver_name,
+		.of_match_table = tegra_udc_of_match,
 		.owner = THIS_MODULE,
 	},
 };
