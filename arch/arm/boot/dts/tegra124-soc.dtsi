@@ -738,6 +738,15 @@
 		status = "disabled";
 	};
 
+	udc@7d000000 {
+		compatible = "nvidia,tegra124-udc", "nvidia,tegra20-udc";
+		reg = <0x0 0x7d000000 0x0 0x4000>;
+		interrupts = <0 20 0x04>;
+		nvidia,memory-clients = <SWGID_PPCS>;
+		nvidia,has-hostpc;
+		status = "disabled";
+	};
+
 	usb@7d004000 {
 		compatible = "nvidia,tegra124-ehci", "nvidia,tegra20-ehci", "usb-ehci";
 		reg = <0x0 0x7d004000 0x0 0x4000>;
