@@ -2893,7 +2893,7 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 	udc->phy = tegra_usb_phy_open(pdev);
 	if (IS_ERR(udc->phy)) {
 		dev_err(&pdev->dev, "failed to open USB phy\n");
-		err = -ENXIO;
+		err = PTR_ERR(udc->phy);
 		goto err_irq;
 	}
 
