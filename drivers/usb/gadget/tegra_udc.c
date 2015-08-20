@@ -2806,9 +2806,6 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 	int err = -ENODEV;
 	DBG("%s(%d) BEGIN\n", __func__, __LINE__);
 
-	if (strcmp(pdev->name, driver_name)) {
-		VDBG("Wrong device");
-		return -ENODEV;
 	}
 
 	the_udc = udc = kzalloc(sizeof(struct tegra_udc), GFP_KERNEL);
