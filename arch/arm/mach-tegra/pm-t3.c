@@ -720,6 +720,10 @@ void tegra_lp0_cpu_mode(bool enter)
 		.io_dpd_bit = _bit, \
 	}
 
+static struct tegra_io_dpd tegra_list_io_dpd[] = {
+};
+#endif
+
 /* PMC IO DPD register offsets */
 #define APBDEV_PMC_IO_DPD_REQ_0		0x1b8
 #define APBDEV_PMC_IO_DPD_STATUS_0	0x1bc
@@ -730,11 +734,8 @@ void tegra_lp0_cpu_mode(bool enter)
 #else
 #define APBDEV_DPD2_ENABLE_LSB		30
 #endif
+#define APBDEV_PMC_IO_DPD2_REQ_0	((APBDEV_PMC_IO_DPD_REQ_0) + 8)
 #define PMC_DPD_SAMPLE			0x20
-
-static struct tegra_io_dpd tegra_list_io_dpd[] = {
-};
-#endif
 
 /* we want to cleanup bootloader io dpd setting in kernel */
 static void __iomem *pmc = IO_ADDRESS(TEGRA_PMC_BASE);
@@ -876,8 +877,8 @@ struct io_dpd_reg_info {
 };
 
 static struct io_dpd_reg_info t3_io_dpd_req_regs[] = {
-	{0x1b8, 30},
-	{0x1c0, 5},
+	{APBDEV_PMC_IO_DPD_REQ_0, APBDEV_DPD_ENABLE_LSB},
+	{APBDEV_PMC_IO_DPD2_REQ_0, APBDEV_DPD2_ENABLE_LSB},
 };
 
 /* io dpd off request code */
