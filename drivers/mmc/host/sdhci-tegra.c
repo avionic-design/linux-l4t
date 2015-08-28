@@ -2535,6 +2535,7 @@ static int sdhci_tegra_get_tap_window_data(struct sdhci_host *sdhci,
 	u8 boun_end = 0, next_boun_end = 0;
 	u8 j = 0;
 	bool valid_ui_found = false;
+	unsigned long iflags;
 
 	/*
 	 * Assume there are a max of 10 windows and allocate tap window
@@ -2548,7 +2549,7 @@ static int sdhci_tegra_get_tap_window_data(struct sdhci_host *sdhci,
 		return -ENOMEM;
 	}
 
-	spin_lock(&sdhci->lock);
+	spin_lock_irqsave(&sdhci->lock, iflags);
 	tap_value = 0;
 	do {
 		tap_data = &tuning_data->tap_data[num_of_wins];
@@ -2561,7 +2562,7 @@ static int sdhci_tegra_get_tap_window_data(struct sdhci_host *sdhci,
 			if (!num_of_wins) {
 				dev_err(mmc_dev(sdhci->mmc),
 					"All tap values(0-255) failed\n");
-				spin_unlock(&sdhci->lock);
+				spin_unlock_irqrestore(&sdhci->lock, iflags);
 				return -EINVAL;
 			} else {
 				/* All windows obtained */
@@ -2603,7 +2604,7 @@ static int sdhci_tegra_get_tap_window_data(struct sdhci_host *sdhci,
 		}
 		num_of_wins++;
 	} while (tap_value < MAX_TAP_VALUES);
-	spin_unlock(&sdhci->lock);
+	spin_unlock_irqrestore(&sdhci->lock, iflags);
 
 	tuning_data->num_of_valid_tap_wins = num_of_wins;
 	valid_num_uis = num_of_uis;
@@ -3726,6 +3727,7 @@ static ssize_t sdhci_handle_boost_mode_tap(struct device *dev,
 	u32 present_state;
 	u8 timeout;
 	bool clk_set_for_tap_prog = false;
+	unsigned long iflags;
 
 	tap_cmd = memparse(p, &p);
 
@@ -3771,7 +3773,7 @@ static ssize_t sdhci_handle_boost_mode_tap(struct device *dev,
 			present_state = sdhci_readl(host, SDHCI_PRESENT_STATE);
 		};
 	}
-	spin_lock(&host->lock);
+	spin_lock_irqsave(&host->lock, iflags);
 	switch (tap_cmd) {
 	case TAP_CMD_TRIM_DEFAULT_VOLTAGE:
 		/* set tap value for voltage range 1.1 to 1.25 */
@@ -3784,7 +3786,7 @@ static ssize_t sdhci_handle_boost_mode_tap(struct device *dev,
 			tuning_data->nom_best_tap_value);
 		break;
 	}
-	spin_unlock(&host->lock);
+	spin_unlock_irqrestore(&host->lock, iflags);
 	if (clk_set_for_tap_prog) {
 		tegra_sdhci_set_clock(host, 0);
 		clk_set_for_tap_prog = false;
