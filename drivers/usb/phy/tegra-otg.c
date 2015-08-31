@@ -63,7 +63,6 @@
 #define YCABLE_CHARGING_CURRENT_UA 500000u
 
 struct tegra_otg {
-	struct platform_device *pdev;
 	struct tegra_usb_otg_data *pdata;
 	struct usb_phy phy;
 	unsigned long int_status;
@@ -282,69 +281,45 @@ static void tegra_otg_vbus_enable(struct regulator *vbus_reg, int on)
 static void tegra_start_host(struct tegra_otg *tegra)
 {
 	struct tegra_usb_otg_data *pdata = tegra->pdata;
-	struct platform_device *pdev, *ehci_device = pdata->ehci_device;
-	int val;
+	struct usb_hcd *hcd;
+	int err;
 
 	DBG("%s(%d) Begin\n", __func__, __LINE__);
-
-	if (tegra->pdev)
-		return;
 
 	if (pdata->is_xhci) {
 		tegra_xhci_release_otg_port(false);
 		return;
 	}
 
-	/* prepare device structure for registering host*/
-	pdev = platform_device_alloc(ehci_device->name, ehci_device->id);
-	if (!pdev)
-		return ;
+	if (!tegra->phy.otg->host)
+		return;
 
-	val = platform_device_add_resources(pdev, ehci_device->resource,
-			ehci_device->num_resources);
-	if (val)
-		goto error;
-
-	pdev->dev.dma_mask = ehci_device->dev.dma_mask;
-	pdev->dev.coherent_dma_mask = ehci_device->dev.coherent_dma_mask;
-
-	val = platform_device_add_data(pdev, pdata->ehci_pdata,
-			sizeof(struct tegra_usb_platform_data));
-	if (val)
-		goto error;
-
-	val = platform_device_add(pdev);
-	if (val) {
-		pr_err("%s: platform_device_add failed\n", __func__);
-		goto error;
-	}
-
-	tegra->pdev = pdev;
+	hcd = bus_to_hcd(tegra->phy.otg->host);
+	err = usb_add_hcd(hcd, hcd->irq, IRQF_SHARED | IRQF_TRIGGER_HIGH);
+	if (err)
+		pr_err("usb_add_hcd failed: %d\n", err);
 
 	DBG("%s(%d) End\n", __func__, __LINE__);
 	return;
-
-error:
-	BUG_ON("failed to add the host controller device\n");
-	platform_device_del(pdev);
-	tegra->pdev = NULL;
 }
 
 static void tegra_stop_host(struct tegra_otg *tegra)
 {
-	struct platform_device *pdev = tegra->pdev;
+	struct tegra_usb_otg_data *pdata = tegra->pdata;
+	struct usb_hcd *hcd;
 
 	DBG("%s(%d) Begin\n", __func__, __LINE__);
 
-	if (tegra->pdata->is_xhci) {
+	if (pdata->is_xhci) {
 		tegra_xhci_release_otg_port(true);
 		return;
 	}
-	if (pdev) {
-		/* unregister host from otg */
-		platform_device_unregister(pdev);
-		tegra->pdev = NULL;
-	}
+
+	if (!tegra->phy.otg->host)
+		return;
+
+	hcd = bus_to_hcd(tegra->phy.otg->host);
+	usb_remove_hcd(hcd);
 
 	DBG("%s(%d) End\n", __func__, __LINE__);
 }
@@ -561,6 +536,9 @@ static int tegra_otg_set_host(struct usb_otg *otg, struct usb_bus *host)
 	struct tegra_otg *tegra = container_of(otg->phy, struct tegra_otg, phy);
 	unsigned long val;
 	DBG("%s(%d) BEGIN\n", __func__, __LINE__);
+
+	if (!host && tegra->phy.state == OTG_STATE_A_HOST)
+		tegra_otg_start_host(tegra, 0);
 
 	otg->host = host;
 
