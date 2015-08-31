@@ -105,7 +105,9 @@ void tegra_meerkat_reserve(void);
 	OF_DEV_AUXDATA("nvidia,tegra20-ehci", 0x7d008000,		\
 		"tegra-ehci.2", NULL),					\
 	OF_DEV_AUXDATA("nvidia,tegra20-udc", 0x7d000000,		\
-		"tegra-udc.0", NULL)
+		"tegra-udc.0", NULL),					\
+	OF_DEV_AUXDATA("nvidia,tegra20-otg", 0x7d000000,		\
+		"tegra-otg", NULL)
 
 
 #endif
