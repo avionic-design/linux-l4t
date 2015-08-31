@@ -697,7 +697,7 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 		err = -ENODEV;
 		goto fail_io;
 	}
-	tegra->irq = irq;
+	tegra->irq = hcd->irq = irq;
 
 	tegra->unaligned_dma_buf_supported = pdata->unaligned_dma_buf_supported;
 	tegra->has_hostpc = pdata->has_hostpc;
