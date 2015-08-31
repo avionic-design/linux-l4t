@@ -2348,12 +2348,6 @@ static int reset_queues(struct tegra_udc *udc)
 	for (pipe = 0; pipe < udc->max_pipes; pipe++)
 		udc_reset_ep_queue(udc, pipe);
 
-	/* report disconnect; the driver is already quiesced */
-	spin_unlock(&udc->lock);
-	if (udc->driver && udc->driver->disconnect)
-		udc->driver->disconnect(&udc->gadget);
-	spin_lock(&udc->lock);
-
 	return 0;
 }
 
