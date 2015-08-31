@@ -852,12 +852,12 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 	tegra->has_hostpc = pdata->has_hostpc;
 
 	tegra->phy = tegra_usb_phy_open(pdev);
-	hcd->phy = get_usb_phy(tegra->phy);
 	if (IS_ERR(tegra->phy)) {
 		dev_err(&pdev->dev, "failed to open USB phy (%ld)\n", PTR_ERR(tegra->phy));
 		err = PTR_ERR(tegra->phy);
 		goto fail_io;
 	}
+	hcd->phy = get_usb_phy(tegra->phy);
 
 	err = tegra_usb_phy_power_on(tegra->phy);
 	if (err) {
