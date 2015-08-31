@@ -2838,21 +2838,6 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 		goto err_rel_mem_region;
 	}
 
-	udc->irq = platform_get_irq(pdev, 0);
-	if (!udc->irq) {
-		err = -ENODEV;
-		ERR("failed to get platform irq resources\n");
-		goto err_iounmap;
-	}
-
-	err = request_irq(udc->irq, tegra_udc_irq,
-				IRQF_SHARED | IRQF_TRIGGER_HIGH,
-				driver_name, udc);
-	if (err) {
-		ERR("cannot request irq %d err %d\n", udc->irq, err);
-		goto err_iounmap;
-	}
-
 	/*Disable fence read if H/W support is disabled*/
 	pdata = dev_get_platdata(&pdev->dev);
 	if (pdata) {
@@ -2881,14 +2866,14 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 	} else {
 		dev_err(&pdev->dev, "failed to get platform_data\n");
 		err = -ENODATA;
-		goto err_irq;
+		goto err_iounmap;
 	}
 
 	udc->phy = tegra_usb_phy_open(pdev);
 	if (IS_ERR(udc->phy)) {
 		dev_err(&pdev->dev, "failed to open USB phy\n");
 		err = PTR_ERR(udc->phy);
-		goto err_irq;
+		goto err_iounmap;
 	}
 
 	err = tegra_usb_phy_power_on(udc->phy);
@@ -3013,6 +2998,21 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 		otg_set_peripheral(udc->transceiver->otg, &udc->gadget);
 	}
 
+	udc->irq = platform_get_irq(pdev, 0);
+	if (!udc->irq) {
+		err = -ENODEV;
+		ERR("failed to get platform irq resources\n");
+		goto err_del_udc;
+	}
+
+	err = request_irq(udc->irq, tegra_udc_irq,
+				IRQF_SHARED | IRQF_TRIGGER_HIGH,
+				driver_name, udc);
+	if (err) {
+		ERR("cannot request irq %d err %d\n", udc->irq, err);
+		goto err_del_udc;
+	}
+
 	DBG("%s(%d) END\n", __func__, __LINE__);
 	return 0;
 
@@ -3021,9 +3021,6 @@ err_del_udc:
 
 err_phy:
 	usb_phy_shutdown(get_usb_phy(udc->phy));
-
-err_irq:
-	free_irq(udc->irq, udc);
 
 err_iounmap:
 	iounmap(udc->regs);
