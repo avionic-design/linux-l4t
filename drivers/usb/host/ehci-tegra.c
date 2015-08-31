@@ -471,6 +471,52 @@ static int tegra_ehci_bus_resume(struct usb_hcd *hcd)
 }
 #endif
 
+static int tegra_ehci_run(struct usb_hcd *hcd)
+{
+	struct tegra_ehci_hcd *tegra = dev_get_drvdata(hcd->self.controller);
+	struct platform_device *pdev = to_platform_device(hcd->self.controller);
+	int err;
+
+	err = tegra_usb_phy_power_on(tegra->phy);
+	if (err) {
+		dev_err(&pdev->dev, "failed to power on the phy\n");
+		return err;
+	}
+	tegra_usb_enable_vbus(tegra->phy, true);
+
+#ifdef CONFIG_TEGRA_EHCI_BOOST_CPU_FREQ
+	INIT_DELAYED_WORK(&tegra->boost_cpu_freq_work,
+					tegra_ehci_boost_cpu_frequency_work);
+	pm_qos_add_request(&tegra->boost_cpu_freq_req, PM_QOS_CPU_FREQ_MIN,
+					PM_QOS_DEFAULT_VALUE);
+	schedule_delayed_work(&tegra->boost_cpu_freq_work, 12000);
+	tegra->cpu_boost_in_work = true;
+#endif
+
+	ehci_run(hcd);
+
+	return 0;
+}
+
+static void tegra_ehci_stop(struct usb_hcd *hcd)
+{
+	struct tegra_ehci_hcd *tegra = dev_get_drvdata(hcd->self.controller);
+
+	/* Make sure phy is powered ON to access USB register */
+	if(!tegra_usb_phy_hw_accessible(tegra->phy))
+		tegra_usb_phy_power_on(tegra->phy);
+
+#ifdef CONFIG_TEGRA_EHCI_BOOST_CPU_FREQ
+	cancel_delayed_work_sync(&tegra->boost_cpu_freq_work);
+	tegra->cpu_boost_in_work = false;
+	pm_qos_remove_request(&tegra->boost_cpu_freq_req);
+#endif
+
+	ehci_stop(hcd);
+	tegra_usb_phy_power_off(tegra->phy);
+	tegra_usb_enable_vbus(tegra->phy, false);
+}
+
 static const struct hc_driver tegra_ehci_hc_driver = {
 	.description		= hcd_name,
 	.product_desc		= "Tegra EHCI Host Controller",
@@ -478,8 +524,6 @@ static const struct hc_driver tegra_ehci_hc_driver = {
 	.flags			= HCD_USB2 | HCD_MEMORY,
 
 	/* standard ehci functions */
-	.start			= ehci_run,
-	.stop			= ehci_stop,
 	.urb_enqueue		= ehci_urb_enqueue,
 	.urb_dequeue		= ehci_urb_dequeue,
 	.endpoint_disable	= ehci_endpoint_disable,
@@ -491,6 +535,8 @@ static const struct hc_driver tegra_ehci_hc_driver = {
 	.port_handed_over	= ehci_port_handed_over,
 
 	/* modified ehci functions for tegra */
+	.start			= tegra_ehci_run,
+	.stop			= tegra_ehci_stop,
 	.reset			= tegra_ehci_setup,
 	.irq			= tegra_ehci_irq,
 	.shutdown		= tegra_ehci_shutdown,
@@ -664,44 +710,40 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 	}
 	hcd->phy = get_usb_phy(tegra->phy);
 
-	err = tegra_usb_phy_power_on(tegra->phy);
-	if (err) {
-		dev_err(&pdev->dev, "failed to power on the phy\n");
-		goto fail_phy;
-	}
+	if (!pdata->port_otg) {
+		err = tegra_usb_phy_power_on(tegra->phy);
+		if (err) {
+			dev_err(&pdev->dev, "failed to power on the phy\n");
+			goto fail_phy;
+		}
 
-	err = usb_phy_init(get_usb_phy(tegra->phy));
-	if (err) {
-		dev_err(&pdev->dev, "failed to init the phy\n");
-		goto fail_phy;
-	}
+		err = usb_phy_init(get_usb_phy(tegra->phy));
+		if (err) {
+			dev_err(&pdev->dev, "failed to init the phy\n");
+			goto fail_phy;
+		}
 
-	err = usb_add_hcd(hcd, irq, IRQF_SHARED | IRQF_TRIGGER_HIGH);
-	if (err) {
-		dev_err(&pdev->dev, "Failed to add USB HCD, error=%d\n", err);
-		goto fail_phy;
+		err = usb_add_hcd(hcd, irq, IRQF_SHARED | IRQF_TRIGGER_HIGH);
+		if (err) {
+			dev_err(&pdev->dev, "Failed to add USB HCD, error=%d\n", err);
+			goto fail_phy;
+		}
+	} else {
+		/* Register at otg driver */
+		tegra->transceiver =
+			devm_usb_get_phy(&pdev->dev, USB_PHY_TYPE_USB2);
+		if (!IS_ERR_OR_NULL(tegra->transceiver)) {
+			otg_set_host(tegra->transceiver->otg, &hcd->self);
+		} else {
+			err = PTR_ERR(tegra->transceiver);
+			goto fail_io;
+		}
 	}
 
 	tegra->ehci = hcd_to_ehci(hcd);
 
-	if (pdata->port_otg) {
-		tegra->transceiver =
-			devm_usb_get_phy(&pdev->dev, USB_PHY_TYPE_USB2);
-		if (!IS_ERR_OR_NULL(tegra->transceiver))
-			otg_set_host(tegra->transceiver->otg, &hcd->self);
-	}
-
 	tegra_pd_add_device(&pdev->dev);
 	pm_runtime_enable(&pdev->dev);
-
-#ifdef CONFIG_TEGRA_EHCI_BOOST_CPU_FREQ
-	INIT_DELAYED_WORK(&tegra->boost_cpu_freq_work,
-					tegra_ehci_boost_cpu_frequency_work);
-	pm_qos_add_request(&tegra->boost_cpu_freq_req, PM_QOS_CPU_FREQ_MIN,
-					PM_QOS_DEFAULT_VALUE);
-	schedule_delayed_work(&tegra->boost_cpu_freq_work, 12000);
-	tegra->cpu_boost_in_work = true;
-#endif
 
 	wake_lock_init(&tegra->ehci_wake_lock,
 		       WAKE_LOCK_SUSPEND, dev_name(&pdev->dev));
@@ -780,11 +822,6 @@ static int tegra_ehci_remove(struct platform_device *pdev)
 
 	wake_lock_destroy(&tegra->ehci_wake_lock);
 
-#ifdef CONFIG_TEGRA_EHCI_BOOST_CPU_FREQ
-	cancel_delayed_work_sync(&tegra->boost_cpu_freq_work);
-	tegra->cpu_boost_in_work = false;
-	pm_qos_remove_request(&tegra->boost_cpu_freq_req);
-#endif
 	rhdev = hcd->self.root_hub;
 	pdata = dev_get_platdata(&pdev->dev);
 
@@ -811,10 +848,12 @@ static int tegra_ehci_remove(struct platform_device *pdev)
 #ifdef CONFIG_TEGRA_EHCI_BOOST_CPU_FREQ
 	device_remove_file(hcd->self.controller, &dev_attr_boost_enable);
 #endif
-	usb_remove_hcd(hcd);
+	if (!pdata->port_otg) {
+		usb_remove_hcd(hcd);
+		tegra_usb_phy_power_off(tegra->phy);
+		usb_phy_shutdown(get_usb_phy(tegra->phy));
+	}
 	usb_put_hcd(hcd);
-	tegra_usb_phy_power_off(tegra->phy);
-	usb_phy_shutdown(get_usb_phy(tegra->phy));
 
 	mutex_destroy(&tegra->sync_lock);
 	tegra_pd_remove_device(&pdev->dev);
