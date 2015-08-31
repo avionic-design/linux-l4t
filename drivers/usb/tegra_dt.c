@@ -206,6 +206,16 @@ static int tegra_usb_parse_dt(struct platform_device *pdev)
 	}
 	pdata->id_det_type = val;
 
+	err = of_property_read_string(np, "nvidia,id-extcon-dev-name",
+			&pdata->id_extcon_dev_name);
+	if (err)
+		dev_dbg(&pdev->dev, "Failed to get id-extcon-dev-name\n");
+
+	err = of_property_read_string(np, "nvidia,vbus-extcon-dev-name",
+			&pdata->vbus_extcon_dev_name);
+	if (err)
+		dev_dbg(&pdev->dev, "Failed to get id-extcon-dev-name\n");
+
 	switch (pdata->op_mode) {
 	case TEGRA_USB_OPMODE_DEVICE:
 		err = tegra_usb_parse_device_dt(pdev, &pdata->u_data.dev);

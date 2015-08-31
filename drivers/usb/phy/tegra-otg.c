@@ -28,6 +28,9 @@
 #include <linux/platform_data/tegra_usb.h>
 #include <linux/clk.h>
 #include <linux/io.h>
+#include <linux/of.h>
+#include <linux/of_gpio.h>
+#include <linux/of_platform.h>
 #include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/export.h>
@@ -674,12 +677,86 @@ void tegra_otg_set_id_detection_type(struct tegra_otg *tegra)
 	}
 }
 
+
+#ifdef CONFIG_OF
+#include "../tegra_dt.c"
+
+static int tegra_otg_parse_dt(struct platform_device *pdev)
+{
+	struct device_node *np = pdev->dev.of_node;
+	struct tegra_usb_otg_data *pdata;
+	struct device_node *ehci;
+	int err = 0;
+
+	if (pdev->dev.platform_data)
+		return 0;
+
+	if (!np)
+		return -EINVAL;
+
+	pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+	if (!pdata)
+		return -ENOMEM;
+
+	pdata->is_xhci = of_property_read_bool(np, "nvidia,is-xhci");
+	pdata->id_det_gpio = of_get_named_gpio(np, "nvidia,id-det-gpio", 0);
+	if (pdata->id_det_gpio < 0)
+		pdata->id_det_gpio = -1;
+
+	ehci = of_parse_phandle(np, "nvidia,ehci-device", 0);
+	if (!ehci) {
+		dev_err(&pdev->dev, "Missing ehci-device in DT\n");
+		return -ENODATA;
+	}
+	pdata->ehci_device = of_find_device_by_node(ehci);
+	if (ehci == NULL) {
+		dev_dbg(&pdev->dev, "ehci device is not specified");
+		err = -EINVAL;
+		goto out;
+	}
+
+	pdata->ehci_pdata = dev_get_platdata(&pdata->ehci_device->dev);
+	if (!pdata->ehci_pdata) {
+		dev_dbg(&pdev->dev, "ehci device has no platform data, try to parse from dt\n");
+		tegra_usb_parse_dt(pdata->ehci_device);
+		pdata->ehci_pdata = dev_get_platdata(&pdata->ehci_device->dev);
+		if (pdata->ehci_pdata == NULL) {
+			dev_err(&pdev->dev, "ehci device has no platform data\n");
+			err = -EINVAL;
+			goto out;
+		}
+	}
+
+	/* Add the handler to clear platform data */
+	err = devm_add_action(&pdev->dev, tegra_usb_clear_pdata, pdev);
+	if (err)
+		goto out;
+	pdev->dev.platform_data = pdata;
+
+out:
+	of_node_put(ehci);
+	return err;
+}
+#else
+static int tegra_otg_parse_dt(struct platform_device *pdev)
+{
+	return 0;
+}
+#endif
+
 static int tegra_otg_conf(struct platform_device *pdev)
 {
-	struct tegra_usb_otg_data *pdata = dev_get_platdata(&pdev->dev);
+	struct tegra_usb_otg_data *pdata;
 	struct tegra_otg *tegra;
 	int err;
 
+	err = tegra_otg_parse_dt(pdev);
+	if (err) {
+		dev_err(&pdev->dev, "Failed to parse DT\n");
+		return err;
+	}
+
+	pdata = dev_get_platdata(&pdev->dev);
 	if (!pdata) {
 		dev_err(&pdev->dev, "unable to get platform data\n");
 		return -ENODEV;
@@ -1127,9 +1204,15 @@ static const struct dev_pm_ops tegra_otg_pm_ops = {
 };
 #endif
 
+static struct of_device_id tegra_otg_of_match[] = {
+	{ .compatible = "nvidia,tegra20-otg", },
+	{ },
+};
+
 static struct platform_driver tegra_otg_driver = {
 	.driver = {
 		.name  = "tegra-otg",
+		.of_match_table = tegra_otg_of_match,
 #ifdef CONFIG_PM
 		.pm    = &tegra_otg_pm_ops,
 #endif
