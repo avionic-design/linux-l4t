@@ -365,6 +365,7 @@ static int tegra_ehci_setup(struct usb_hcd *hcd)
 {
 	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
 	struct tegra_ehci_hcd *tegra = dev_get_drvdata(hcd->self.controller);
+	struct platform_device *pdev = to_platform_device(hcd->self.controller);
 	int retval;
 #ifndef CONFIG_ARCH_TEGRA_2x_SOC
 	u32 val;
@@ -386,6 +387,15 @@ static int tegra_ehci_setup(struct usb_hcd *hcd)
 #endif
 	/* switch to host mode */
 	hcd->has_tt = 1;
+
+	/* Make sure phy is powered ON to access USB register */
+	if(!tegra_usb_phy_hw_accessible(tegra->phy)) {
+		retval = tegra_usb_phy_power_on(tegra->phy);
+		if (retval) {
+			dev_err(&pdev->dev, "failed to power on the phy\n");
+			return retval;
+		}
+	}
 
 	retval = ehci_setup(hcd);
 	if (retval)
