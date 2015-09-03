@@ -845,8 +845,11 @@ static int ar0330_mclk_enable(struct ar0330_info *info)
 		__func__, mclk_init_rate);
 
 	err = clk_set_rate(info->mclk, mclk_init_rate);
-	if (!err)
+	if (!err) {
 		err = clk_prepare_enable(info->mclk);
+		/* Datasheet estimates 30ms settling time. */
+		usleep_range(30000, 310000);
+	}
 	return err;
 }
 
@@ -962,28 +965,28 @@ static int ar0330_power_on(struct ar0330_power_rail *pw)
 	if (unlikely(WARN_ON(!pw || !pw->iovdd || !pw->avdd || !pw->dvdd)))
 		return -EFAULT;
 
-	gpio_set_value(info->pdata->cam2_gpio, 0);
-	usleep_range(10, 20);
-
 	err = regulator_enable(pw->avdd);
 	if (err)
 		goto ar0330_avdd_fail;
-
+	usleep_range(90, 110);
 	err = regulator_enable(pw->dvdd);
 	if (err)
 		goto ar0330_dvdd_fail;
-
+	usleep_range(90, 110);
 	err = regulator_enable(pw->iovdd);
 	if (err)
 		goto ar0330_iovdd_fail;
 
-	usleep_range(1, 2);
+	usleep_range(10, 20);
+
+	gpio_set_value(info->pdata->cam2_gpio, 0);
+	usleep_range(1000, 1100);
 	gpio_set_value(info->pdata->cam2_gpio, 1);
 
-	usleep_range(300, 310);
+	/* Wait 150000 clock cycles @ 24MHz = 6.24 ms */
+	usleep_range(6500, 10000);
 
 	return 1;
-
 
 ar0330_iovdd_fail:
 	regulator_disable(pw->dvdd);
@@ -998,14 +1001,8 @@ ar0330_avdd_fail:
 
 static int ar0330_power_off(struct ar0330_power_rail *pw)
 {
-	struct ar0330_info *info = container_of(pw, struct ar0330_info, power);
-
 	if (unlikely(WARN_ON(!pw || !pw->iovdd || !pw->avdd || !pw->dvdd)))
 		return -EFAULT;
-
-	usleep_range(1, 2);
-	gpio_set_value(info->pdata->cam2_gpio, 0);
-	usleep_range(1, 2);
 
 	regulator_disable(pw->iovdd);
 	regulator_disable(pw->dvdd);
