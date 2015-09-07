@@ -1122,6 +1122,7 @@ static struct ar0330_platform_data *ar0330_parse_dt(struct i2c_client *client)
 	struct device_node *np = client->dev.of_node;
 	struct ar0330_platform_data *board_info_pdata;
 	const struct of_device_id *match;
+	int err;
 
 	match = of_match_device(ar0330_of_match, &client->dev);
 	if (!match) {
@@ -1137,6 +1138,18 @@ static struct ar0330_platform_data *ar0330_parse_dt(struct i2c_client *client)
 	}
 
 	board_info_pdata->cam2_gpio = of_get_named_gpio(np, "cam1-gpios", 0);
+	err = of_property_read_string(np, "nvidia,mclk-name",
+			&board_info_pdata->mclk_name);
+	if (err && err != -EINVAL) {
+		dev_err(&client->dev,
+				"Error reading mclk DT property: %d\n", err);
+		return NULL;
+	}
+
+	dev_dbg(&client->dev, "cam pwdn gpio = %d, mclk = %s\n",
+			board_info_pdata->cam2_gpio,
+			board_info_pdata->mclk_name ?: "<none>");
+
 	board_info_pdata->ext_reg = of_property_read_bool(np, "nvidia,ext_reg");
 
 	board_info_pdata->power_on = ar0330_power_on;
