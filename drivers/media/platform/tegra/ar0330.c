@@ -1196,7 +1196,7 @@ ar0330_probe(struct i2c_client *client,
 		strncpy(info->devname, info->pdata->dev_name,
 			sizeof(info->devname) - 1);
 	else
-		strncpy(info->devname, "ar0330", sizeof(info->devname) - 1);
+		strncpy(info->devname, id->name, sizeof(info->devname) - 1);
 
 	ar0330_power_get(info);
 
