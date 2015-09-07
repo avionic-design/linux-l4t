@@ -1,0 +1,136 @@
+#include <dt-bindings/media/camera.h>
+
+/ {
+	camera-pcl {
+		compatible = "nvidia,tegra124-camera", "simple-bus";
+		configuration = <0xaa55aa55>;
+
+		modules {
+			module1: module1@modules {
+				compatible = "sensor,rear";
+				badge_info = "e1633_rear_camera";
+
+				sensor {
+					compatible = "nvidia,ar0330";
+					cam1-gpios = <&gpio TEGRA_GPIO(BB, 5) GPIO_ACTIVE_LOW>;
+					nvidia,mclk-name = "mclk";
+					use-of-node = "yes";
+					profile = <&ar0330_1>;
+				};
+			};
+			module2: module2@modules {
+				compatible = "sensor,front";
+				badge_info = "e1633_front_camera";
+
+				sensor {
+					compatible = "nvidia,ar0330";
+					cam1-gpios = <&gpio TEGRA_GPIO(BB, 6) GPIO_ACTIVE_LOW>;
+					nvidia,mclk-name = "mclk2";
+					use-of-node = "yes";
+					profile = <&ar0330_2>;
+				};
+			};
+		};
+
+		profiles {
+			ar0330_1: ar0330@2_0018 {
+				index = <1>;
+				chipname = "pcl_AR0330";
+				type = "sensor";
+				guid = "s_AR0330";
+				position = <0>;
+				bustype = "i2c";
+				busnum = <2>;
+				addr = <0x18>;
+				datalen = <2>;
+				pinmuxgrp = <0xFFFF>;
+				gpios = <3>;
+				regulators = "vana", "vdig", "vif";
+				clocks = "mclk";
+				drivername = "ar0330";
+				detect = <0x0002 0x3000 0xFFFF 0x2604>;
+				devid = <0x0330>;
+				powerseq-gpios = <&gpio TEGRA_GPIO(BB, 5) GPIO_ACTIVE_LOW>;
+				poweron = <
+					CAMERA_IND_CLK_SET(10000)
+					CAMERA_GPIO_SET(TEGRA_GPIO(BB, 5))
+					CAMERA_REGULATOR_ON(0)
+					CAMERA_WAITUS(100)
+					CAMERA_REGULATOR_ON(1)
+					CAMERA_WAITUS(100)
+					CAMERA_REGULATOR_ON(2)
+					CAMERA_WAITMS(100)
+					CAMERA_GPIO_CLR(TEGRA_GPIO(BB, 5))
+					CAMERA_WAITMS(10)
+					CAMERA_GPIO_SET(TEGRA_GPIO(BB, 5))
+					CAMERA_WAITMS(10)
+					CAMERA_END
+					>;
+				poweroff = <
+					CAMERA_IND_CLK_CLR
+					CAMERA_GPIO_CLR(TEGRA_GPIO(BB, 5))
+					CAMERA_WAITUS(10)
+					CAMERA_REGULATOR_OFF(2)
+					CAMERA_REGULATOR_OFF(1)
+					CAMERA_REGULATOR_OFF(0)
+					CAMERA_END
+					>;
+			};
+			ar0330_2: ar0330@2_0010 {
+				index = <2>;
+				/*
+				 * The virtual sensor driver framework
+				 * stores the poweron/poweroff sequences
+				 * only once for each chip name. Use
+				 * distinct chip names for the two
+				 * sensors, since they need different
+				 * powerup/powerdown sequences.
+				 */
+				chipname = "pcl_AR0330.1";
+				type = "sensor";
+				guid = "sAR0330f";
+				position = <1>;
+				bustype = "i2c";
+				busnum = <2>;
+				addr = <0x10>;
+				datalen = <2>;
+				pinmuxgrp = <0xFFFF>;
+				gpios = <3>;
+				regulators = "vana", "vdig", "vif";
+				clocks = "mclk2";
+				/*
+				 * The ar0330 driver also claims device
+				 * name ar0330.1.
+				 */
+				drivername = "ar0330.1";
+				detect = <0x0002 0x3000 0xFFFF 0x2604>;
+				devid = <0x0330>;
+				powerseq-gpios = <&gpio TEGRA_GPIO(BB, 6) GPIO_ACTIVE_LOW>;
+				poweron = <
+					CAMERA_IND_CLK_SET(10000)
+					CAMERA_GPIO_SET(TEGRA_GPIO(BB, 6))
+					CAMERA_REGULATOR_ON(0)
+					CAMERA_WAITUS(100)
+					CAMERA_REGULATOR_ON(1)
+					CAMERA_WAITUS(100)
+					CAMERA_REGULATOR_ON(2)
+					CAMERA_WAITMS(100)
+					CAMERA_GPIO_CLR(TEGRA_GPIO(BB, 6))
+					CAMERA_WAITMS(10)
+					CAMERA_GPIO_SET(TEGRA_GPIO(BB, 6))
+					CAMERA_WAITMS(10)
+					CAMERA_END
+					>;
+				poweroff = <
+					CAMERA_IND_CLK_CLR
+					CAMERA_GPIO_CLR(TEGRA_GPIO(BB, 6))
+					CAMERA_WAITUS(10)
+					CAMERA_REGULATOR_OFF(2)
+					CAMERA_REGULATOR_OFF(1)
+					CAMERA_REGULATOR_OFF(0)
+					CAMERA_END
+					>;
+			};
+		};
+	};
+};

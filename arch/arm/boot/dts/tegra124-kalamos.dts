@@ -5,11 +5,27 @@
 #include <dt-bindings/usb/tegra-xhci.h>
 
 #include "tegra124-meerkat.dtsi"
+#include "tegra124-kalamos-camera.dtsi"
 
 / {
 	model = "Parrot Kalamos";
 	compatible = "parrot,kalamos", "ad,meerkat", "nvidia,tegra124";
 	nvidia,dtsfilename = __FILE__;
+
+	pinmux {
+		common {
+			pbb3 {
+				nvidia,function = "vgp3";
+			};
+
+			/* Don't mess with NVD_PWM (camera trigger).
+			 * Tri-stating the pin gives us the required
+			 * 1.8V */
+			dap1_dout_pn2 {
+				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+			};
+		};
+	};
 
 	host1x {
 		dc@54200000 {
@@ -30,6 +46,11 @@
 	};
 
 	serial@70006300 {
+		status = "okay";
+	};
+
+	/* CAM */
+	i2c@7000c500 {
 		status = "okay";
 	};
 
@@ -165,6 +186,16 @@
 			regulator-always-on;
 			regulator-boot-on;
 			vin-supply = <&vdd_3v3>;
+			consumers {
+				c1 {
+					regulator-consumer-supply = "vana";
+					regulator-consumer-device = "2-0010";
+				};
+				c2 {
+					regulator-consumer-supply = "vana";
+					regulator-consumer-device = "2-0018";
+				};
+			};
 		};
 
 		vdd_1v8_cam: regulator@105 {
@@ -176,6 +207,39 @@
 			regulator-always-on;
 			regulator-boot-on;
 			vin-supply = <&vdd_3v3>;
+			consumers {
+				c1 {
+					regulator-consumer-supply = "vif";
+					regulator-consumer-device = "2-0010";
+				};
+				c2 {
+					regulator-consumer-supply = "vif";
+					regulator-consumer-device = "2-0018";
+				};
+			};
+		};
+
+		/* This 1.175V regulator does not actually exist,
+		 * but the sensor drivers want it. */
+		vdd_1v175_cam: regulator@106 {
+			compatible = "regulator-fixed";
+			reg = <106>;
+			regulator-name = "1V175_CAM";
+			regulator-min-microvolt = <1175000>;
+			regulator-max-microvolt = <1175000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_3v3>;
+			consumers {
+				c1 {
+					regulator-consumer-supply = "vdig";
+					regulator-consumer-device = "2-0010";
+				};
+				c2 {
+					regulator-consumer-supply = "vdig";
+					regulator-consumer-device = "2-0018";
+				};
+			};
 		};
 	};
 };
