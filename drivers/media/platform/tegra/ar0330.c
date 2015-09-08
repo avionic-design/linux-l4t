@@ -72,7 +72,7 @@ static const struct regmap_config sensor_regmap_config = {
 #define AR0330_COARSE_TIME_ADDR 0x3012
 #define AR0330_GAIN_ADDR 0x3060
 
-static struct ar0330_reg mode_2304x1536[] = {
+static struct ar0330_reg mode_2304x1536_1lane[] = {
 	{0x3052, 0xa114},
 	{0x304A, 0x0070},
 	{AR0330_TABLE_WAIT_MS, AR0330_WAIT_MS},
@@ -105,6 +105,104 @@ static struct ar0330_reg mode_2304x1536[] = {
 	{0x3040, 0x0000},
 	{0x3042, 0x0000},
 	{0x30BA, 0x006C},
+	{0x31E0, 0x0303},
+	{0x3064, 0x1802},
+	{0x3ED2, 0x0146},
+	{0x3ED4, 0x8F6C},
+	{0x3ED6, 0x66CC},
+	{0x3ED8, 0x8C42},
+	{0x3EDA, 0x88BC},
+	{0x3EDC, 0xAA63},
+	{0x305E, 0x00A0},
+	{0x3088, 0x80BA},
+	{0x3086, 0x0253},
+	{0x30CE, 0x0010},
+	{0x301A, 0x035C},
+	{AR0330_TABLE_END, 0x00}
+};
+
+static struct ar0330_reg mode_2048x1536[] = {
+	{0x3052, 0xa114},
+	{0x304A, 0x0070},
+	{AR0330_TABLE_WAIT_MS, AR0330_WAIT_MS},
+	{0x301A, 0x0058},
+	{0x302A, 0x0005},
+	{0x302C, 0x0001},
+	{0x302E, 0x0002},
+	{0x3030, 0x0029},
+	{0x3036, 0x000A},
+	{0x3038, 0x0001},
+	{0x31AC, 0x0A0A},
+	{0x31AE, 0x0204},
+	{0x31B0, 0x002F},
+	{0x31B2, 0x0013},
+	{0x31B4, 0x3C44},
+	{0x31B6, 0x314D},
+	{0x31B8, 0x208A},
+	{0x31BA, 0x0207},
+	{0x31BC, 0x8005},
+	{0x3002, 0x0006},
+	{0x3004, 0x0086},
+	{0x3006, 0x0605},
+	{0x3008, 0x0885},
+	{0x300A, 0x0B76},
+	{0x300C, 0x045E},
+	{0x3012, 0x0B75},
+	{0x3014, 0x0000},
+	{0x30A2, 0x0001},
+	{0x30A6, 0x0001},
+	{0x3040, 0x0000},
+	{0x3042, 0x0000},
+	{0x30BA, 0x002C},
+	{0x31E0, 0x0303},
+	{0x3064, 0x1802},
+	{0x3ED2, 0x0146},
+	{0x3ED4, 0x8F6C},
+	{0x3ED6, 0x66CC},
+	{0x3ED8, 0x8C42},
+	{0x3EDA, 0x88BC},
+	{0x3EDC, 0xAA63},
+	{0x305E, 0x00A0},
+	{0x3088, 0x80BA},
+	{0x3086, 0x0253},
+	{0x30CE, 0x0010},
+	{0x301A, 0x035C},
+	{AR0330_TABLE_END, 0x00}
+};
+
+static struct ar0330_reg mode_1280x720_1lane[] = {
+	{0x3052, 0xa114},
+	{0x304A, 0x0070},
+	{AR0330_TABLE_WAIT_MS, AR0330_WAIT_MS},
+	{0x301A, 0x0058},
+	{0x302A, 0x0005},
+	{0x302C, 0x0004},
+	{0x302E, 0x0003},
+	{0x3030, 0x005F},
+	{0x3036, 0x000A},
+	{0x3038, 0x0001},
+	{0x31AC, 0x0A0A},
+	{0x31AE, 0x0201},
+	{0x31B0, 0x002F},
+	{0x31B2, 0x0013},
+	{0x31B4, 0x3C44},
+	{0x31B6, 0x314D},
+	{0x31B8, 0x208A},
+	{0x31BA, 0x0207},
+	{0x31BC, 0x8005},
+	{0x3002, 0x019E},
+	{0x3004, 0x0206},
+	{0x3006, 0x046D},
+	{0x3008, 0x0705},
+	{0x300A, 0x0A50},
+	{0x300C, 0x04DA},
+	{0x3012, 0x0A4E},
+	{0x3014, 0x0000},
+	{0x30A2, 0x0001},
+	{0x30A6, 0x0001},
+	{0x3040, 0x0000},
+	{0x3042, 0x0000},
+	{0x30BA, 0x002C},
 	{0x31E0, 0x0303},
 	{0x3064, 0x1802},
 	{0x3ED2, 0x0146},
@@ -154,6 +252,55 @@ static struct ar0330_reg mode_1280x720[] = {
 	{0x3040, 0x0000},
 	{0x3042, 0x0000},
 	{0x30BA, 0x002C},
+	{0x31E0, 0x0303},
+	{0x3064, 0x1802},
+	{0x3ED2, 0x0146},
+	{0x3ED4, 0x8F6C},
+	{0x3ED6, 0x66CC},
+	{0x3ED8, 0x8C42},
+	{0x3EDA, 0x88BC},
+	{0x3EDC, 0xAA63},
+	{0x305E, 0x00A0},
+	{0x3088, 0x80BA},
+	{0x3086, 0x0253},
+	{0x30CE, 0x0010},
+	{0x301A, 0x035C},
+	{AR0330_TABLE_END, 0x00}
+};
+
+static struct ar0330_reg mode_1280x960_1lane[] = {
+	{0x3052, 0xa114},
+	{0x304A, 0x0070},
+	{AR0330_TABLE_WAIT_MS, AR0330_WAIT_MS},
+	{0x301A, 0x0058},
+	{0x302A, 0x0005},
+	{0x302C, 0x0004},
+	{0x302E, 0x0003},
+	{0x3030, 0x005F},
+	{0x3036, 0x000A},
+	{0x3038, 0x0001},
+	{0x31AC, 0x0A0A},
+	{0x31AE, 0x0201},
+	{0x31B0, 0x003D},
+	{0x31B2, 0x0018},
+	{0x31B4, 0x4F56},
+	{0x31B6, 0x4214},
+	{0x31B8, 0x308B},
+	{0x31BA, 0x028A},
+	{0x31BC, 0x8008},
+	{0x3002, 0x0126},
+	{0x3004, 0x0206},
+	{0x3006, 0x04E5},
+	{0x3008, 0x0705},
+	{0x300A, 0x0449},
+	{0x300C, 0x0482},
+	{0x3012, 0x0448},
+	{0x3014, 0x0000},
+	{0x30A2, 0x0001},
+	{0x30A6, 0x0001},
+	{0x3040, 0x0000},
+	{0x3042, 0x0000},
+	{0x30BA, 0x006C},
 	{0x31E0, 0x0303},
 	{0x3064, 0x1802},
 	{0x3ED2, 0x0146},
@@ -239,13 +386,13 @@ static struct ar0330_reg mode_2048x1296[] = {
 	{0x31B8, 0x208A},
 	{0x31BA, 0x0207},
 	{0x31BC, 0x8005},
-	{0x3002, 0x019E},
-	{0x3004, 0x0206},
-	{0x3006, 0x046D},
-	{0x3008, 0x0705},
-	{0x300A, 0x0A50},
-	{0x300C, 0x04DA},
-	{0x3012, 0x0A4E},
+	{0x3002, 0x007E},
+	{0x3004, 0x0086},
+	{0x3006, 0x058D},
+	{0x3008, 0x0885},
+	{0x300A, 0x05BB},
+	{0x300C, 0x045E},
+	{0x3012, 0x05BA},
 	{0x3014, 0x0000},
 	{0x30A2, 0x0001},
 	{0x30A6, 0x0001},
@@ -268,18 +415,183 @@ static struct ar0330_reg mode_2048x1296[] = {
 	{AR0330_TABLE_END, 0x00}
 };
 
+static struct ar0330_reg mode_1500x1500[] = {
+	{0x3052, 0xa114},
+	{0x304A, 0x0070},
+	{AR0330_TABLE_WAIT_MS, AR0330_WAIT_MS},
+	{0x301A, 0x0058},
+	{0x302A, 0x0005},
+	{0x302C, 0x0001},
+	{0x302E, 0x0002},
+	{0x3030, 0x0029},
+	{0x3036, 0x000A},
+	{0x3038, 0x0001},
+	{0x31AC, 0x0A0A},
+	{0x31AE, 0x0204},
+	{0x31B0, 0x002F},
+	{0x31B2, 0x0013},
+	{0x31B4, 0x3C44},
+	{0x31B6, 0x314D},
+	{0x31B8, 0x208A},
+	{0x31BA, 0x0207},
+	{0x31BC, 0x8005},
+	{0x3002, 0x0018},
+	{0x3004, 0x0198},
+	{0x3006, 0x05F3},
+	{0x3008, 0x0773},
+	{0x300A, 0x06EC},
+	{0x300C, 0x039E},
+	{0x3012, 0x06EB},
+	{0x3014, 0x0000},
+	{0x30A2, 0x0001},
+	{0x30A6, 0x0001},
+	{0x3040, 0x0000},
+	{0x3042, 0x0000},
+	{0x30BA, 0x006C},
+	{0x31E0, 0x0303},
+	{0x3064, 0x1802},
+	{0x3ED2, 0x0146},
+	{0x3ED4, 0x8F6C},
+	{0x3ED6, 0x66CC},
+	{0x3ED8, 0x8C42},
+	{0x3EDA, 0x88BC},
+	{0x3EDC, 0xAA63},
+	{0x305E, 0x00A0},
+	{0x3088, 0x80BA},
+	{0x3086, 0x0253},
+	{0x30CE, 0x0010},
+	{0x301A, 0x035C},
+	{AR0330_TABLE_END, 0x00}
+};
+
+static struct ar0330_reg mode_900x700[] = {
+	{0x3052, 0xa114},
+	{0x304A, 0x0070},
+	{AR0330_TABLE_WAIT_MS, AR0330_WAIT_MS},
+	{0x301A, 0x0058},
+	{0x302A, 0x0005},
+	{0x302C, 0x0001},
+	{0x302E, 0x0002},
+	{0x3030, 0x0029},
+	{0x3036, 0x000A},
+	{0x3038, 0x0001},
+	{0x31AC, 0x0A0A},
+	{0x31AE, 0x0204},
+	{0x31B0, 0x002F},
+	{0x31B2, 0x0013},
+	{0x31B4, 0x3C44},
+	{0x31B6, 0x314D},
+	{0x31B8, 0x208A},
+	{0x31BA, 0x0207},
+	{0x31BC, 0x8005},
+	{0x3002, 0x01A8},
+	{0x3004, 0x02C4},
+	{0x3006, 0x0463},
+	{0x3008, 0x0647},
+	{0x300A, 0x0375},
+	{0x300C, 0x039E},
+	{0x3012, 0x0374},
+	{0x3014, 0x0000},
+	{0x30A2, 0x0001},
+	{0x30A6, 0x0001},
+	{0x3040, 0x0000},
+	{0x3042, 0x0000},
+	{0x30BA, 0x006C},
+	{0x31E0, 0x0303},
+	{0x3064, 0x1802},
+	{0x3ED2, 0x0146},
+	{0x3ED4, 0x8F6C},
+	{0x3ED6, 0x66CC},
+	{0x3ED8, 0x8C42},
+	{0x3EDA, 0x88BC},
+	{0x3EDC, 0xAA63},
+	{0x305E, 0x00A0},
+	{0x3088, 0x80BA},
+	{0x3086, 0x0253},
+	{0x30CE, 0x0010},
+	{0x301A, 0x035C},
+	{AR0330_TABLE_END, 0x00}
+};
+
+static struct ar0330_reg mode_752x480[] = {
+	{0x3052, 0xa114},
+	{0x304A, 0x0070},
+	{AR0330_TABLE_WAIT_MS, AR0330_WAIT_MS},
+	{0x301A, 0x0058},
+	{0x302A, 0x0005},
+	{0x302C, 0x0001},
+	{0x302E, 0x0002},
+	{0x3030, 0x0029},
+	{0x3036, 0x000A},
+	{0x3038, 0x0001},
+	{0x31AC, 0x0A0A},
+	{0x31AE, 0x0204},
+	{0x31B0, 0x002F},
+	{0x31B2, 0x0013},
+	{0x31B4, 0x3C44},
+	{0x31B6, 0x314D},
+	{0x31B8, 0x208A},
+	{0x31BA, 0x0207},
+	{0x31BC, 0x8005},
+	{0x3002, 0x0036},
+	{0x3004, 0x001E},
+	{0x3006, 0x05D5},
+	{0x3008, 0x08ED},
+	{0x300A, 0x01EE},
+	{0x300C, 0x039E},
+	{0x3012, 0x01ED},
+	{0x3014, 0x0000},
+	{0x30A2, 0x0005},
+	{0x30A6, 0x0005},
+	{0x3040, 0x3000},
+	{0x3042, 0x0000},
+	{0x30BA, 0x006C},
+	{0x31E0, 0x0303},
+	{0x3064, 0x1802},
+	{0x3ED2, 0x0146},
+	{0x3ED4, 0x8F6C},
+	{0x3ED6, 0x66CC},
+	{0x3ED8, 0x8C42},
+	{0x3EDA, 0x88BC},
+	{0x3EDC, 0xAA63},
+	{0x305E, 0x00A0},
+	{0x3088, 0x80BA},
+	{0x3086, 0x0253},
+	{0x30CE, 0x0010},
+	{0x301A, 0x035C},
+	{AR0330_TABLE_END, 0x00}
+};
+
 enum {
-	AR0330_MODE_2304X1536,
+	AR0330_MODE_2048X1536,
 	AR0330_MODE_1280X720,
 	AR0330_MODE_1280X960,
 	AR0330_MODE_2048X1296,
+	AR0330_MODE_1500X1500,
+	AR0330_MODE_900X700,
+	AR0330_MODE_752X480,
+};
+
+enum {
+	AR0330_MODE_2304X1536_1LANE,
+	AR0330_MODE_1280X720_1LANE,
+	AR0330_MODE_1280X960_1LANE,
 };
 
 static struct ar0330_reg *mode_table[] = {
-	[AR0330_MODE_2304X1536] = mode_2304x1536,
+	[AR0330_MODE_2048X1536] = mode_2048x1536,
 	[AR0330_MODE_1280X720] = mode_1280x720,
 	[AR0330_MODE_1280X960] = mode_1280x960,
 	[AR0330_MODE_2048X1296] = mode_2048x1296,
+	[AR0330_MODE_1500X1500] = mode_1500x1500,
+	[AR0330_MODE_900X700] = mode_900x700,
+	[AR0330_MODE_752X480] = mode_752x480,
+};
+
+static struct ar0330_reg *mode_table_1lane[] = {
+	[AR0330_MODE_2304X1536_1LANE] = mode_2304x1536_1lane,
+	[AR0330_MODE_1280X720_1LANE] = mode_1280x720_1lane,
+	[AR0330_MODE_1280X960_1LANE] = mode_1280x960_1lane,
 };
 
 static inline void
@@ -410,18 +722,42 @@ ar0330_set_mode(struct ar0330_info *info, struct ar0330_mode *mode)
 			 __func__, mode->xres, mode->yres, mode->frame_length,
 			 mode->coarse_time, mode->gain);
 
-	if (mode->xres == 2304 && mode->yres == 1520) {
-		sensor_mode = AR0330_MODE_2304X1536;
-	} else if (mode->xres == 1280 && mode->yres == 720) {
-		sensor_mode = AR0330_MODE_1280X720;
-	} else if (mode->xres == 1280 && mode->yres == 960) {
-		sensor_mode = AR0330_MODE_1280X960;
-	} else if (mode->xres == 2048 && mode->yres == 1296) {
-		sensor_mode = AR0330_MODE_2048X1296;
+	if (mode->lane_config == 1) {
+		/* 1-lane settings */
+		if (mode->xres == 2304 && mode->yres == 1520) {
+			sensor_mode = AR0330_MODE_2304X1536_1LANE;
+		} else if (mode->xres == 1280 && mode->yres == 720) {
+			sensor_mode = AR0330_MODE_1280X720_1LANE;
+		} else if (mode->xres == 1280 && mode->yres == 960) {
+			sensor_mode = AR0330_MODE_1280X960_1LANE;
+		} else {
+			pr_err("%s: invalid input res to set mode %d %d %d\n",
+				 __func__, mode->xres,
+				 mode->yres, mode->lane_config);
+				return -EINVAL;
+		}
 	} else {
-		pr_err("%s: invalid resolution supplied to set mode %d %d\n",
-			 __func__, mode->xres, mode->yres);
-		return -EINVAL;
+		/* 4-lane settings */
+		if (mode->xres == 2048 && mode->yres == 1536) {
+			sensor_mode = AR0330_MODE_2048X1536;
+		} else if (mode->xres == 1280 && mode->yres == 720) {
+			sensor_mode = AR0330_MODE_1280X720;
+		} else if (mode->xres == 1280 && mode->yres == 960) {
+			sensor_mode = AR0330_MODE_1280X960;
+		} else if (mode->xres == 2048 && mode->yres == 1296) {
+			sensor_mode = AR0330_MODE_2048X1296;
+		} else if (mode->xres == 1500 && mode->yres == 1500) {
+			sensor_mode = AR0330_MODE_1500X1500;
+		} else if (mode->xres == 900 && mode->yres == 700) {
+			sensor_mode = AR0330_MODE_900X700;
+		} else if (mode->xres == 752 && mode->yres == 480) {
+			sensor_mode = AR0330_MODE_752X480;
+		} else {
+			pr_err("%s: invalid input res to set mode %d %d %d\n",
+				 __func__, mode->xres,
+				 mode->yres, mode->lane_config);
+				return -EINVAL;
+		}
 	}
 
 	/* get a list of override regs for the asking frame length, */
@@ -430,9 +766,18 @@ ar0330_set_mode(struct ar0330_info *info, struct ar0330_mode *mode)
 	ar0330_get_coarse_time_regs(reg_list + 1, mode->coarse_time);
 	ar0330_get_gain_reg(reg_list + 2, mode->gain);
 
-	err = ar0330_write_table(info,
-				mode_table[sensor_mode],
-				reg_list, 3);
+	if (mode->lane_config == 1) {
+		/* 1-lane settings */
+		err = ar0330_write_table(info,
+					mode_table_1lane[sensor_mode],
+					reg_list, 3);
+	} else {
+		/* 4-lane settings */
+		err = ar0330_write_table(info,
+					mode_table[sensor_mode],
+					reg_list, 3);
+	}
+
 	if (err)
 		return err;
 	info->mode = sensor_mode;
@@ -696,6 +1041,8 @@ static int ar0330_power_on(struct ar0330_power_rail *pw)
 	int err;
 	struct ar0330_info *info = container_of(pw, struct ar0330_info, power);
 
+	pr_debug("%s\n", __func__);
+
 	if (unlikely(WARN_ON(!pw || !pw->iovdd || !pw->avdd || !pw->dvdd)))
 		return -EFAULT;
 
@@ -740,6 +1087,7 @@ static int ar0330_power_off(struct ar0330_power_rail *pw)
 {
 	struct ar0330_info *info = container_of(pw, struct ar0330_info, power);
 
+	pr_debug("%s\n", __func__);
 	if (unlikely(WARN_ON(!pw || !pw->iovdd || !pw->avdd || !pw->dvdd)))
 		return -EFAULT;
 
@@ -862,6 +1210,7 @@ static struct ar0330_platform_data *ar0330_parse_dt(struct i2c_client *client)
 	const struct of_device_id *match;
 	int err;
 
+	pr_debug("%s\n", __func__);
 	match = of_match_device(ar0330_of_match, &client->dev);
 	if (!match) {
 		dev_err(&client->dev, "Failed to find matching dt id\n");
@@ -904,7 +1253,7 @@ ar0330_probe(struct i2c_client *client,
 	int err;
 	const char *mclk_name;
 
-	pr_err("[AR0330]: probing sensor.\n");
+	pr_info("[AR0330]: probing sensor.\n");
 
 	info = devm_kzalloc(&client->dev,
 			sizeof(struct ar0330_info), GFP_KERNEL);
@@ -921,10 +1270,13 @@ ar0330_probe(struct i2c_client *client,
 		return -ENODEV;
 	}
 
-	if (client->dev.of_node)
+	if (client->dev.of_node) {
+		pr_debug("[AR0330]: Found DT node\n");
 		info->pdata = ar0330_parse_dt(client);
-	else
+	} else {
+		pr_debug("[AR0330]: Found platform data\n");
 		info->pdata = client->dev.platform_data;
+	}
 
 	if (!info->pdata) {
 		pr_err("[AR0330]:%s:Unable to get platform data\n", __func__);
@@ -975,7 +1327,7 @@ ar0330_probe(struct i2c_client *client,
 	}
 
 	i2c_set_clientdata(client, info);
-	pr_err("[AR0330]: end of probing sensor.\n");
+	pr_info("[AR0330]: end of probing sensor.\n");
 	return 0;
 
 ar0330_probe_fail:

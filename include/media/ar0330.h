@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012-2014, NVIDIA Corporation.  All rights reserved.
+ * Copyright (c) 2012-2015, NVIDIA Corporation.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -39,6 +39,7 @@ struct ar0330_mode {
 	__u32 frame_length;
 	__u32 coarse_time;
 	__u16 gain;
+	__u16 lane_config;
 };
 
 struct ar0330_ae {
