@@ -1208,6 +1208,16 @@ ar0330_probe(struct i2c_client *client,
 	else
 		strncpy(info->devname, id->name, sizeof(info->devname) - 1);
 
+	if (gpio_is_valid(info->pdata->cam2_gpio)) {
+		err = devm_gpio_request_one(&client->dev, info->pdata->cam2_gpio,
+				GPIOF_OUT_INIT_HIGH, "pwdn");
+		if (err) {
+			dev_err(&client->dev,
+				"Error requesting pwdn gpio %d: %d\n",
+				info->pdata->cam2_gpio, err);
+		}
+	}
+
 	ar0330_power_get(info);
 
 	memcpy(&info->miscdev_info,
