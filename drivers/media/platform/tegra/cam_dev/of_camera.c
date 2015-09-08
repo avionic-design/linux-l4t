@@ -563,6 +563,67 @@ struct camera_platform_data *of_camera_create_pdata(
 }
 EXPORT_SYMBOL(of_camera_create_pdata);
 
+struct device_node *of_find_sensor_profile(const struct i2c_client *client)
+{
+	struct device_node *modules, *submod, *subdev, *prfdev;
+	u32 ph, busnum, addr;
+	int err;
+
+	modules = of_find_node_by_path("/camera-pcl/modules");
+	if (!modules) {
+		dev_err(&client->dev,
+			"Missing dt node /camera-pcl/modules\n");
+		return NULL;
+	}
+	for_each_child_of_node(modules, submod) {
+		for_each_child_of_node(submod, subdev) {
+			err = of_property_read_u32(subdev, "profile", &ph);
+			if (err)
+				goto err_next_subdev;
+
+			prfdev = of_find_node_by_phandle(ph);
+			if (!prfdev) {
+				err = -ENOENT;
+				goto err_next_subdev;
+			}
+
+			err = of_property_read_u32(prfdev, "busnum", &busnum);
+			if (err)
+				goto err_next_subdev2;
+
+			if (busnum != i2c_adapter_id(client->adapter)) {
+				of_node_put(prfdev);
+				continue;
+			}
+
+			err = of_property_read_u32(prfdev, "addr", &addr);
+			if (err)
+				goto err_next_subdev2;
+
+
+			if (addr != client->addr) {
+				of_node_put(prfdev);
+				continue;
+			}
+
+			of_node_put(subdev);
+			of_node_put(submod);
+			of_node_put(modules);
+			return prfdev;
+err_next_subdev2:
+			of_node_put(prfdev);
+err_next_subdev:
+			dev_err(&client->dev,
+				"Error parsing sensor dt for %s: %d\n",
+				subdev->name, err);
+		}
+	}
+	of_node_put(modules);
+	dev_err(&client->dev, "Can't find dt node for sensor\n");
+	return NULL;
+}
+EXPORT_SYMBOL(of_find_sensor_profile);
+
 int of_camera_init(struct camera_platform_info *info)
 {
 	cam_desc = info;

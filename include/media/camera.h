@@ -423,6 +423,7 @@ int camera_debugfs_remove(void);
 int of_camera_init(struct camera_platform_info *);
 int of_camera_get_property(struct camera_info *, unsigned long);
 struct camera_platform_data *of_camera_create_pdata(struct platform_device *);
+struct device_node *of_find_sensor_profile(const struct i2c_client *client);
 
 #endif
 
