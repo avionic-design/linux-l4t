@@ -359,6 +359,10 @@ ar0330_write_table(struct ar0330_info *info,
 			}
 		}
 
+		if (!strcmp(info->devname, "ar0330") &&
+			next->addr == 0x3040)
+			val |= 0xC000;
+
 		err = ar0330_write_reg(info, next->addr, val);
 		if (err) {
 			pr_err("%s:ar0330_write_table:%d", __func__, err);
