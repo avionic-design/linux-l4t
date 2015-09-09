@@ -122,6 +122,7 @@ struct tegra_camera_dev {
 	int				tpg_mode;
 
 	int				sof;
+
 	int				cal_done;
 };
 
