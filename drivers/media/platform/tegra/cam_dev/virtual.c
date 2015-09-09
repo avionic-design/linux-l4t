@@ -253,6 +253,8 @@ static int virtual_instance_create(struct camera_device *cdev, void *pdata)
 	for (idx = 0; idx < cdev->num_gpio; idx++)
 		cdev->gpios[idx].valid = false;
 
+	cdev->dev->of_node = of_find_sensor_profile(cdev->client);
+
 	for (idx = 0; idx < cdev->num_reg; idx++) {
 		cdev->regs[idx].vreg_name =
 			(const char *)c_info->reg_names[idx];
