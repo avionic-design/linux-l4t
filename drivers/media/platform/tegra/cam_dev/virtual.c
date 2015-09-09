@@ -227,6 +227,7 @@ static int virtual_instance_destroy(struct camera_device *cdev)
 static int virtual_instance_create(struct camera_device *cdev, void *pdata)
 {
 	struct chip_config *c_info = cdev->chip->private;
+	struct gpio_desc *gpio = NULL;
 	u32 idx;
 
 	dev_dbg(cdev->dev, "%s\n", __func__);
@@ -254,6 +255,17 @@ static int virtual_instance_create(struct camera_device *cdev, void *pdata)
 		cdev->gpios[idx].valid = false;
 
 	cdev->dev->of_node = of_find_sensor_profile(cdev->client);
+
+	if (cdev->dev->of_node) {
+		gpio = devm_gpiod_get_optional(cdev->dev, "powerseq",
+				GPIOD_OUT_LOW);
+		if (IS_ERR(gpio)) {
+			dev_err(cdev->dev, "Error getting powerseq gpio: %ld\n",
+					PTR_ERR(gpio));
+		}
+	}
+	if (!gpio)
+		dev_dbg(cdev->dev, "No powerseq gpio specified\n");
 
 	for (idx = 0; idx < cdev->num_reg; idx++) {
 		cdev->regs[idx].vreg_name =
