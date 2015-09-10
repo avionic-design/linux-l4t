@@ -847,8 +847,8 @@ static int ar0330_mclk_enable(struct ar0330_info *info)
 	err = clk_set_rate(info->mclk, mclk_init_rate);
 	if (!err) {
 		err = clk_prepare_enable(info->mclk);
-		/* Datasheet estimates 30ms settling time. */
-		usleep_range(30000, 310000);
+		/* Datasheet estimates up to 100ms settling time. */
+		usleep_range(100000, 110000);
 	}
 	return err;
 }
