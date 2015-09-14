@@ -25,7 +25,7 @@ struct tegra_usb_phy;
  * Opens the usb phy associated to the USB platform device
  * tegra usb phy open must be called before accessing any phy APIs
  */
-struct tegra_usb_phy *tegra_usb_phy_open(struct platform_device *pdev);
+struct tegra_usb_phy *tegra_usb_phy_open(struct platform_device *pdev, int instance);
 
 /**
  * Handles interrupts specific to the phy interface

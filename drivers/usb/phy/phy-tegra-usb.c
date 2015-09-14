@@ -783,7 +783,7 @@ static int tegra_usb_phy_notify_disconnect(struct usb_phy *x,
 	return 0;
 }
 
-struct tegra_usb_phy *tegra_usb_phy_open(struct platform_device *pdev)
+struct tegra_usb_phy *tegra_usb_phy_open(struct platform_device *pdev, int instance)
 {
 	struct tegra_usb_phy *phy;
 	struct tegra_usb_platform_data *pdata;
@@ -816,7 +816,7 @@ struct tegra_usb_phy *tegra_usb_phy_open(struct platform_device *pdev)
 
 	memcpy(phy->pdata, pdata, plat_data_size);
 	phy->pdev = pdev;
-	phy->inst = pdev->id;
+	phy->inst = instance;
 
 	if (phy->pdata->op_mode == TEGRA_USB_OPMODE_HOST)
 		phy->hot_plug = phy->pdata->u_data.host.hot_plug;

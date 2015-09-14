@@ -656,7 +656,7 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 	tegra->unaligned_dma_buf_supported = pdata->unaligned_dma_buf_supported;
 	tegra->has_hostpc = pdata->has_hostpc;
 
-	tegra->phy = tegra_usb_phy_open(pdev);
+	tegra->phy = tegra_usb_phy_open(pdev, instance);
 	if (IS_ERR(tegra->phy)) {
 		dev_err(&pdev->dev, "failed to open USB phy (%ld)\n", PTR_ERR(tegra->phy));
 		err = PTR_ERR(tegra->phy);

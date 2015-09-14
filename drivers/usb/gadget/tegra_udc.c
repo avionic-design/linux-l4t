@@ -2803,6 +2803,7 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 	struct tegra_udc *udc;
 	struct resource *res;
 	struct tegra_usb_platform_data *pdata;
+	int instance = pdev->id;
 	int err = -ENODEV;
 	DBG("%s(%d) BEGIN\n", __func__, __LINE__);
 
@@ -2864,7 +2865,33 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 		goto err_iounmap;
 	}
 
-	udc->phy = tegra_usb_phy_open(pdev);
+	/* The phy driver requires the instance id of the phy to be known. As
+	 * this was done via a hardcoded platform device id when old school
+	 * platform code was used we need to make sure it gets fixed in
+	 * device-tree init case.
+	 * This code relies on the base address of the usb controler which is
+	 * not a clean approach, but as it is expected that this code will
+	 * change in future l4t versions, try to keep the change minimal.
+	 */
+	if (instance < 0) {
+		switch (res->start) {
+		case TEGRA_USB_BASE:
+			instance = 0;
+			break;
+		case TEGRA_USB2_BASE:
+			instance = 1;
+			break;
+		case TEGRA_USB3_BASE:
+			instance = 2;
+			break;
+		default:
+			err = -ENODEV;
+			dev_err(&pdev->dev, "unknown usb instance\n");
+			goto err_iounmap;
+		}
+	}
+
+	udc->phy = tegra_usb_phy_open(pdev, instance);
 	if (IS_ERR(udc->phy)) {
 		dev_err(&pdev->dev, "failed to open USB phy\n");
 		err = PTR_ERR(udc->phy);
