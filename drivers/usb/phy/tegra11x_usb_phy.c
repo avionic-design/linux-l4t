@@ -938,6 +938,7 @@ static int utmi_phy_power_off(struct tegra_usb_phy *phy)
 		writel(val, base + UTMIP_PMC_WAKEUP0);
 		PHY_DBG("%s ENABLE_PMC inst = %d\n", __func__, phy->inst);
 
+		pmc->pmc_ops->powerdown_pmc_wake_detect(pmc);
 		val = readl(base + USB_SUSP_CTRL);
 		val &= ~USB_WAKE_ON_CNNT_EN_DEV;
 		writel(val, base + USB_SUSP_CTRL);
@@ -1162,10 +1163,8 @@ static int utmi_phy_power_on(struct tegra_usb_phy *phy)
 	val |= HOSTPC1_DEVLC_STS;
 	writel(val, base + HOSTPC1_DEVLC);
 
-	if (phy->pdata->op_mode == TEGRA_USB_OPMODE_DEVICE) {
-		pmc_data[phy->inst].is_xhci = phy->pdata->u_data.dev.is_xhci;
-		pmc->pmc_ops->powerup_pmc_wake_detect(pmc);
-	}
+	pmc_data[phy->inst].is_xhci = phy->pdata->u_data.dev.is_xhci;
+	pmc->pmc_ops->powerup_pmc_wake_detect(pmc);
 
 	if (!readl(base + USB_ASYNCLISTADDR))
 		_usb_phy_init(phy);
