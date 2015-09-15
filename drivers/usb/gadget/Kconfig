@@ -113,6 +113,12 @@ config USB_GADGET_STORAGE_NUM_BUFFERS
 	   a module parameter as well.
 	   If unsure, say 2.
 
+config USB_GADGET_AUTO_CONNECT
+	boolean "Enable automatic connect of gadget devices"
+	help
+	   This disables an Android specific hack which prevents automatic
+	   connection of gadget drivers on driver load/cable plug.
+
 #
 # USB Peripheral Controller Support
 #

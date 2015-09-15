@@ -341,9 +341,10 @@ static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *dri
 	 * it calls usb_gadget_connect when userspace is ready. Remove
 	 * the call to usb_gadget_connect bellow to avoid enabling the
 	 * pullup before userspace is ready.
-	 *
-	 * usb_gadget_connect(udc->gadget);
 	 */
+#ifdef CONFIG_USB_GADGET_AUTO_CONNECT
+	usb_gadget_connect(udc->gadget);
+#endif
 
 	kobject_uevent(&udc->dev.kobj, KOBJ_CHANGE);
 	return 0;
