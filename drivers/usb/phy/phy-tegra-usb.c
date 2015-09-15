@@ -371,7 +371,7 @@ int tegra_usb_phy_power_off(struct tegra_usb_phy *phy)
 	if (!phy->phy_power_on)
 		return err;
 
-	if (phy->ops && phy->ops->power_off) {
+	if (!phy->pdata->port_otg && phy->ops && phy->ops->power_off) {
 		if (phy->pdata->ops && phy->pdata->ops->pre_phy_off)
 			phy->pdata->ops->pre_phy_off();
 		err = phy->ops->power_off(phy);
