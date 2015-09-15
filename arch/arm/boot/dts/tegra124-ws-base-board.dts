@@ -140,12 +140,14 @@
 	};
 
 	/* Recovery USB */
-	usb@7d000000 {
+	tegra_ehci_0: usb@7d000000 {
 		status = "okay";
+		nvidia,port-otg;
 		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
 		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+		nvidia,id-det-type = <TEGRA_USB_PMU_ID>;
+		nvidia,id-extcon-dev-name = "as3722-extcon";
 
-		nvidia,hotplug;
 		nvidia,remote-wakeup-supported;
 		nvidia,power-off-on-suspend;
 
@@ -162,6 +164,36 @@
 
 		usb_vbus-supply = <&vdd_usb0_vbus>;
 	};
+
+	tegra_udc: udc@7d000000 {
+		status = "okay";
+		nvidia,port-otg;
+		nvidia,has-host;
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_DEVICE>;
+		nvidia,id-det-type = <TEGRA_USB_PMU_ID>;
+		nvidia,id-extcon-dev-name = "as3722-extcon";
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+
+		usb_vbus-supply = <&vdd_usb0_vbus>;
+	};
+
+	otg@7d000000 {
+		status = "okay";
+		nvidia,ehci-device = <&tegra_ehci_0>;
+
+		usb_vbus-supply = <&vdd_usb0_vbus>;
+	};
+
 
 	/* USB1 */
 	usb@7d004000 {
