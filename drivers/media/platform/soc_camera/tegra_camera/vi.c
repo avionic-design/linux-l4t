@@ -689,7 +689,7 @@ static int vi_capture_output_channel_setup(
 		output_format = 0x6; /* YUV420 planar */
 		break;
 	case V4L2_PIX_FMT_SBGGR8:
-	case V4L2_PIX_FMT_SGBRG8:
+	case V4L2_PIX_FMT_SRGGB8:
 	case V4L2_PIX_FMT_SBGGR10:
 		/* Use second output channel for RAW8/RAW10 */
 		buf->output_channel = 1;
@@ -803,7 +803,7 @@ static int vi_capture_setup(struct tegra_camera_dev *cam)
 		hdr = 30;
 		break;
 	case V4L2_MBUS_FMT_SBGGR8_1X8:
-	case V4L2_MBUS_FMT_SGBRG8_1X8:
+	case V4L2_MBUS_FMT_SRGGB8_1X8:
 		input_control |= 0x2 << 2;	/* Input Format = Bayer */
 		hdr = 42;
 		break;
@@ -862,7 +862,7 @@ static int vi_capture_buffer_setup(struct tegra_camera_dev *cam,
 	case V4L2_PIX_FMT_YUYV:
 	case V4L2_PIX_FMT_YVYU:
 	case V4L2_PIX_FMT_SBGGR8:
-	case V4L2_PIX_FMT_SGBRG8:
+	case V4L2_PIX_FMT_SRGGB8:
 	case V4L2_PIX_FMT_SBGGR10:
 	case V4L2_PIX_FMT_RGB32:
 		/* output 1 */
