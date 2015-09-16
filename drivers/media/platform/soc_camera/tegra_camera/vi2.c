@@ -581,6 +581,12 @@ static int vi2_capture_get_format(struct tegra_camera_dev *cam,
 	if (cam->tpg_mode) {
 		*data_type = TEGRA_IMAGE_DT_RGB888;
 		*image_size = icd->user_width * 3;
+	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_UYVY8_2X8) ||
+		   (icd->current_fmt->code == V4L2_MBUS_FMT_VYUY8_2X8) ||
+		   (icd->current_fmt->code == V4L2_MBUS_FMT_YUYV8_2X8) ||
+		   (icd->current_fmt->code == V4L2_MBUS_FMT_YVYU8_2X8)) {
+		*data_type = TEGRA_IMAGE_DT_YUV422_8;
+		*image_size = icd->user_width * 2;
 	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_SBGGR8_1X8) ||
 		   (icd->current_fmt->code == V4L2_MBUS_FMT_SGBRG8_1X8)) {
 		*data_type = TEGRA_IMAGE_DT_RAW8;
@@ -594,6 +600,21 @@ static int vi2_capture_get_format(struct tegra_camera_dev *cam,
 	}
 
 	switch (icd->current_fmt->host_fmt->fourcc) {
+	case V4L2_PIX_FMT_UYVY:
+		*format = TEGRA_IMAGE_FORMAT_T_U8_Y8__V8_Y8;
+		break;
+	case V4L2_PIX_FMT_VYUY:
+		*format = TEGRA_IMAGE_FORMAT_T_V8_Y8__U8_Y8;
+		break;
+	case V4L2_PIX_FMT_YUYV:
+		*format = TEGRA_IMAGE_FORMAT_T_Y8_U8__Y8_V8;
+		break;
+	case V4L2_PIX_FMT_YVYU:
+		*format = TEGRA_IMAGE_FORMAT_T_Y8_V8__Y8_U8;
+		break;
+	case V4L2_PIX_FMT_GREY:
+		*format = TEGRA_IMAGE_FORMAT_T_L8;
+		break;
 	case V4L2_PIX_FMT_SBGGR8:
 	case V4L2_PIX_FMT_SRGGB8:
 		*format = TEGRA_IMAGE_FORMAT_T_L8;
