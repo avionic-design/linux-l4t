@@ -574,6 +574,44 @@ static void vi2_capture_clean(struct tegra_camera_dev *cam)
 	TC_VI_REG_WT(cam, TEGRA_VI_CSI_1_ERROR_STATUS, 0xFFFFFFFF);
 }
 
+static int vi2_capture_get_format(struct tegra_camera_dev *cam,
+				struct soc_camera_device *icd,
+				int *format, int *data_type, int *image_size)
+{
+	if (cam->tpg_mode) {
+		*data_type = TEGRA_IMAGE_DT_RGB888;
+		*image_size = icd->user_width * 3;
+	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_SBGGR8_1X8) ||
+		   (icd->current_fmt->code == V4L2_MBUS_FMT_SGBRG8_1X8)) {
+		*data_type = TEGRA_IMAGE_DT_RAW8;
+		*image_size = icd->user_width;
+	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_SBGGR10_1X10) ||
+		   (icd->current_fmt->code == V4L2_MBUS_FMT_SRGGB10_1X10)) {
+		*data_type = TEGRA_IMAGE_DT_RAW10;
+		*image_size = (icd->user_width * 10) >> 3;
+	} else {
+		return -EINVAL;
+	}
+
+	switch (icd->current_fmt->host_fmt->fourcc) {
+	case V4L2_PIX_FMT_SBGGR8:
+	case V4L2_PIX_FMT_SRGGB8:
+		*format = TEGRA_IMAGE_FORMAT_T_L8;
+		break;
+	case V4L2_PIX_FMT_SBGGR10:
+	case V4L2_PIX_FMT_SRGGB10:
+		*format = TEGRA_IMAGE_FORMAT_T_R16_I;
+		break;
+	case V4L2_PIX_FMT_RGB32:
+		*format = TEGRA_IMAGE_FORMAT_T_A8B8G8R8;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int vi2_capture_setup_csi_0(struct tegra_camera_dev *cam,
 				    struct soc_camera_device *icd)
 {
@@ -581,6 +619,7 @@ static int vi2_capture_setup_csi_0(struct tegra_camera_dev *cam,
 	struct tegra_camera_platform_data *pdata = ssdesc->drv_priv;
 	int format = 0, data_type = 0, image_size = 0;
 	u32 val;
+	int err;
 
 	/*
 	 * PAD_CILA_PDVCLAMP 0, PAD_CILA_PDIO_CLK 0,
@@ -631,26 +670,12 @@ static int vi2_capture_setup_csi_0(struct tegra_camera_dev *cam,
 		TC_VI_REG_WT(cam, TEGRA_CSI_PG_BLUE_FREQ_A, 0x100010);
 		TC_VI_REG_WT(cam, TEGRA_CSI_PG_BLUE_FREQ_RATE_A, 0x0);
 		TC_VI_REG_WT(cam, TEGRA_CSI_PHY_CIL_COMMAND, 0x22020202);
-
-		format = TEGRA_IMAGE_FORMAT_T_A8B8G8R8;
-		data_type = TEGRA_IMAGE_DT_RGB888;
-		image_size = icd->user_width * 3;
-	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_UYVY8_2X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_VYUY8_2X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_YUYV8_2X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_YVYU8_2X8)) {
-		/* TBD */
-	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_SBGGR8_1X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_SGBRG8_1X8)) {
-		format = TEGRA_IMAGE_FORMAT_T_L8;
-		data_type = TEGRA_IMAGE_DT_RAW8;
-		image_size = icd->user_width;
-	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_SBGGR10_1X10) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_SRGGB10_1X10)) {
-		format = TEGRA_IMAGE_FORMAT_T_R16_I;
-		data_type = TEGRA_IMAGE_DT_RAW10;
-		image_size = (icd->user_width * 10) >> 3;
 	}
+
+	err = vi2_capture_get_format(cam, icd, &format,
+				&data_type, &image_size);
+	if (err)
+		return err;
 
 	TC_VI_REG_WT(cam, TEGRA_VI_CSI_0_IMAGE_DEF, (format << 16) | 0x1);
 
@@ -671,6 +696,7 @@ static int vi2_capture_setup_csi_1(struct tegra_camera_dev *cam,
 	struct tegra_camera_platform_data *pdata = ssdesc->drv_priv;
 	int format = 0, data_type = 0, image_size = 0;
 	u32 val;
+	int err;
 
 	/*
 	 * PAD_CILC_PDVCLAMP 0, PAD_CILC_PDIO_CLK 0,
@@ -733,26 +759,12 @@ static int vi2_capture_setup_csi_1(struct tegra_camera_dev *cam,
 		TC_VI_REG_WT(cam, TEGRA_CSI_PG_BLUE_FREQ_B, 0x100010);
 		TC_VI_REG_WT(cam, TEGRA_CSI_PG_BLUE_FREQ_RATE_B, 0x0);
 		TC_VI_REG_WT(cam, TEGRA_CSI_PHY_CIL_COMMAND, 0x22020202);
-
-		format = TEGRA_IMAGE_FORMAT_T_A8B8G8R8;
-		data_type = TEGRA_IMAGE_DT_RGB888;
-		image_size = icd->user_width * 3;
-	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_UYVY8_2X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_VYUY8_2X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_YUYV8_2X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_YVYU8_2X8)) {
-		/* TBD */
-	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_SBGGR8_1X8) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_SGBRG8_1X8)) {
-		format = TEGRA_IMAGE_FORMAT_T_L8;
-		data_type = TEGRA_IMAGE_DT_RAW8;
-		image_size = icd->user_width;
-	} else if ((icd->current_fmt->code == V4L2_MBUS_FMT_SBGGR10_1X10) ||
-		   (icd->current_fmt->code == V4L2_MBUS_FMT_SRGGB10_1X10)) {
-		format = TEGRA_IMAGE_FORMAT_T_R16_I;
-		data_type = TEGRA_IMAGE_DT_RAW10;
-		image_size = icd->user_width * 10 / 8;
 	}
+
+	err = vi2_capture_get_format(cam, icd, &format,
+				&data_type, &image_size);
+	if (err)
+		return err;
 
 	TC_VI_REG_WT(cam, TEGRA_VI_CSI_1_IMAGE_DEF, (format << 16) | 0x1);
 
