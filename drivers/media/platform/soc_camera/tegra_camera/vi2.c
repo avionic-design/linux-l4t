@@ -642,6 +642,9 @@ static int vi2_capture_setup_csi_0(struct tegra_camera_dev *cam,
 	u32 val;
 	int err;
 
+	/* Allow bad frames */
+	TC_VI_REG_WT(cam, TEGRA_VI_CSI_0_SINGLE_SHOT_STATE_UPDATE, 0);
+
 	/*
 	 * PAD_CILA_PDVCLAMP 0, PAD_CILA_PDIO_CLK 0,
 	 * PAD_CILA_PDIO 0, PAD_AB_BK_MODE 1
@@ -718,6 +721,9 @@ static int vi2_capture_setup_csi_1(struct tegra_camera_dev *cam,
 	int format = 0, data_type = 0, image_size = 0;
 	u32 val;
 	int err;
+
+	/* Allow bad frames */
+	TC_VI_REG_WT(cam, TEGRA_VI_CSI_1_SINGLE_SHOT_STATE_UPDATE, 0);
 
 	/*
 	 * PAD_CILC_PDVCLAMP 0, PAD_CILC_PDIO_CLK 0,
