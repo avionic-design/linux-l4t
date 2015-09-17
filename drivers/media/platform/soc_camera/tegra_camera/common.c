@@ -683,6 +683,7 @@ static int tegra_camera_get_formats(struct soc_camera_device *icd,
 		num_formats = ARRAY_SIZE(tegra_camera_bayer_formats);
 		break;
 	case V4L2_MBUS_FMT_RGBA8888_4X8_LE:
+	case V4L2_MBUS_FMT_RGB888_1X24:
 		formats = tegra_camera_rgb_formats;
 		num_formats = ARRAY_SIZE(tegra_camera_rgb_formats);
 		break;

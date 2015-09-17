@@ -595,6 +595,9 @@ static int vi2_capture_get_format(struct tegra_camera_dev *cam,
 		   (icd->current_fmt->code == V4L2_MBUS_FMT_SRGGB10_1X10)) {
 		*data_type = TEGRA_IMAGE_DT_RAW10;
 		*image_size = (icd->user_width * 10) >> 3;
+	} else if (icd->current_fmt->code == V4L2_MBUS_FMT_RGB888_1X24) {
+		*data_type = TEGRA_IMAGE_DT_RGB888;
+		*image_size = icd->user_width * 3;
 	} else {
 		return -EINVAL;
 	}
