@@ -91,6 +91,17 @@ struct stk1160_buffer *stk1160_next_buffer(struct stk1160 *dev)
 	return buf;
 }
 
+#ifdef STK1160_BACKPORT
+static void v4l2_get_timestamp(struct timeval *tv)
+{
+	struct timespec ts;
+
+	ktime_get_ts(&ts);
+	tv->tv_sec = ts.tv_sec;
+	tv->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
+}
+#endif
+
 static inline
 void stk1160_buffer_done(struct stk1160 *dev)
 {

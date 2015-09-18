@@ -98,8 +98,13 @@ int stk1160_ac97_register(struct stk1160 *dev)
 	 * Just want a card to access ac96 controls,
 	 * the actual capture interface will be handled by snd-usb-audio
 	 */
+#ifdef STK1160_BACKPORT
+	rc = snd_card_create(SNDRV_DEFAULT_IDX1, SNDRV_DEFAULT_STR1,
+			  THIS_MODULE, 0, &card);
+#else
 	rc = snd_card_new(dev->dev, SNDRV_DEFAULT_IDX1, SNDRV_DEFAULT_STR1,
 			  THIS_MODULE, 0, &card);
+#endif
 	if (rc < 0)
 		return rc;
 

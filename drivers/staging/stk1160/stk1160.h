@@ -27,6 +27,8 @@
 #include <media/v4l2-device.h>
 #include <media/v4l2-ctrls.h>
 
+#define STK1160_BACKPORT
+
 #define STK1160_VERSION		"0.9.5"
 #define STK1160_VERSION_NUM	0x000905
 

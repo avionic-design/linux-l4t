@@ -162,8 +162,10 @@ static int stk1160_start_streaming(struct stk1160 *dev)
 	if (!dev->udev)
 		return -ENODEV;
 
+#ifndef STK1160_BACKPORT
 	if (mutex_lock_interruptible(&dev->v4l_lock))
 		return -ERESTARTSYS;
+#endif
 	/*
 	 * For some reason it is mandatory to set alternate *first*
 	 * and only *then* initialize isoc urbs.
@@ -200,7 +202,9 @@ static int stk1160_start_streaming(struct stk1160 *dev)
 
 	stk1160_dbg("streaming started\n");
 
+#ifndef STK1160_BACKPORT
 	mutex_unlock(&dev->v4l_lock);
+#endif
 
 	return 0;
 
@@ -210,7 +214,9 @@ out_stop_hw:
 	usb_set_interface(dev->udev, 0, 0);
 	stk1160_clear_queue(dev);
 
+#ifndef STK1160_BACKPORT
 	mutex_unlock(&dev->v4l_lock);
+#endif
 
 	return rc;
 }
@@ -237,8 +243,10 @@ static void stk1160_stop_hw(struct stk1160 *dev)
 
 static int stk1160_stop_streaming(struct stk1160 *dev)
 {
+#ifndef STK1160_BACKPORT
 	if (mutex_lock_interruptible(&dev->v4l_lock))
 		return -ERESTARTSYS;
+#endif
 
 	/*
 	 * Once URBs are cancelled, the URB complete handler
@@ -260,10 +268,46 @@ static int stk1160_stop_streaming(struct stk1160 *dev)
 
 	stk1160_dbg("streaming stopped\n");
 
+#ifndef STK1160_BACKPORT
 	mutex_unlock(&dev->v4l_lock);
+#endif
 
 	return 0;
 }
+
+#ifdef STK1160_BACKPORT
+int vb2_fop_release(struct file *file)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	if (v4l2_fh_is_singular_file(file))
+		vb2_queue_release(&dev->vb_vidq);
+	return v4l2_fh_release(file);
+}
+
+ssize_t vb2_fop_read(struct file *file, char __user *buf, size_t count,
+		loff_t *ppos)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_read(&dev->vb_vidq, buf, count, ppos,
+			file->f_flags & O_NONBLOCK);
+}
+
+unsigned int vb2_fop_poll(struct file *file, poll_table *wait)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_poll(&dev->vb_vidq, file, wait);
+}
+
+int vb2_fop_mmap(struct file *file, struct vm_area_struct *vma)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_mmap(&dev->vb_vidq, vma);
+}
+#endif
 
 static struct v4l2_file_operations stk1160_fops = {
 	.owner = THIS_MODULE,
@@ -286,11 +330,16 @@ static int vidioc_querycap(struct file *file,
 	strcpy(cap->driver, "stk1160");
 	strcpy(cap->card, "stk1160");
 	usb_make_path(dev->udev, cap->bus_info, sizeof(cap->bus_info));
+#ifdef STK1160_BACKPORT
+	cap->capabilities = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING |
+			V4L2_CAP_READWRITE;
+#else
 	cap->device_caps =
 		V4L2_CAP_VIDEO_CAPTURE |
 		V4L2_CAP_STREAMING |
 		V4L2_CAP_READWRITE;
 	cap->capabilities = cap->device_caps | V4L2_CAP_DEVICE_CAPS;
+#endif
 	return 0;
 }
 
@@ -375,13 +424,22 @@ static int vidioc_g_std(struct file *file, void *priv, v4l2_std_id *norm)
 	return 0;
 }
 
+#ifdef STK1160_BACKPORT
+static int vidioc_s_std(struct file *file, void *priv, v4l2_std_id *norm)
+#else
 static int vidioc_s_std(struct file *file, void *priv, v4l2_std_id norm)
+#endif
 {
 	struct stk1160 *dev = video_drvdata(file);
 	struct vb2_queue *q = &dev->vb_vidq;
 
+#ifdef STK1160_BACKPORT
+	if (dev->norm == *norm)
+		return 0;
+#else
 	if (dev->norm == norm)
 		return 0;
+#endif
 
 	if (vb2_is_busy(q))
 		return -EBUSY;
@@ -391,7 +449,11 @@ static int vidioc_s_std(struct file *file, void *priv, v4l2_std_id norm)
 		return -ENODEV;
 
 	/* We need to set this now, before we call stk1160_set_std */
+#ifdef STK1160_BACKPORT
+	dev->norm = *norm;
+#else
 	dev->norm = norm;
+#endif
 
 	/* This is taken from saa7115 video decoder */
 	if (dev->norm & V4L2_STD_525_60) {
@@ -407,8 +469,12 @@ static int vidioc_s_std(struct file *file, void *priv, v4l2_std_id norm)
 
 	stk1160_set_std(dev);
 
+#ifdef STK1160_BACKPORT
+	v4l2_device_call_all(&dev->v4l2_dev, 0, core, s_std, dev->norm);
+#else
 	v4l2_device_call_all(&dev->v4l2_dev, 0, video, s_std,
 			dev->norm);
+#endif
 
 	return 0;
 }
@@ -455,8 +521,13 @@ static int vidioc_s_input(struct file *file, void *priv, unsigned int i)
 }
 
 #ifdef CONFIG_VIDEO_ADV_DEBUG
+#ifdef STK1160_BACKPORT
+static int vidioc_g_register(struct file *file, void *priv,
+		struct v4l2_dbg_register *reg)
+#else
 static int vidioc_g_register(struct file *file, void *priv,
 			     const struct v4l2_dbg_register *reg)
+#endif
 {
 	struct stk1160 *dev = video_drvdata(file);
 	int rc;
@@ -470,13 +541,82 @@ static int vidioc_g_register(struct file *file, void *priv,
 	return rc;
 }
 
+#ifdef STK1160_BACKPORT
+static int vidioc_s_register(struct file *file, void *priv,
+		struct v4l2_dbg_register *reg)
+#else
 static int vidioc_s_register(struct file *file, void *priv,
 			     const struct v4l2_dbg_register *reg)
+#endif
 {
 	struct stk1160 *dev = video_drvdata(file);
 
 	/* Match host */
 	return stk1160_write_reg(dev, reg->reg, reg->val);
+}
+#endif
+
+#ifdef STK1160_BACKPORT
+static int vb2_ioctl_reqbufs(struct file *file, void *priv,
+		struct v4l2_requestbuffers *p)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_reqbufs(&dev->vb_vidq, p);
+}
+
+static int vb2_ioctl_querybuf(struct file *file, void *priv,
+		struct v4l2_buffer *p)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_querybuf(&dev->vb_vidq, p);
+}
+
+static int vb2_ioctl_qbuf(struct file *file, void *priv, struct v4l2_buffer *p)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_qbuf(&dev->vb_vidq, p);
+}
+
+static int vb2_ioctl_dqbuf(struct file *file, void *priv, struct v4l2_buffer *p)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_dqbuf(&dev->vb_vidq, p, file->f_flags & O_NONBLOCK);
+}
+
+static int vb2_ioctl_streamon(struct file *file, void *priv,
+		enum v4l2_buf_type type)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_streamon(&dev->vb_vidq, type);
+}
+
+static int vb2_ioctl_streamoff(struct file *file, void *priv,
+		enum v4l2_buf_type type)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	return vb2_streamoff(&dev->vb_vidq, type);
+}
+
+static int v4l2_ctrl_log_status(struct file *file, void *priv)
+{
+	struct stk1160 *dev = video_drvdata(file);
+
+	v4l2_ctrl_handler_log_status(&dev->ctrl_handler, dev->v4l2_dev.name);
+	return 0;
+}
+
+static int v4l2_ctrl_subscribe_event(struct v4l2_fh *fh,
+		struct v4l2_event_subscription *sub)
+{
+	if (sub->type == V4L2_EVENT_CTRL)
+		return v4l2_event_subscribe(fh, sub, 0);
+	return -EINVAL;
 }
 #endif
 
@@ -516,9 +656,15 @@ static const struct v4l2_ioctl_ops stk1160_ioctl_ops = {
 /*
  * Videobuf2 operations
  */
+#ifdef STK1160_BACKPORT
+static int queue_setup(struct vb2_queue *vq, unsigned int *nbuffers,
+		unsigned int *nplanes, unsigned long sizes[],
+		void *alloc_ctxs[])
+#else
 static int queue_setup(struct vb2_queue *vq, const struct v4l2_format *v4l_fmt,
 				unsigned int *nbuffers, unsigned int *nplanes,
 				unsigned int sizes[], void *alloc_ctxs[])
+#endif
 {
 	struct stk1160 *dev = vb2_get_drv_priv(vq);
 	unsigned long size;
@@ -577,18 +723,45 @@ static void buffer_queue(struct vb2_buffer *vb)
 	spin_unlock_irqrestore(&dev->buf_lock, flags);
 }
 
+#ifdef STK1160_BACKPORT
+static int start_streaming(struct vb2_queue *vq)
+#else
 static int start_streaming(struct vb2_queue *vq, unsigned int count)
+#endif
 {
 	struct stk1160 *dev = vb2_get_drv_priv(vq);
 	return stk1160_start_streaming(dev);
 }
 
 /* abort streaming and wait for last buffer */
+#ifdef STK1160_BACKPORT
+static int stop_streaming(struct vb2_queue *vq)
+#else
 static void stop_streaming(struct vb2_queue *vq)
+#endif
 {
 	struct stk1160 *dev = vb2_get_drv_priv(vq);
 	stk1160_stop_streaming(dev);
+#ifdef STK1160_BACKPORT
+	return 0;
+#endif
 }
+
+#ifdef STK1160_BACKPORT
+void vb2_ops_wait_prepare(struct vb2_queue *vq)
+{
+	struct stk1160 *dev = vb2_get_drv_priv(vq);
+
+	mutex_unlock(&dev->v4l_lock);
+}
+
+void vb2_ops_wait_finish(struct vb2_queue *vq)
+{
+	struct stk1160 *dev = vb2_get_drv_priv(vq);
+
+	mutex_lock(&dev->v4l_lock);
+}
+#endif
 
 static struct vb2_ops stk1160_video_qops = {
 	.queue_setup		= queue_setup,
@@ -650,7 +823,9 @@ int stk1160_vb2_setup(struct stk1160 *dev)
 	q->buf_struct_size = sizeof(struct stk1160_buffer);
 	q->ops = &stk1160_video_qops;
 	q->mem_ops = &vb2_vmalloc_memops;
+#ifndef STK1160_BACKPORT
 	q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
+#endif
 
 	rc = vb2_queue_init(q);
 	if (rc < 0)
@@ -668,14 +843,18 @@ int stk1160_video_register(struct stk1160 *dev)
 
 	/* Initialize video_device with a template structure */
 	dev->vdev = v4l_template;
+#ifndef STK1160_BACKPORT
 	dev->vdev.queue = &dev->vb_vidq;
+#endif
 
 	/*
 	 * Provide mutexes for v4l2 core and for videobuf2 queue.
 	 * It will be used to protect *only* v4l2 ioctls.
 	 */
 	dev->vdev.lock = &dev->v4l_lock;
+#ifndef STK1160_BACKPORT
 	dev->vdev.queue->lock = &dev->vb_queue_lock;
+#endif
 
 	/* This will be used to set video_device parent */
 	dev->vdev.v4l2_dev = &dev->v4l2_dev;
@@ -689,8 +868,12 @@ int stk1160_video_register(struct stk1160 *dev)
 	dev->fmt = &format[0];
 	stk1160_set_std(dev);
 
+#ifdef STK1160_BACKPORT
+	v4l2_device_call_all(&dev->v4l2_dev, 0, core, s_std, dev->norm);
+#else
 	v4l2_device_call_all(&dev->v4l2_dev, 0, video, s_std,
 			dev->norm);
+#endif
 
 	video_set_drvdata(&dev->vdev, dev);
 	rc = video_register_device(&dev->vdev, VFL_TYPE_GRABBER, -1);
