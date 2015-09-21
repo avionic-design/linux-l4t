@@ -685,6 +685,8 @@ static int ar0330_power_on(struct ar0330_power_rail *pw)
 	if (unlikely(WARN_ON(!pw || !pw->iovdd || !pw->avdd || !pw->dvdd)))
 		return -EFAULT;
 
+	gpio_set_value(info->pdata->cam2_gpio, 1);
+
 	err = regulator_enable(pw->avdd);
 	if (err)
 		goto ar0330_avdd_fail;
@@ -715,18 +717,23 @@ ar0330_dvdd_fail:
 	regulator_disable(pw->avdd);
 
 ar0330_avdd_fail:
+	gpio_set_value(info->pdata->cam2_gpio, 0);
 	pr_err("%s failed.\n", __func__);
 	return -ENODEV;
 }
 
 static int ar0330_power_off(struct ar0330_power_rail *pw)
 {
+	struct ar0330_info *info = container_of(pw, struct ar0330_info, power);
+
 	if (unlikely(WARN_ON(!pw || !pw->iovdd || !pw->avdd || !pw->dvdd)))
 		return -EFAULT;
 
 	regulator_disable(pw->iovdd);
 	regulator_disable(pw->dvdd);
 	regulator_disable(pw->avdd);
+
+	gpio_set_value(info->pdata->cam2_gpio, 0);
 
 	return 0;
 }
