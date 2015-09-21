@@ -1542,7 +1542,13 @@ static int snd_ac97_mixer_build(struct snd_ac97 * ac97)
 		if ((err = snd_ctl_add(card, kctl = snd_ac97_cnew(&snd_ac97_control_capture_vol, ac97))) < 0)
 			return err;
 		set_tlv_db_scale(kctl, db_scale_rec_gain);
-		snd_ac97_write_cache(ac97, AC97_REC_SEL, 0x0000);
+		/*
+		 * Hack for stk1160, which only hase line in.
+		 */
+		if (ac97->scaps & AC97_SCAP_REC_SEL_LINE)
+			snd_ac97_write_cache(ac97, AC97_REC_SEL, 0x0404);
+		else
+			snd_ac97_write_cache(ac97, AC97_REC_SEL, 0x0000);
 		snd_ac97_write_cache(ac97, AC97_REC_GAIN, 0x0000);
 	}
 	/* build MIC Capture controls */

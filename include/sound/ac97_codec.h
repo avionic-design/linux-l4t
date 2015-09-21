@@ -386,6 +386,8 @@
 #define AC97_SCAP_NO_SPDIF	(1<<9)	/* don't build SPDIF controls */
 #define AC97_SCAP_EAPD_LED	(1<<10)	/* EAPD as mute LED */
 #define AC97_SCAP_POWER_SAVE	(1<<11)	/* capable for aggressive power-saving */
+/* Hack for stk1160, which only has line in */
+#define AC97_SCAP_REC_SEL_LINE	(1<<12)	/* Set line-in as default rec selection */
 
 /* ac97->flags */
 #define AC97_HAS_PC_BEEP	(1<<0)	/* force PC Speaker usage */
