@@ -122,7 +122,7 @@ int stk1160_ac97_register(struct stk1160 *dev)
 	/* We must set private_data before calling snd_ac97_mixer */
 	memset(&ac97_template, 0, sizeof(ac97_template));
 	ac97_template.private_data = dev;
-	ac97_template.scaps = AC97_SCAP_SKIP_MODEM;
+	ac97_template.scaps = AC97_SCAP_SKIP_MODEM | AC97_SCAP_REC_SEL_LINE;
 	rc = snd_ac97_mixer(ac97_bus, &ac97_template, &stk1160_ac97);
 	if (rc)
 		goto err;
