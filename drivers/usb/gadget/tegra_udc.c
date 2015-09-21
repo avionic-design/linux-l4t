@@ -2972,10 +2972,6 @@ static int tegra_udc_probe(struct platform_device *pdev)
 		goto err_phy;
 	}
 
-	err = usb_add_gadget_udc_release(&pdev->dev, &udc->gadget,
-		tegra_udc_release);
-	if (err)
-		goto err_del_udc;
 #ifdef CONFIG_TEGRA_GADGET_BOOST_CPU_FREQ
 	boost_cpufreq_work_flag = 1;
 	ep_queue_request_count = 0;
@@ -3054,6 +3050,11 @@ static int tegra_udc_probe(struct platform_device *pdev)
 		ERR("cannot request irq %d err %d\n", udc->irq, err);
 		goto err_del_udc;
 	}
+
+	err = usb_add_gadget_udc_release(&pdev->dev, &udc->gadget,
+		tegra_udc_release);
+	if (err)
+		goto err_del_udc;
 
 	DBG("%s(%d) END\n", __func__, __LINE__);
 	return 0;
