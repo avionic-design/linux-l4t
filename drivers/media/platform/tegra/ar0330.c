@@ -580,6 +580,7 @@ ar0330_ioctl(struct file *file,
 	int err = 0;
 	struct ar0330_info *info = file->private_data;
 
+	mutex_lock(&info->ar0330_camera_lock);
 	switch (cmd) {
 	case AR0330_IOCTL_SET_POWER:
 		if (!info->pdata)
@@ -602,28 +603,33 @@ ar0330_ioctl(struct file *file,
 		if (copy_from_user(&mode, (const void __user *)arg,
 			sizeof(struct ar0330_mode))) {
 			pr_err("%s:Failed to get mode from user.\n", __func__);
-			return -EFAULT;
+			err = -EFAULT;
+			goto out;
 		}
-		return ar0330_set_mode(info, &mode);
+		err = ar0330_set_mode(info, &mode);
+		break;
 	}
 	case AR0330_IOCTL_SET_FRAME_LENGTH:
-		return ar0330_set_frame_length(info, (u32)arg, true);
+		err = ar0330_set_frame_length(info, (u32)arg, true);
+		break;
 	case AR0330_IOCTL_SET_COARSE_TIME:
-		return ar0330_set_coarse_time(info, (u32)arg, true);
+		err = ar0330_set_coarse_time(info, (u32)arg, true);
+		break;
 	case AR0330_IOCTL_SET_GAIN:
-		return ar0330_set_gain(info, (u16)arg, true);
+		err = ar0330_set_gain(info, (u16)arg, true);
+		break;
 	case AR0330_IOCTL_GET_STATUS:
 	{
 		u8 status;
 
 		err = ar0330_get_status(info, &status);
 		if (err)
-			return err;
+			goto out;
 		if (copy_to_user((void __user *)arg, &status, 1)) {
 			pr_err("%s:Failed to copy status to user\n", __func__);
-			return -EFAULT;
+			err = -EFAULT;
 		}
-		return 0;
+		break;
 	}
 	case AR0330_IOCTL_GET_SENSORDATA:
 	{
@@ -631,15 +637,15 @@ ar0330_ioctl(struct file *file,
 
 		if (err) {
 			pr_err("%s:Failed to get fuse id info.\n", __func__);
-			return err;
+			goto out;
 		}
 		if (copy_to_user((void __user *)arg, &info->sensor_data,
 				sizeof(struct ar0330_sensordata))) {
 			pr_info("%s:Failed to copy fuse id to user space\n",
 				__func__);
-			return -EFAULT;
+			err = -EFAULT;
 		}
-		return 0;
+		break;
 	}
 	case AR0330_IOCTL_SET_GROUP_HOLD:
 	{
@@ -647,9 +653,11 @@ ar0330_ioctl(struct file *file,
 		if (copy_from_user(&ae, (const void __user *)arg,
 			sizeof(struct ar0330_ae))) {
 			pr_info("%s:fail group hold\n", __func__);
-			return -EFAULT;
+			err = -EFAULT;
+			goto out;
 		}
-		return ar0330_set_group_hold(info, &ae);
+		err = ar0330_set_group_hold(info, &ae);
+		break;
 	}
 	case AR0330_IOCTL_SET_FLASH_MODE:
 	{
@@ -674,6 +682,8 @@ ar0330_ioctl(struct file *file,
 		err = -EINVAL;
 	}
 
+out:
+	mutex_unlock(&info->ar0330_camera_lock);
 	return err;
 }
 
@@ -899,6 +909,7 @@ ar0330_probe(struct i2c_client *client,
 		return -ENOMEM;
 	}
 
+	mutex_init(&info->ar0330_camera_lock);
 	info->regmap = devm_regmap_init_i2c(client, &sensor_regmap_config);
 	if (IS_ERR(info->regmap)) {
 		dev_err(&client->dev,
@@ -960,8 +971,6 @@ ar0330_probe(struct i2c_client *client,
 	}
 
 	i2c_set_clientdata(client, info);
-
-	mutex_init(&info->ar0330_camera_lock);
 	pr_err("[AR0330]: end of probing sensor.\n");
 	return 0;
 
