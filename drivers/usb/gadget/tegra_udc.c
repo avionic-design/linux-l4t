@@ -2727,7 +2727,7 @@ static int tegra_udc_setup_qh(struct tegra_udc *udc)
  * ep0out is not used so do nothing here
  * ep0in should be taken care
  */
-static int __init struct_ep_setup(struct tegra_udc *udc, unsigned char index,
+static int struct_ep_setup(struct tegra_udc *udc, unsigned char index,
 		char *name, int link)
 {
 	struct tegra_ep *ep = &udc->eps[index];
@@ -2798,7 +2798,7 @@ static int tegra_udc_ep_setup(struct tegra_udc *udc)
  * all intialization operations implemented here except enabling usb_intr reg
  * board setup should have been done in the platform code
  */
-static int __init tegra_udc_probe(struct platform_device *pdev)
+static int tegra_udc_probe(struct platform_device *pdev)
 {
 	struct tegra_udc *udc;
 	struct resource *res;
@@ -3059,7 +3059,7 @@ err_kfree:
 /* Driver removal function
  * Free resources and finish pending transactions
  */
-static int __exit tegra_udc_remove(struct platform_device *pdev)
+static int tegra_udc_remove(struct platform_device *pdev)
 {
 	struct tegra_udc *udc = platform_get_drvdata(pdev);
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -3221,7 +3221,7 @@ static int tegra_udc_resume(struct platform_device *pdev)
 
 static struct platform_driver tegra_udc_driver = {
 	.probe   = tegra_udc_probe,
-	.remove  = __exit_p(tegra_udc_remove),
+	.remove  = tegra_udc_remove,
 	.suspend = tegra_udc_suspend,
 	.resume  = tegra_udc_resume,
 	.driver  = {
