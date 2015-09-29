@@ -174,4 +174,8 @@
 		};
 
 	};
+
+	pwm-fan {
+		status = "okay";
+	};
 };
