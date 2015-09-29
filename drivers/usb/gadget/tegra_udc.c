@@ -2806,8 +2806,6 @@ static int __init tegra_udc_probe(struct platform_device *pdev)
 	int err = -ENODEV;
 	DBG("%s(%d) BEGIN\n", __func__, __LINE__);
 
-	}
-
 	the_udc = udc = kzalloc(sizeof(struct tegra_udc), GFP_KERNEL);
 	if (udc == NULL) {
 		ERR("malloc udc failed\n");
