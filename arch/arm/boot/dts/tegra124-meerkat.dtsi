@@ -1,5 +1,6 @@
 #include <dt-bindings/pinctrl/pinctrl-tegra.h>
 #include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/thermal/thermal.h>
 #include <dt-bindings/mfd/as3722.h>
 #include "tegra124.dtsi"
 
@@ -1910,16 +1911,15 @@
 			};
 		};
 
-/* Dummy entry, the driver doesn't support DT yet
-		temperature-sensor@4c {
-			compatible = "ti,tmp451", "onnn,nct72";
+		com_temperature_sensor: temperature-sensor@4c {
+			compatible = "tmp451";
 			reg = <0x4c>;
 			interrupt-parent = <&gpio>;
 			interrupts = <TEGRA_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
+			vcc-supply = <&vddio_1v8>;
 
-			vdd-supply = <&vddio_1v8>;
+			#thermal-sensor-cells = <1>;
 		};
-*/
 	};
 
 	i2c@7000d100 {
@@ -2121,6 +2121,30 @@
 			regulator-max-microvolt = <1050000>;
 			gpio = <&gpio TEGRA_GPIO(H, 7) GPIO_ACTIVE_LOW>;
 			vin-supply = <&vdd_1v05_run>;
+		};
+	};
+
+	thermal-zones {
+		com_thermal: com-thermal {
+			polling-delay-passive = <250>;
+			polling-delay = <1000>;
+
+			thermal-sensors = <&com_temperature_sensor 0>;
+		};
+
+		cpu_thermal: cpu-thermal {
+			polling-delay-passive = <250>;
+			polling-delay = <1000>;
+
+			thermal-sensors = <&com_temperature_sensor 1>;
+
+			trips {
+				cpu_crit: cpu-crit {
+					temperature = <95000>;
+					hysteresis = <1000>;
+					type = "critical";
+				};
+			};
 		};
 	};
 
