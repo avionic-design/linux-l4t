@@ -111,7 +111,7 @@
 		nvidia,ss_portmap = <XUSB_PADCTL_SS_PORTMAP(P2, DISABLE)>;
 		nvidia,lane_owner = <2>; /* PCIe lane1 owner = USB3_SS port1 */
 		nvidia,ulpicap = <0>;
-		usb_vbus2-supply = <&vdd_5v0_ext>;
+		usb_vbus2-supply = <&vdd_usb2_vbus>;
 	};
 
 	/* On board SD-CARD slot */
