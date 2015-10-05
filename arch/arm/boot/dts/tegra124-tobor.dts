@@ -448,4 +448,8 @@
 			gpio-open-drain;
 		};
 	};
+
+	pwm-fan {
+		status = "okay";
+	};
  };
