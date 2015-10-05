@@ -776,9 +776,13 @@ static int tegra_otg_conf(struct platform_device *pdev)
 
 	tegra->vbus_reg = regulator_get(&pdev->dev, "usb_vbus");
 	if (IS_ERR_OR_NULL(tegra->vbus_reg)) {
-		pr_err("failed to get regulator usb_vbus: %ld\n",
-			PTR_ERR(tegra->vbus_reg));
-		tegra->vbus_reg = NULL;
+		if (PTR_ERR(tegra->vbus_reg) != -EPROBE_DEFER) {
+			pr_err("failed to get regulator usb_vbus: %ld\n",
+				PTR_ERR(tegra->vbus_reg));
+			tegra->vbus_reg = NULL;
+		} else {
+			return PTR_ERR(tegra->vbus_reg);
+		}
 	}
 
 	spin_lock_init(&tegra->lock);
