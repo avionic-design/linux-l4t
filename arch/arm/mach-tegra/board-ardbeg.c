@@ -1364,9 +1364,9 @@ static int __init tegra_jetson_sensorhub_init(void)
 {
 	struct board_info board_info;
 
-	/* This should only be used on nvidia boards */
+	/* This should only be used on Jetson TK1 */
 	tegra_get_board_info(&board_info);
-	if (!board_info.board_id)
+	if (board_info.board_id != BOARD_PM375)
 		return 0;
 
 	if (gpio_request(SENSOR_HUB_RST, "sensor_hub_rst"))
