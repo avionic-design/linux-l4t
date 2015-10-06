@@ -21,8 +21,8 @@ static int sensorhub_probe(struct platform_device *pdev)
 {
 	struct gpio_desc *reset, *boot0;
 
-	/* Request the GPIO with reset disabled */
-	reset = devm_gpiod_get(&pdev->dev, "reset", GPIOD_OUT_LOW);
+	/* Request the GPIO with reset enabled */
+	reset = devm_gpiod_get(&pdev->dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(reset))
 		return PTR_ERR(reset);
 
