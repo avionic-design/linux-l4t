@@ -952,7 +952,8 @@ static unsigned int tegra_sdhci_get_ro(struct sdhci_host *sdhci)
 	if (!gpio_is_valid(plat->wp_gpio))
 		return -1;
 
-	return gpio_get_value_cansleep(plat->wp_gpio);
+	return gpio_get_value_cansleep(plat->wp_gpio) !=
+		plat->wp_gpio_low_active;
 }
 
 static int tegra_sdhci_set_uhs_signaling(struct sdhci_host *host,
@@ -1083,7 +1084,8 @@ static irqreturn_t carddetect_irq(int irq, void *data)
 	plat = pdev->dev.platform_data;
 
 	tegra_host->card_present =
-			(gpio_get_value_cansleep(plat->cd_gpio) == 0);
+		(gpio_get_value_cansleep(plat->cd_gpio) ==
+			plat->cd_gpio_high_active);
 
 	if (tegra_host->card_present) {
 		err = tegra_sdhci_configure_regulators(tegra_host,
@@ -3341,7 +3343,8 @@ static int tegra_sdhci_resume(struct sdhci_host *sdhci)
 			disable_irq_wake(cd_irq);
 		}
 		tegra_host->card_present =
-			(gpio_get_value_cansleep(plat->cd_gpio) == 0);
+			(gpio_get_value_cansleep(plat->cd_gpio) ==
+				plat->cd_gpio_high_active);
 	}
 
 	/* Setting the min identification clock of freq 400KHz */
@@ -3993,6 +3996,7 @@ static struct tegra_sdhci_platform_data *sdhci_tegra_dt_parse_pdata(
 	int val;
 	struct tegra_sdhci_platform_data *plat;
 	struct device_node *np = pdev->dev.of_node;
+	enum of_gpio_flags flags;
 	u32 bus_width;
 
 	if (!np)
@@ -4004,8 +4008,12 @@ static struct tegra_sdhci_platform_data *sdhci_tegra_dt_parse_pdata(
 		return NULL;
 	}
 
-	plat->cd_gpio = of_get_named_gpio(np, "cd-gpios", 0);
-	plat->wp_gpio = of_get_named_gpio(np, "wp-gpios", 0);
+	plat->cd_gpio = of_get_named_gpio_flags(np, "cd-gpios", 0, &flags);
+	if (gpio_is_valid(plat->cd_gpio))
+		plat->cd_gpio_high_active = !(flags & OF_GPIO_ACTIVE_LOW);
+	plat->wp_gpio = of_get_named_gpio_flags(np, "wp-gpios", 0, &flags);
+	if (gpio_is_valid(plat->wp_gpio))
+		plat->wp_gpio_low_active = !!(flags & OF_GPIO_ACTIVE_LOW);
 	plat->power_gpio = of_get_named_gpio(np, "power-gpios", 0);
 
 	if (of_property_read_u32(np, "bus-width", &bus_width) == 0 &&
@@ -4186,7 +4194,8 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 		gpio_direction_input(plat->cd_gpio);
 
 		tegra_host->card_present =
-			(gpio_get_value_cansleep(plat->cd_gpio) == 0);
+			(gpio_get_value_cansleep(plat->cd_gpio) ==
+				plat->cd_gpio_high_active);
 
 	} else if (plat->mmc_data.register_status_notify) {
 		plat->mmc_data.register_status_notify(sdhci_status_notify_cb, host);

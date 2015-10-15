@@ -41,7 +41,9 @@
 
 struct tegra_sdhci_platform_data {
 	int cd_gpio;
+	bool cd_gpio_high_active;
 	int wp_gpio;
+	bool wp_gpio_low_active;
 	int power_gpio;
 	int is_8bit;
 	int pm_flags;
