@@ -274,6 +274,7 @@
 #define PADCTL_OC_DET		0x18
 #define   ENABLE0_OC_MAP(x)	(((x) & 0x7) << 10)
 #define   ENABLE1_OC_MAP(x)	(((x) & 0x7) << 13)
+#define   ENABLE2_OC_MAP(x)	(((x) & 0x7) << 5)
 
 #define TEGRA_STREAM_DISABLE	0x1f8
 #define TEGRA_STREAM_DISABLE_OFFSET	(1 << 4)
@@ -1186,8 +1187,10 @@ static int utmi_phy_power_on(struct tegra_usb_phy *phy)
 	val = readl(padctl_base + PADCTL_OC_DET);
 	if (phy->inst == 0)
 		val |= ENABLE0_OC_MAP(config->vbus_oc_map);
-	if (phy->inst == 2)
+	if (phy->inst == 1)
 		val |= ENABLE1_OC_MAP(config->vbus_oc_map);
+	if (phy->inst == 2)
+		val |= ENABLE2_OC_MAP(config->vbus_oc_map);
 	writel(val, padctl_base + PADCTL_OC_DET);
 #endif
 
