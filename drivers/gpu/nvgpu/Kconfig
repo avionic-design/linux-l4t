@@ -21,11 +21,10 @@ config GK20A_PMU
 
 choice
 	depends on GK20A
-	prompt "Enable GK20A frequency scaling"
+	prompt "Select GK20A frequency scaling governor"
 	default GK20A_PERFMON
-	optional
 	help
-	  Select this entry to enable gk20a scaling
+	  Select the gk20a frequency scaling governor
 
 config GK20A_PERFMON
 	bool "Use Perfmon"
