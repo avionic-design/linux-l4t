@@ -122,6 +122,7 @@ static struct snd_soc_dai_link tegra_tlv320dac3100_dai = {
 static const struct snd_soc_dapm_widget tegra_tlv320dac3100_dapm_widgets[] = {
 	SND_SOC_DAPM_SPK("Speaker", NULL),
 	SND_SOC_DAPM_HP("Headphone", NULL),
+	SND_SOC_DAPM_REGULATOR_SUPPLY("Amp", 0, 0),
 };
 
 static struct snd_soc_card snd_soc_tegra_tlv320dac3100 = {
