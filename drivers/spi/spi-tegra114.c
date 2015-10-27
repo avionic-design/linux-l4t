@@ -1135,11 +1135,11 @@ static int tegra_spi_transfer_one_message(struct spi_master *master,
 			}
 		} /* End of while */
 		msg->actual_length += xfer->len;
-		if (xfer->cs_change && xfer->delay_usecs) {
+		if (xfer->delay_usecs)
+			udelay(xfer->delay_usecs);
+		if (xfer->cs_change)
 			tegra_spi_writel(tspi, tspi->def_command1_reg,
 					SPI_COMMAND1);
-			udelay(xfer->delay_usecs);
-		}
 	}
 	ret = 0;
 exit:
