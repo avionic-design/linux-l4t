@@ -254,6 +254,7 @@ dtb-$(CONFIG_ARCH_TEGRA) += tegra20-harmony.dtb \
 	tegra124-p2360.dtb \
 	tegra124-kein-baseboard.dtb \
 	tegra124-tobor.dtb \
+	tegra124-tobor-aio.dtb \
 	tegra124-kitt.dtb \
 	tegra124-twobit.dtb \
 	tegra124-kalamos.dtb \
