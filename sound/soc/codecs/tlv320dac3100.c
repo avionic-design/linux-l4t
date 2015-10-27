@@ -276,7 +276,7 @@ static const struct snd_soc_dapm_route dac3100_intercon[] = {
 	{ "HPL", NULL, "HPL Driver" },
 	{ "HPR", NULL, "HPR Driver" },
 
-	{ "Speaker", NULL, "Speaker Driver" },
+	{ "SPK", NULL, "Speaker Driver" },
 };
 
 static int dac3100_set_dai_sysclk(struct snd_soc_dai *dai,
