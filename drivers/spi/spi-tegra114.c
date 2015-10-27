@@ -36,6 +36,7 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/spi-tegra.h>
 #include <linux/clk/tegra.h>
+#include <linux/gpio.h>
 
 #define SPI_COMMAND1				0x000
 #define SPI_BIT_LENGTH(x)			(((x) & 0x1f) << 0)
@@ -766,11 +767,14 @@ static int tegra_spi_start_transfer_one(struct spi_device *spi,
 		}
 
 		if (!tspi->is_hw_based_cs) {
-			command1 |= SPI_CS_SW_HW;
-			if (spi->mode & SPI_CS_HIGH)
+			bool cs_high = gpio_is_valid(spi->cs_gpio) ?
+				(command1 & SPI_CS_POL_INACTIVE_0) :
+				(spi->mode & SPI_CS_HIGH);
+			if (cs_high)
 				command1 |= SPI_CS_SS_VAL;
 			else
 				command1 &= ~SPI_CS_SS_VAL;
+			command1 |= SPI_CS_SW_HW;
 		} else {
 			command1 &= ~SPI_CS_SW_HW;
 			command1 &= ~SPI_CS_SS_VAL;
@@ -827,7 +831,10 @@ static int tegra_spi_start_transfer_one(struct spi_device *spi,
 		command1 |= SPI_TX_EN;
 		tspi->cur_direction |= DATA_DIR_TX;
 	}
-	command1 |= SPI_CS_SEL(spi->chip_select);
+	if (gpio_is_valid(spi->cs_gpio))
+		gpio_set_value(spi->cs_gpio, !!(spi->mode & SPI_CS_HIGH));
+	else
+		command1 |= SPI_CS_SEL(spi->chip_select);
 	tegra_spi_writel(tspi, command1, SPI_COMMAND1);
 	tspi->command1_reg = command1;
 
@@ -905,8 +912,6 @@ static int tegra_spi_setup(struct spi_device *spi)
 		spi->mode & SPI_CPHA ? "" : "~",
 		spi->max_speed_hz);
 
-	BUG_ON(spi->chip_select >= MAX_CHIP_SELECT);
-
 	if (!cdata) {
 		cdata = tegra_spi_get_cdata_dt(spi);
 		spi->controller_data = cdata;
@@ -914,6 +919,26 @@ static int tegra_spi_setup(struct spi_device *spi)
 
 	/* Set speed to the spi max fequency if spi device has not set */
 	spi->max_speed_hz = spi->max_speed_hz ? : tspi->spi_max_frequency;
+
+	if (gpio_is_valid(spi->cs_gpio)) {
+
+		flags = GPIOF_DIR_OUT;
+		if (spi->mode & SPI_CS_HIGH)
+			flags |= GPIOF_INIT_LOW;
+		else
+			flags |= GPIOF_INIT_HIGH;
+
+		ret = gpio_request_one(spi->cs_gpio, flags,
+				dev_name(&spi->dev));
+
+		/* Make sure is_hw_based_cs is not set */
+		if (cdata)
+			cdata->is_hw_based_cs = 0;
+
+		return ret;
+	}
+
+	BUG_ON(spi->chip_select >= MAX_CHIP_SELECT);
 
 	ret = pm_runtime_get_sync(tspi->dev);
 	if (ret < 0) {
@@ -935,6 +960,12 @@ static int tegra_spi_setup(struct spi_device *spi)
 	return 0;
 }
 
+static void tegra_spi_cleanup(struct spi_device *spi)
+{
+	if (gpio_is_valid(spi->cs_gpio))
+		gpio_free(spi->cs_gpio);
+}
+
 static  int tegra_spi_cs_low(struct spi_device *spi,
 		bool state)
 {
@@ -948,6 +979,11 @@ static  int tegra_spi_cs_low(struct spi_device *spi,
 			SPI_CS_POL_INACTIVE_2,
 			SPI_CS_POL_INACTIVE_3,
 	};
+
+	if (gpio_is_valid(spi->cs_gpio)) {
+		gpio_set_value(spi->cs_gpio, !state);
+		return 0;
+	}
 
 	BUG_ON(spi->chip_select >= MAX_CHIP_SELECT);
 
@@ -1137,12 +1173,19 @@ static int tegra_spi_transfer_one_message(struct spi_master *master,
 		msg->actual_length += xfer->len;
 		if (xfer->delay_usecs)
 			udelay(xfer->delay_usecs);
-		if (xfer->cs_change)
-			tegra_spi_writel(tspi, tspi->def_command1_reg,
-					SPI_COMMAND1);
+		if (xfer->cs_change) {
+			if (gpio_is_valid(spi->cs_gpio))
+				gpio_set_value(spi->cs_gpio,
+					!(spi->mode & SPI_CS_HIGH));
+			else
+				tegra_spi_writel(tspi, tspi->def_command1_reg,
+						SPI_COMMAND1);
+		}
 	}
 	ret = 0;
 exit:
+	if (gpio_is_valid(spi->cs_gpio))
+		gpio_set_value(spi->cs_gpio, !(spi->mode & SPI_CS_HIGH));
 	tegra_spi_writel(tspi, tspi->def_command1_reg, SPI_COMMAND1);
 	pm_runtime_put(tspi->dev);
 	msg->status = ret;
@@ -1297,6 +1340,7 @@ static int tegra_spi_probe(struct platform_device *pdev)
 	/* the spi->mode bits understood by this driver: */
 	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
 	master->setup = tegra_spi_setup;
+	master->cleanup = tegra_spi_cleanup;
 	master->transfer_one_message = tegra_spi_transfer_one_message;
 	master->num_chipselect = MAX_CHIP_SELECT;
 	master->bus_num = bus_num;
