@@ -425,6 +425,7 @@ get_property_end:
 	kfree(pbuf);
 	return err;
 }
+EXPORT_SYMBOL(of_camera_get_property);
 
 static struct device_node *of_camera_get_brdinfo(
 	struct platform_device *dev,
@@ -560,12 +561,14 @@ struct camera_platform_data *of_camera_create_pdata(
 
 	return pd;
 }
+EXPORT_SYMBOL(of_camera_create_pdata);
 
 int of_camera_init(struct camera_platform_info *info)
 {
 	cam_desc = info;
 	return 0;
 }
+EXPORT_SYMBOL(of_camera_init);
 
 int of_camera_remove(void)
 {

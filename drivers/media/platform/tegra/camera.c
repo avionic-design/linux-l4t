@@ -130,6 +130,7 @@ int camera_copy_user_params(unsigned long arg, struct nvc_param *prm)
 		MAKE_USER_PTR(arg), (const void *)prm, sizeof(*prm));
 }
 #endif
+EXPORT_SYMBOL_GPL(camera_copy_user_params);
 
 int camera_get_params(
 	struct camera_info *cam, unsigned long arg, int u_size,
@@ -172,6 +173,7 @@ int camera_get_params(
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(camera_get_params);
 
 static int camera_seq_rd(struct camera_info *cam, unsigned long arg)
 {

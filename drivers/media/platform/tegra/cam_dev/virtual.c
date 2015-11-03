@@ -491,6 +491,7 @@ int virtual_device_add(struct device *dev, unsigned long arg)
 
 	return err;
 }
+EXPORT_SYMBOL(virtual_device_add);
 
 static int __init virtual_init(void)
 {

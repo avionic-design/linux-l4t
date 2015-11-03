@@ -35,6 +35,7 @@
 void camera_edp_register(struct camera_device *cdev)
 {
 }
+EXPORT_SYMBOL(camera_edp_register);
 
 int camera_edp_req(struct camera_device *cdev, unsigned new_state)
 {
@@ -42,9 +43,11 @@ int camera_edp_req(struct camera_device *cdev, unsigned new_state)
 
 	return 0;
 }
+EXPORT_SYMBOL(camera_edp_req);
 
 void camera_edp_lowest(
 	struct camera_device *cdev
 )
 {
 }
+EXPORT_SYMBOL(camera_edp_lowest);

@@ -75,6 +75,7 @@ int camera_dev_sync_init(void)
 
 	return 0;
 }
+EXPORT_SYMBOL(camera_dev_sync_init);
 
 void camera_dev_sync_cb(void *stub)
 {
@@ -98,6 +99,7 @@ void camera_dev_sync_cb(void *stub)
 
 	return;
 }
+EXPORT_SYMBOL(camera_dev_sync_cb);
 
 int camera_dev_sync_wr_add(
 	struct camera_sync_dev *csyncdev,
@@ -238,6 +240,7 @@ int camera_dev_rd_table(struct camera_device *cdev, struct camera_reg *table)
 dev_rd_tbl_done:
 	return err;
 }
+EXPORT_SYMBOL(camera_dev_rd_table);
 
 static int camera_dev_wr_blk(
 	struct camera_device *cdev, u32 reg, u8 *buf, int len)
@@ -516,6 +519,7 @@ int camera_dev_wr_table(
 		err = 1;
 	return err;
 }
+EXPORT_SYMBOL(camera_dev_wr_table);
 
 int camera_regulator_get(struct device *dev,
 	struct nvc_regulator *nvc_reg, char *vreg_name)
@@ -543,3 +547,4 @@ int camera_regulator_get(struct device *dev,
 
 	return err;
 }
+EXPORT_SYMBOL(camera_regulator_get);

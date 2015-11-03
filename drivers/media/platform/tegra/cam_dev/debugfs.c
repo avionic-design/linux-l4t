@@ -278,6 +278,7 @@ int camera_debugfs_init(struct camera_platform_info *info)
 	cam_desc = info;
 	return 0;
 }
+EXPORT_SYMBOL(camera_debugfs_init);
 
 int camera_debugfs_remove(void)
 {
@@ -285,3 +286,4 @@ int camera_debugfs_remove(void)
 	cam_desc->d_entry = NULL;
 	return 0;
 }
+EXPORT_SYMBOL(camera_debugfs_remove);

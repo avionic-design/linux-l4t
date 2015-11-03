@@ -113,6 +113,7 @@ err_out:
 		debugfs_remove_recursive(info->debugfs_root);
 	return -ENOMEM;
 }
+EXPORT_SYMBOL(nvc_debugfs_init);
 
 
 int nvc_debugfs_remove(struct nvc_debugfs_info *info)
@@ -121,4 +122,5 @@ int nvc_debugfs_remove(struct nvc_debugfs_info *info)
 		debugfs_remove_recursive(info->debugfs_root);
 	return 0;
 }
+EXPORT_SYMBOL(nvc_debugfs_remove);
 
