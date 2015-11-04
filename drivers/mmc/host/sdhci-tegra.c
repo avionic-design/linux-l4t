@@ -4039,15 +4039,15 @@ static struct tegra_sdhci_platform_data *sdhci_tegra_dt_parse_pdata(
 	plat->nominal_vcore_mv =
 		tegra_dvfs_rail_get_nominal_millivolts(tegra_core_rail);
 	if (plat->nominal_vcore_mv < 0)
-		return plat->nominal_vcore_mv;
+		return ERR_PTR(plat->nominal_vcore_mv);
 	plat->min_vcore_override_mv =
 		tegra_dvfs_rail_get_override_floor(tegra_core_rail);
 	if (plat->min_vcore_override_mv < 0)
-		return plat->min_vcore_override_mv;
+		return ERR_PTR(plat->min_vcore_override_mv);
 	plat->boot_vcore_mv =
 		tegra_dvfs_rail_get_boot_level(tegra_core_rail);
 	if (plat->boot_vcore_mv < 0)
-		return plat->boot_vcore_mv;
+		return ERR_PTR(plat->boot_vcore_mv);
 
 	return plat;
 }
