@@ -225,12 +225,12 @@ static irqreturn_t t20_intr_host1x_isr(int irq, void *dev_id)
 
 	if (host1x_sync_hintstatus_ext_ip_read_int_v(ext_stat)) {
 		addr = readl(sync_regs + host1x_sync_ip_read_timeout_addr_r());
-		pr_err("Host read timeout at address %x\n", addr);
+		pr_err_ratelimited("Host read timeout at address %x\n", addr);
 	}
 
 	if (host1x_sync_hintstatus_ext_ip_write_int_v(ext_stat)) {
 		addr = readl(sync_regs + host1x_sync_ip_write_timeout_addr_r());
-		pr_err("Host write timeout at address %x\n", addr);
+		pr_err_ratelimited("Host write timeout at address %x\n", addr);
 	}
 
 	writel(ext_stat, sync_regs + host1x_sync_hintstatus_ext_r());
