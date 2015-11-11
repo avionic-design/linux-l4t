@@ -241,6 +241,7 @@ static u32 medcom_wide_platform_id[] = {
 		  used in production of 1427 due to some mysterious
 		  reasons. */
 	0xFDD, /* Gen 2 */
+	0xFD7, /* Gen 2 reloaded (1474) */
 };
 
 static void __init medcom_wide_init(void)
