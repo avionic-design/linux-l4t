@@ -28,6 +28,7 @@ static const char dt_match[] = "none,panel-generic";
 struct panel_generic {
 	struct backlight_device *backlight;
 	int enable_gpio;
+	bool enable_gpio_is_active_low;
 };
 
 static void panel_generic_release(struct device *dev, void *res)
@@ -46,6 +47,7 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 	struct device_node *panel_node;
 	struct device_node *backlight;
 	struct panel_generic *panel;
+	enum of_gpio_flags of_flags;
 	int err = 0;
 
 	panel_node = of_parse_phandle(dev->of_node, "panel", 0);
@@ -72,6 +74,9 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 		err = panel->enable_gpio;
 		if (err == -EPROBE_DEFER)
 			goto free_backlight;
+	} else if (gpio_is_valid(panel->enable_gpio)) {
+		of_get_named_gpio_flags(panel_node, "enable-gpios", 0, &of_flags);
+		panel->enable_gpio_is_active_low = of_flags & OF_GPIO_ACTIVE_LOW;
 	}
 
 	devres_add(dev, panel);
@@ -79,7 +84,8 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 	/* Activate the gpios */
 	if (gpio_is_valid(panel->enable_gpio)) {
 		gpio_request(panel->enable_gpio, "panel-generic-enable");
-		gpio_direction_output(panel->enable_gpio, 0);
+		gpio_direction_output(panel->enable_gpio,
+				panel->enable_gpio_is_active_low);
 	}
 
 	return panel;
@@ -106,7 +112,7 @@ static int panel_generic_enable(struct device *dev)
 	}
 
 	if (gpio_is_valid(panel->enable_gpio))
-		gpio_set_value(panel->enable_gpio, 1);
+		gpio_set_value(panel->enable_gpio, !panel->enable_gpio_is_active_low);
 
 	return 0;
 }
@@ -120,7 +126,7 @@ static int panel_generic_disable(struct device *dev)
 		return -ENODEV;
 
 	if (gpio_is_valid(panel->enable_gpio))
-		gpio_set_value(panel->enable_gpio, 0);
+		gpio_set_value(panel->enable_gpio, panel->enable_gpio_is_active_low);
 
 	return 0;
 }
