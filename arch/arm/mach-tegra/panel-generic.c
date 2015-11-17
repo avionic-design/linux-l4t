@@ -19,6 +19,7 @@
 #include <linux/backlight.h>
 #include <linux/of_gpio.h>
 #include <linux/of_platform.h>
+#include <linux/delay.h>
 
 #include "devices.h"
 #include "board-panel.h"
@@ -29,6 +30,10 @@ struct panel_generic {
 	struct backlight_device *backlight;
 	int enable_gpio;
 	bool enable_gpio_is_active_low;
+	int reset_gpio;
+	bool reset_gpio_is_active_low;
+	int reset_hold; /* reset hold time in ms */
+	int reset_settle; /* settle time after reset in ms */
 };
 
 static void panel_generic_release(struct device *dev, void *res)
@@ -40,6 +45,8 @@ static void panel_generic_release(struct device *dev, void *res)
 
 	if (gpio_is_valid(panel->enable_gpio))
 		gpio_free(panel->enable_gpio);
+	if (gpio_is_valid(panel->reset_gpio))
+		gpio_free(panel->reset_gpio);
 }
 
 static struct panel_generic* panel_generic_init(struct device *dev)
@@ -79,6 +86,30 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 		panel->enable_gpio_is_active_low = of_flags & OF_GPIO_ACTIVE_LOW;
 	}
 
+	panel->reset_gpio = of_get_named_gpio(panel_node, "reset-gpios", 0);
+	if (IS_ERR_VALUE(panel->reset_gpio)) {
+		err = panel->reset_gpio;
+		if (err == -EPROBE_DEFER)
+			goto free_backlight;
+	} else if (gpio_is_valid(panel->reset_gpio)) {
+		of_get_named_gpio_flags(panel_node, "reset-gpios", 0, &of_flags);
+		panel->reset_gpio_is_active_low = of_flags & OF_GPIO_ACTIVE_LOW;
+
+		err = of_property_read_u32(panel_node, "reset-hold",
+				&panel->reset_hold);
+		if (err) {
+			dev_err(dev, "Reset gpio specified but no hold time set");
+			goto free_backlight;
+		}
+
+		err = of_property_read_u32(panel_node, "reset-settle",
+				&panel->reset_settle);
+		if (err) {
+			dev_err(dev, "Reset gpio specified but no settle time set");
+			goto free_backlight;
+		}
+	}
+
 	devres_add(dev, panel);
 
 	/* Activate the gpios */
@@ -86,6 +117,12 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 		gpio_request(panel->enable_gpio, "panel-generic-enable");
 		gpio_direction_output(panel->enable_gpio,
 				panel->enable_gpio_is_active_low);
+	}
+
+	if (gpio_is_valid(panel->reset_gpio)) {
+		gpio_request(panel->reset_gpio, "panel-generic-reset");
+		gpio_direction_output(panel->reset_gpio,
+				!panel->reset_gpio_is_active_low);
 	}
 
 	return panel;
@@ -111,6 +148,14 @@ static int panel_generic_enable(struct device *dev)
 			return PTR_ERR(panel);
 	}
 
+	/* Reset the display if reset-gpio is specified */
+	if (gpio_is_valid(panel->reset_gpio)) {
+		gpio_set_value(panel->reset_gpio, !panel->reset_gpio_is_active_low);
+		msleep(panel->reset_hold);
+		gpio_set_value(panel->reset_gpio, panel->reset_gpio_is_active_low);
+		msleep(panel->reset_settle);
+	}
+
 	if (gpio_is_valid(panel->enable_gpio))
 		gpio_set_value(panel->enable_gpio, !panel->enable_gpio_is_active_low);
 
@@ -127,6 +172,9 @@ static int panel_generic_disable(struct device *dev)
 
 	if (gpio_is_valid(panel->enable_gpio))
 		gpio_set_value(panel->enable_gpio, panel->enable_gpio_is_active_low);
+
+	if (gpio_is_valid(panel->reset_gpio))
+		gpio_set_value(panel->reset_gpio, !panel->reset_gpio_is_active_low);
 
 	return 0;
 }
