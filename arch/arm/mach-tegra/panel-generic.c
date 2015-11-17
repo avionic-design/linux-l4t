@@ -48,7 +48,7 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 	struct panel_generic *panel;
 	int err = 0;
 
-	panel_node = of_parse_phandle(dev->of_node, "none,panel-generic", 0);
+	panel_node = of_parse_phandle(dev->of_node, "panel", 0);
 	if (!panel_node) {
 		dev_err(dev, "Could not find panel node\n");
 		return ERR_PTR(-ENODEV);
