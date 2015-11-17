@@ -1648,6 +1648,7 @@ skip_pinctrl:
 	ret = i2c_add_numbered_adapter(&i2c_dev->adapter);
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to add I2C adapter\n");
+		pm_runtime_disable(&pdev->dev);
 		return ret;
 	}
 
