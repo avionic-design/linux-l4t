@@ -76,6 +76,12 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 
 	devres_add(dev, panel);
 
+	/* Activate the gpios */
+	if (gpio_is_valid(panel->enable_gpio)) {
+		gpio_request(panel->enable_gpio, "panel-generic-enable");
+		gpio_direction_output(panel->enable_gpio, 0);
+	}
+
 	return panel;
 
 free_backlight:
