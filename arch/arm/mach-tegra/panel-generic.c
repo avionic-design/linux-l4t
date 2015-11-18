@@ -114,18 +114,44 @@ static struct panel_generic* panel_generic_init(struct device *dev)
 
 	/* Activate the gpios */
 	if (gpio_is_valid(panel->enable_gpio)) {
-		gpio_request(panel->enable_gpio, "panel-generic-enable");
-		gpio_direction_output(panel->enable_gpio,
+		err = gpio_request(panel->enable_gpio, "panel-generic-enable");
+		if (err) {
+			dev_err(dev, "Failed to request enable gpio");
+			goto free_backlight;
+		}
+
+		err = gpio_direction_output(panel->enable_gpio,
 				panel->enable_gpio_is_active_low);
+		if (err) {
+			dev_err(dev, "Failed to configure enable gpio");
+			goto free_enable_gpio;
+		}
 	}
 
 	if (gpio_is_valid(panel->reset_gpio)) {
-		gpio_request(panel->reset_gpio, "panel-generic-reset");
-		gpio_direction_output(panel->reset_gpio,
+		err = gpio_request(panel->reset_gpio, "panel-generic-reset");
+		if (err) {
+			dev_err(dev, "Failed to request reset gpio");
+			goto free_enable_gpio;
+		}
+
+		err = gpio_direction_output(panel->reset_gpio,
 				!panel->reset_gpio_is_active_low);
+		if (err) {
+			dev_err(dev, "Failed to configure reset gpio");
+			goto free_reset_gpio;
+		}
 	}
 
 	return panel;
+
+free_reset_gpio:
+	if (gpio_is_valid(panel->reset_gpio))
+		gpio_free(panel->reset_gpio);
+
+free_enable_gpio:
+	if (gpio_is_valid(panel->enable_gpio))
+		gpio_free(panel->enable_gpio);
 
 free_backlight:
 	if (panel->backlight)
