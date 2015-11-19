@@ -7508,9 +7508,9 @@ static struct clk_mux_sel mux_pllm_pllc_pllp_plla_pllc2_c3_clkm[] = {
 
 static struct clk_mux_sel mux_pllm_pllc_pllp_plla_pllc4[] = {
 	{ .input = &tegra_pll_m, .value = 0},
-	/* Skip C2(1) */
+	{ .input = &tegra_pll_c2, .value = 1},
 	{ .input = &tegra_pll_c, .value = 2},
-	/* Skip C2(3) */
+	{ .input = &tegra_pll_c3, .value = 3},
 	{ .input = &tegra_pll_p, .value = 4},
 	{ .input = &tegra_pll_a_out0, .value = 6},
 	{ .input = &tegra_pll_c4, .value = 7},
