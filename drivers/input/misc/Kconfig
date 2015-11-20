@@ -82,6 +82,16 @@ config INPUT_ARIZONA_HAPTICS
 	  To compile this driver as a module, choose M here: the
 	  module will be called arizona-haptics.
 
+config INPUT_AS3722
+	tristate "AMS AS3722 pmic input upport"
+	depends on MFD_AS3722
+	help
+	  Say Y to enable support for the input buttons in AS3722 pmic
+	  controller.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called as3722-input.
+
 config INPUT_BMA150
 	tristate "BMA150/SMB380 acceleration sensor support"
 	depends on I2C
