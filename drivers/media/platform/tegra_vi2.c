@@ -200,6 +200,60 @@ static const struct tegra_formats tegra_formats[] = {
 	},
 };
 
+static bool tegra_vi_field_is_interlaced(enum v4l2_field field)
+{
+	switch (field) {
+	case V4L2_FIELD_INTERLACED:
+	case V4L2_FIELD_SEQ_TB:
+	case V4L2_FIELD_SEQ_BT:
+	case V4L2_FIELD_INTERLACED_TB:
+	case V4L2_FIELD_INTERLACED_BT:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static int tegra_vi_fill_pix_format(struct v4l2_pix_format *pf,
+				const struct v4l2_mbus_framefmt *framefmt)
+{
+	enum v4l2_field field;
+	bool interlaced;
+
+	/* Check for a sane resolution */
+	if (!framefmt->height || !framefmt->width)
+		return -EINVAL;
+
+	/* Convert the field format */
+	switch (framefmt->field) {
+	case V4L2_FIELD_ANY:
+	case V4L2_FIELD_NONE:
+		interlaced = false;
+		break;
+	case V4L2_FIELD_INTERLACED:
+	case V4L2_FIELD_SEQ_TB:
+	case V4L2_FIELD_SEQ_BT:
+	case V4L2_FIELD_INTERLACED_TB:
+	case V4L2_FIELD_INTERLACED_BT:
+		interlaced = true;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* With interlaced try to return the requested field format */
+	if (interlaced)
+		field = tegra_vi_field_is_interlaced(pf->field) ?
+			pf->field : V4L2_FIELD_INTERLACED_TB;
+	else
+		field = V4L2_FIELD_NONE;
+
+	v4l2_fill_pix_format(pf, framefmt);
+	pf->field = field;
+
+	return v4l2_pix_format_set_sizeimage(pf);
+}
+
 static int mbus_format_to_tegra_data_type(enum v4l2_mbus_pixelcode mbus)
 {
 	switch(mbus) {
@@ -977,17 +1031,10 @@ static int tegra_vi_channel_get_mbus_framefmt(struct tegra_vi_channel *chan,
 		}
 	}
 
-	/* Check for a sane resolution */
-	if (!framefmt->height || !framefmt->width) {
-		dev_err(&vdev->dev, "Format has a bad resolution: %ux%u\n",
-			framefmt->width, framefmt->height);
-		return -EINVAL;
-	}
-
-	v4l2_fill_pix_format(pf, framefmt);
-	err = v4l2_pix_format_set_sizeimage(pf);
+	/* Check that the mbus format is acceptable and fill pf */
+	err = tegra_vi_fill_pix_format(pf, framefmt);
 	if (err) {
-		dev_err(&vdev->dev, "Failed to get image size\n");
+		dev_err(&vdev->dev, "Got invalid bus format\n");
 		return err;
 	}
 
@@ -1027,6 +1074,7 @@ static int tegra_vi_channel_set_format(
 	struct video_device *vdev = &chan->vdev;
 	int src, nv_mbus, nv_fmt, line_size;
 	struct v4l2_mbus_framefmt framefmt;
+	unsigned int interlaced;
 	int err;
 
 	if (input == NULL) {
@@ -1114,15 +1162,17 @@ static int tegra_vi_channel_set_format(
 	}
 
 	/* Return the effective settings */
-	v4l2_fill_pix_format(pf, &framefmt);
-	err = v4l2_pix_format_set_sizeimage(pf);
+	err = tegra_vi_fill_pix_format(pf, &framefmt);
 	if (err) {
-		dev_err(&vdev->dev, "Failed to get image size\n");
+		dev_err(&vdev->dev, "Got invalid bus format\n");
 		return err;
 	}
 
 	/* And store them to allow get */
 	chan->pixfmt = *pf;
+
+	/* Check if the format is interlaced */
+	interlaced = tegra_vi_field_is_interlaced(pf->field);
 
 	/* We must allow bad frames to be able to return buffers
 	 * on errors. */
@@ -1159,13 +1209,13 @@ static int tegra_vi_channel_set_format(
 	/* Setup the output format with MEM output */
 	vi_writel((nv_fmt << 16) | BIT(0), &chan->vi_regs->image_def);
 	/* Bus format */
-	vi_writel(nv_mbus | (input->csi_channel << 8),
+	vi_writel(nv_mbus | (input->csi_channel << 8) | (interlaced << 12),
 		&chan->vi_regs->image_dt);
 	/* Line size on the memory bus rounded up to the next word */
 	vi_writel((line_size + 1) & ~1,
 		&chan->vi_regs->image_size_wc);
 	/* Resolution */
-	vi_writel((framefmt.height << 16) | framefmt.width,
+	vi_writel(((framefmt.height >> interlaced) << 16) | framefmt.width,
 		&chan->vi_regs->image_size);
 
 	return 0;

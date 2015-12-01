@@ -138,6 +138,7 @@ static int tegra_vi_videobuf_prepare(struct vb2_buffer *vb)
 		container_of(vb->vb2_queue, struct tegra_vi_channel, vb);
 	struct tegra_vi_buffer *buf =
 		container_of(vb, struct tegra_vi_buffer, vb);
+	unsigned height = chan->pixfmt.height;
 
 	if (vb->v4l2_buf.type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
 		return -EINVAL;
@@ -148,9 +149,63 @@ static int tegra_vi_videobuf_prepare(struct vb2_buffer *vb)
 	if (buf->num_planes < 0)
 		return buf->num_planes;
 
-	buf->addr[0] = vb2_dma_contig_plane_dma_addr(vb, 0);
-	buf->addr[1] = buf->addr[0] + buf->stride[0] * chan->pixfmt.height;
-	buf->addr[2] = buf->addr[1] + buf->stride[1] * chan->pixfmt.height;
+	switch (chan->pixfmt.field) {
+	case V4L2_FIELD_ANY:
+	case V4L2_FIELD_NONE:
+		buf->addr[0] = vb2_dma_contig_plane_dma_addr(vb, 0);
+		buf->addr[1] = buf->addr[0] + buf->stride[0] * height;
+		buf->addr[2] = buf->addr[1] + buf->stride[1] * height;
+		break;
+
+	case V4L2_FIELD_INTERLACED:
+	case V4L2_FIELD_INTERLACED_TB:
+		buf->addr[0] = vb2_dma_contig_plane_dma_addr(vb, 0);
+		buf->addr[1] = buf->addr[0] + buf->stride[0] * height;
+		buf->addr[2] = buf->addr[1] + buf->stride[1] * height;
+
+		buf->bf_addr[0] = buf->addr[0] + buf->stride[0];
+		buf->bf_addr[1] = buf->addr[1] + buf->stride[1];
+		buf->bf_addr[2] = buf->addr[2] + buf->stride[2];
+
+		buf->stride[0] *= 2;
+		buf->stride[1] *= 2;
+		buf->stride[2] *= 2;
+		break;
+	case V4L2_FIELD_INTERLACED_BT:
+		buf->bf_addr[0] = vb2_dma_contig_plane_dma_addr(vb, 0);
+		buf->bf_addr[1] = buf->bf_addr[0] + buf->stride[0] * height;
+		buf->bf_addr[2] = buf->bf_addr[1] + buf->stride[1] * height;
+
+		buf->addr[0] = buf->bf_addr[0] + buf->stride[0];
+		buf->addr[1] = buf->bf_addr[1] + buf->stride[1];
+		buf->addr[2] = buf->bf_addr[2] + buf->stride[2];
+
+		buf->stride[0] *= 2;
+		buf->stride[1] *= 2;
+		buf->stride[2] *= 2;
+		break;
+
+	case V4L2_FIELD_SEQ_TB:
+		buf->addr[0] = vb2_dma_contig_plane_dma_addr(vb, 0);
+		buf->addr[1] = buf->addr[0] + buf->stride[0] * height / 2;
+		buf->addr[2] = buf->addr[1] + buf->stride[1] * height / 2;
+
+		buf->bf_addr[0] = buf->addr[2] + buf->stride[2] * height / 2;
+		buf->bf_addr[1] = buf->bf_addr[0] + buf->stride[0] * height / 2;
+		buf->bf_addr[2] = buf->bf_addr[1] + buf->stride[1] * height / 2;
+		break;
+
+	case V4L2_FIELD_SEQ_BT:
+		buf->bf_addr[0] = vb2_dma_contig_plane_dma_addr(vb, 0);
+		buf->bf_addr[1] = buf->bf_addr[0] + buf->stride[0] * height / 2;
+		buf->bf_addr[2] = buf->bf_addr[1] + buf->stride[1] * height / 2;
+
+		buf->addr[0] = buf->bf_addr[2] + buf->stride[2] * height / 2;
+		buf->addr[1] = buf->addr[0] + buf->stride[0] * height / 2;
+		buf->addr[2] = buf->addr[1] + buf->stride[1] * height / 2;
+		break;
+	}
+
 	return 0;
 }
 
@@ -353,6 +408,10 @@ static struct tegra_vi_buffer * tegra_vi_channel_set_next_buffer(struct tegra_vi
 		vi_writel(0, &chan->vi_regs->surface_offset[i].msb);
 		vi_writel(buf->addr[i], &chan->vi_regs->surface_offset[i].lsb);
 		vi_writel(buf->stride[i], &chan->vi_regs->surface_stride[i]);
+
+		vi_writel(0, &chan->vi_regs->surface_bf_offset[i].msb);
+		vi_writel(buf->bf_addr[i],
+			&chan->vi_regs->surface_bf_offset[i].lsb);
 	}
 
 	if (missed)

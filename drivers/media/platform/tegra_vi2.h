@@ -179,6 +179,7 @@ struct tegra_vi_buffer {
 
 	unsigned num_planes;
 	dma_addr_t addr[3];
+	dma_addr_t bf_addr[3];
 	int stride[3];
 };
 
