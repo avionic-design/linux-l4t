@@ -29,6 +29,7 @@
 #include <linux/module.h>
 
 #include <mach/irqs.h>
+#include <linux/reboot.h>
 
 #include "clock.h"
 #include "iomap.h"
@@ -966,6 +967,49 @@ err_out:
 
 #endif
 
+static void tegra_actmon_dev_deinit(struct actmon_dev *dev)
+{
+	struct clk *clk_parent;
+
+	tegra_clk_disable_unprepare(dev->clk);
+	actmon_dev_disable(dev);
+	free_irq(INT_ACTMON, dev);
+	clk_parent = clk_get_parent(dev->clk);
+	if (dev->rate_change_nb.notifier_call)
+		tegra_unregister_clk_rate_notifier(clk_parent,
+						   &dev->rate_change_nb);
+}
+
+static void tegra_actmon_deinit(void)
+{
+	int i;
+	struct clk *c;
+
+#ifdef CONFIG_DEBUG_FS
+	debugfs_remove_recursive(clk_debugfs_root);
+#endif
+
+	unregister_pm_notifier(&actmon_pm_nb);
+
+	for (i = 0; i < ARRAY_SIZE(actmon_devices); i++)
+		tegra_actmon_dev_deinit(actmon_devices[i]);
+
+	c = tegra_get_clock_by_name("actmon");
+	if (c)
+		tegra_clk_disable_unprepare(c);
+}
+
+static int tegra_actmon_shutdown_notify(struct notifier_block *nb,
+		unsigned long action, void *data)
+{
+	tegra_actmon_deinit();
+	return 0;
+}
+
+static struct notifier_block tegra_actmon_shutdown_nb = {
+	.notifier_call = tegra_actmon_shutdown_notify,
+};
+
 static int __init tegra_actmon_init(void)
 {
 	int i, ret;
@@ -991,6 +1035,7 @@ static int __init tegra_actmon_init(void)
 			ret ? "Failed" : "Completed", ret);
 	}
 	register_pm_notifier(&actmon_pm_nb);
+	register_reboot_notifier(&tegra_actmon_shutdown_nb);
 
 #ifdef CONFIG_DEBUG_FS
 	actmon_debugfs_init();
