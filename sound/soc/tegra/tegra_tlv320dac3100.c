@@ -20,6 +20,8 @@
 
 #include "tegra_asoc_utils.h"
 
+#define DRV_NAME "tegra-tlv320dac3100"
+
 struct tegra_tlv320dac3100 {
 	struct platform_device *codec;
 	struct tegra_asoc_utils_data util_data;
@@ -234,7 +236,7 @@ static const struct of_device_id tegra_tlv320dac3100_of_match[] = {
 
 static struct platform_driver tegra_tlv320dac3100_driver = {
 	.driver = {
-		.name = "tegra-tlv320dac3100",
+		.name = DRV_NAME,
 		.owner = THIS_MODULE,
 		.pm = &snd_soc_pm_ops,
 		.of_match_table = tegra_tlv320dac3100_of_match,
