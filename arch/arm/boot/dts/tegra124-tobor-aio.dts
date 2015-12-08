@@ -74,6 +74,13 @@
 			dap4_sclk_pp7 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+
+			/* TI Wifi IRQ line */
+			clk2_req_pcc5 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 		};
 	};
 
@@ -191,6 +198,25 @@
 		};
 	};
 
+	/* Limit MMC3 to 1.8V for TI SDIO */
+	i2c@7000d000 {
+		pmic: pmic@40 {
+			regulators {
+				vddio_sdmmc3: ldo6 {
+					regulator-max-microvolt = <1800000>;
+				};
+			};
+
+			/* Generate 32kHz clock for TI wifi module */
+			as3722_default: pinmux@0 {
+				gpio5 {
+					pins = "gpio5";
+					function = "clk32k-out";
+				};
+			};
+		};
+	};
+
 	/* SPI4 */
 	spi@7000da00 {
 		status = "okay";
@@ -213,8 +239,24 @@
 	/* MMC card slot */
 	sdhci@700b0400 {
 		status = "okay";
-		wp-gpios = <>;
+		/delete-property/ cd-gpios;
+		/delete-property/ wp-gpios;
+
+		cap-power-off-card;
+		keep-power-in-suspend;
+		mmc-ocr-mask = <0>;
 		vddio_sd_slot-supply = <&vdd_3v3_sd>;
+		vmmc-supply = <&wlan_enable>;
+
+		wlcore: wlcore@2 {
+			status = "okay";
+			compatible = "ti,wl1837";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(CC, 5) IRQ_TYPE_LEVEL_HIGH>;
+		};
 	};
 
 	/* Recovery USB */
@@ -507,6 +549,17 @@
 			regulator-max-microvolt = <1800000>;
 			vin-supply = <&vdd_5v0_ext>;
 			gpio = <&gpio TEGRA_GPIO(S, 0) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
+		wlan_enable: regulator@113 {
+			compatible = "regulator-fixed";
+			reg = <113>;
+			regulator-name = "WLAN_EN";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			vin-supply = <&vdd_5v0_ext>;
+			gpio = <&gpio TEGRA_GPIO(J, 0) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
 	};
