@@ -264,6 +264,9 @@ static int tegra_vi_videobuf_stop_streaming(struct vb2_queue *q)
 
 	/* Clear the buffer queue */
 	tegra_vi_channel_clear_queue(chan);
+	/* Reset the channel logic */
+	vi_writel(0x1F, &chan->vi_regs->sw_reset);
+	vi_writel(0x00, &chan->vi_regs->sw_reset);
 
 	mutex_unlock(&chan->lock);
 
