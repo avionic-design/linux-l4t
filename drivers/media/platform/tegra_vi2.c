@@ -1215,6 +1215,52 @@ static int tegra_vi_channel_g_fmt_vid_cap(
 	return 0;
 }
 
+static int tegra_vi_channel_cropcap(
+	struct file *file, void *__fh, struct v4l2_cropcap *cc)
+{
+	struct video_device *vdev = video_devdata(file);
+	struct tegra_vi_channel *chan =
+		container_of(vdev, struct tegra_vi_channel, vdev);
+	int err;
+
+	if (cc->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
+
+	mutex_lock(&chan->lock);
+
+	if (!chan->input) {
+		mutex_unlock(&chan->lock);
+		return -ENODEV;
+	}
+
+	mutex_lock(&chan->input->lock);
+
+	if (!chan->input->sensor) {
+		mutex_unlock(&chan->input->lock);
+		mutex_unlock(&chan->lock);
+		return -ENODEV;
+	}
+
+	/* Fill with default values */
+	cc->bounds.left = 0;
+	cc->bounds.top = 0;
+	cc->bounds.width = chan->pixfmt.width;
+	cc->bounds.height = chan->pixfmt.height;
+	cc->defrect = cc->bounds;
+	cc->pixelaspect.numerator = 1;
+	cc->pixelaspect.denominator = 1;
+
+	/* Allow the sensor to override */
+	err = v4l2_subdev_call(chan->input->sensor, video, cropcap, cc);
+	if (err == -ENOIOCTLCMD)
+		err = 0;
+
+	mutex_unlock(&chan->input->lock);
+	mutex_unlock(&chan->lock);
+
+	return err;
+}
+
 static int tegra_vi_channel_open(struct file *file)
 {
 	struct video_device *vdev = video_devdata(file);
@@ -1270,6 +1316,7 @@ static const struct v4l2_ioctl_ops tegra_vi_channel_ioctl_ops = {
 	.vidioc_try_fmt_vid_cap		= tegra_vi_channel_try_fmt_vid_cap,
 	.vidioc_g_fmt_vid_cap		= tegra_vi_channel_g_fmt_vid_cap,
 	.vidioc_s_fmt_vid_cap		= tegra_vi_channel_s_fmt_vid_cap,
+	.vidioc_cropcap			= tegra_vi_channel_cropcap,
 	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
