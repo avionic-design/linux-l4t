@@ -408,13 +408,13 @@ static int tegra_vi_channel_capture_thread(void *data)
 	u32 syncpt_val;
 	int err;
 
+	mutex_lock(&chan->lock);
+
 	/* Don't capture in broadcast mode it is broken */
 	if (chan->input->use_count > 1) {
 		dev_err(&vdev->dev, "Broadcast capture is not working yet!\n");
 		goto finish;
 	}
-
-	mutex_lock(&chan->lock);
 
 	tegra_vi_channel_clear_errors(chan);
 
