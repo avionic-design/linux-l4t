@@ -57,9 +57,12 @@ static int v4l2_pix_format_stride(const struct v4l2_pix_format *pf, int *stride)
 		stride[0] = ROUND_STRIDE(pf->width * 4);
 		return 1;
 	case V4L2_PIX_FMT_YUV422P:
-		stride[0] = ROUND_STRIDE(pf->width);
+		/* Make sure that all strides aligns properly while
+		 * ensuring that stride[1] = stride[0] / 2.
+		 */
 		stride[1] = ROUND_STRIDE(pf->width / 2);
-		stride[2] = ROUND_STRIDE(pf->width / 2);
+		stride[2] = stride[1];
+		stride[0] = stride[1] * 2;
 		return 3;
 	case V4L2_PIX_FMT_NV16:
 	case V4L2_PIX_FMT_NV61:
@@ -80,6 +83,7 @@ int v4l2_pix_format_set_sizeimage(struct v4l2_pix_format *pf)
 		return planes;
 
 	pf->sizeimage = (stride[0] + stride[1] + stride[2]) * pf->height;
+	pf->bytesperline = stride[0];
 	return 0;
 }
 
