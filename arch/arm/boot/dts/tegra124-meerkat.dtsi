@@ -2073,22 +2073,83 @@
 		vddio_sd_slot-supply = <&vdd_3v3_run>;
 	};
 
-	usb@7d000000 {
+	tegra_ehci_0: usb@7d000000 {
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+		nvidia,id-det-type = <TEGRA_USB_PMU_ID>;
+		nvidia,id-extcon-dev-name = "as3722-extcon";
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+
 		avdd_usb-supply = <&vdd_3v3_lp0>;
 		avdd_pll_utmip-supply = <&vddio_1v8>;
 	};
 
-	udc@7d000000 {
+	tegra_udc: udc@7d000000 {
+		nvidia,port-otg;
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_DEVICE>;
+		nvidia,id-det-type = <TEGRA_USB_PMU_ID>;
+		nvidia,id-extcon-dev-name = "as3722-extcon";
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+
 		avdd_usb-supply = <&vdd_3v3_lp0>;
 		avdd_pll_utmip-supply = <&vddio_1v8>;
+	};
+
+	otg@7d000000 {
+		nvidia,ehci-device = <&tegra_ehci_0>;
 	};
 
 	usb@7d004000 {
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+
 		avdd_usb-supply = <&vdd_3v3_lp0>;
 		avdd_pll_utmip-supply = <&vddio_1v8>;
 	};
 
 	usb@7d008000 {
+		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
+		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
+
+		nvidia,hssync-start-delay = <0>;
+		nvidia,elastic-limit = <16>;
+		nvidia,idle-wait-delay = <17>;
+		nvidia,term-range-adj = <6>;
+		nvidia,xcvr-setup = <8>;
+		nvidia,xcvr-lsfslew = <2>;
+		nvidia,xcvr-lsrslew = <2>;
+		nvidia,xcvr-setup-offset = <0>;
+		nvidia,xcvr-use-fuses = <1>;
+
 		avdd_usb-supply = <&vdd_3v3_lp0>;
 		avdd_pll_utmip-supply = <&vddio_1v8>;
 	};
