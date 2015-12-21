@@ -344,7 +344,7 @@
 
 	sound@0 {
 		compatible = "nvidia,tegra-audio-tlv320dac3100";
-		reg = <0>;
+		reg = <0x0 0x0 0x0 0x0>;
 		nvidia,model = "Tobor TLV320DAC3100";
 
 		nvidia,audio-routing =
@@ -360,7 +360,7 @@
 
 	sound@1 {
 		compatible = "ad,tobor-adc";
-		reg = <1>;
+		reg = <0x0 0x1 0x0 0x0>;
 		nvidia,model = "Tobor ADC";
 
 		nvidia,audio-routing =
