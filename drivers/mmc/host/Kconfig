@@ -187,6 +187,15 @@ config MMC_SDHCI_TEGRA_HS200_DISABLE
 
 	  If unsure, say N.
 
+config MMC_SDHCI_TEGRA_ENABLE_BOOT_PARTITIONS
+	bool "Create boot partitions to access boot area on Tegra SDHCI"
+	depends on MMC_SDHCI_TEGRA
+	help
+	  If you need to access your bootloader and/or its environment
+	  enable this setting to expose the boot partitions.
+
+	  If unsure, say N.
+
 config MMC_SDHCI_S3C
 	tristate "SDHCI support on Samsung S3C SoC"
 	depends on MMC_SDHCI && PLAT_SAMSUNG

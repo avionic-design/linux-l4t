@@ -4388,8 +4388,10 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 	}
 	host->mmc->pm_flags |= MMC_PM_IGNORE_PM_NOTIFY;
 
+#ifndef CONFIG_MMC_SDHCI_TEGRA_ENABLE_BOOT_PARTITIONS
 	/* disable access to boot partitions */
 	host->mmc->caps2 |= MMC_CAP2_BOOTPART_NOACC;
+#endif
 
 #if !defined(CONFIG_ARCH_TEGRA_2x_SOC) && !defined(CONFIG_ARCH_TEGRA_3x_SOC)
 	if (soc_data->nvquirks & NVQUIRK_ENABLE_HS200)
