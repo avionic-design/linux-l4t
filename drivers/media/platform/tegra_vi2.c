@@ -85,6 +85,11 @@ static int tegra_vi_input_get_csi_params(
 	struct tegra_vi_input *input, int *csi_lanes, int *csi_channel,
 	bool *continuous_clk);
 
+static struct device_dma_parameters dma_parameters = {
+	.max_segment_size = UINT_MAX,
+	.segment_boundary_mask = 0xffffffff,
+};
+
 /* List of all supported pixel formats along with the MBUS formats
  * they support. The MBUS formats are ordered by preference, so we
  * always start with MBUS format with the same bit depth, then
@@ -1373,6 +1378,9 @@ static const struct v4l2_ioctl_ops tegra_vi_channel_ioctl_ops = {
 	.vidioc_querybuf		= vb2_ioctl_querybuf,
 	.vidioc_qbuf			= vb2_ioctl_qbuf,
 	.vidioc_dqbuf			= vb2_ioctl_dqbuf,
+	.vidioc_expbuf			= vb2_ioctl_expbuf,
+	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
+	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_streamon		= vb2_ioctl_streamon,
 	.vidioc_streamoff		= vb2_ioctl_streamoff,
 	.vidioc_log_status		= v4l2_ctrl_log_status,
@@ -1766,6 +1774,14 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to get CSI regulator\n");
 		return PTR_ERR(vi2->csi_reg);
 	}
+
+	/* The default DMA segment size is 64K, however we need more
+	 * as video buffer are much larger. If we have an IOMMU it
+	 * shouldn't be a problem to support such large segments, so
+	 * apply the DMA parameters if none have been set yet.
+	 */
+	if (device_is_iommuable(&pdev->dev) && !pdev->dev.dma_parms)
+		pdev->dev.dma_parms = &dma_parameters;
 
 	mutex_init(&vi2->lock);
 
