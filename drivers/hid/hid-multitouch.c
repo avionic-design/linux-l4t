@@ -577,6 +577,7 @@ static void mt_up_timeout(unsigned long data)
 			input_mt_report_slot_state(hidinput->input,
 					MT_TOOL_FINGER, false);
 		}
+		input_mt_report_pointer_emulation(hidinput->input, true);
 		input_sync(hidinput->input);
 	}
 }
