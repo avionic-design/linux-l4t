@@ -1685,6 +1685,7 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 	while ((np = v4l2_of_get_next_endpoint(pdev->dev.of_node, np))) {
 		struct v4l2_async_subdev *asd;
 		struct device_node *port;
+		struct device_node *ep;
 		struct device_node *sd;
 		u32 reg;
 
@@ -1707,10 +1708,16 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 			return -EINVAL;
 		}
 
+		ep = of_parse_phandle(np, "remote-endpoint", 0);
+		if (!ep || !of_device_is_available(ep)) {
+			of_node_put(np);
+			continue;
+		}
+
 		sd = v4l2_of_get_remote_port_parent(np);
 		of_node_put(np);
 
-		if (!sd)
+		if (!sd || !of_device_is_available(sd))
 			continue;
 
 		asd->match_type = V4L2_ASYNC_MATCH_OF;
