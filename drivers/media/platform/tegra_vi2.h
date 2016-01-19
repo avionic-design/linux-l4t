@@ -260,6 +260,7 @@ struct tegra_vi_channel {
 	void *vb2_alloc_ctx;
 
 	struct task_struct *work_th;
+	bool should_stop;
 
 	/* Lock for the buffer list */
 	spinlock_t vq_lock;

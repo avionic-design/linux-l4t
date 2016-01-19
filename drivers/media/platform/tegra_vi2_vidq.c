@@ -306,6 +306,7 @@ static int tegra_vi_videobuf_stop_streaming(struct vb2_queue *q)
 	/* First wait for the capture thread to finish */
 	kthread_stop(chan->work_th);
 	chan->work_th = NULL;
+	chan->should_stop = false;
 
 	mutex_lock(&chan->lock);
 
@@ -387,7 +388,7 @@ static struct tegra_vi_buffer * tegra_vi_channel_set_next_buffer(struct tegra_vi
 
 	/* Get the next buffer, if none is available sleep a bit */
 	while (!buf) {
-		if (kthread_should_stop())
+		if (chan->should_stop || kthread_should_stop())
 			return NULL;
 
 		spin_lock_irqsave(&chan->vq_lock, flags);
@@ -518,8 +519,11 @@ static int tegra_vi_channel_capture_thread(void *data)
 		/* Wait for the write ACK */
 		err = tegra_vi_channel_wait_for_syncpt(chan, syncpt_val);
 		if (err) {
-			dev_err(&vdev->dev, "Failed to capture frame\n");
-			tegra_vi_channel_print_errors(chan);
+			if (!chan->should_stop) {
+				dev_err(&vdev->dev,
+					"Failed to capture frame\n");
+				tegra_vi_channel_print_errors(chan);
+			}
 			break;
 		}
 

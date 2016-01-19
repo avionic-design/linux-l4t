@@ -1398,6 +1398,45 @@ static const struct v4l2_file_operations tegra_vi_channel_fops = {
 	.unlocked_ioctl	= video_ioctl2,
 };
 
+static void tegra_vi_channel_event(struct tegra_vi_channel *chan,
+				struct v4l2_event *ev)
+{
+	struct video_device *vdev = &chan->vdev;
+
+	switch(ev->type) {
+	/* Handle source change like an EOS for now */
+	case V4L2_EVENT_SOURCE_CHANGE:
+	case V4L2_EVENT_EOS:
+		chan->should_stop = true;
+		break;
+	}
+}
+
+static void tegra_vi_notify(struct v4l2_subdev *sd,
+			unsigned int notification, void *arg)
+{
+	struct tegra_vi2 *vi2 =
+		container_of(sd->v4l2_dev, struct tegra_vi2, v4l2_dev);
+	int i;
+
+	/* We are only interrested in event notifications */
+	if (notification != V4L2_DEVICE_NOTIFY_EVENT)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(vi2->channel); i++) {
+		struct tegra_vi_channel *chan = &vi2->channel[i];
+
+		mutex_lock(&chan->lock);
+		if (chan->input) {
+			mutex_lock(&chan->input->lock);
+			if (chan->input->sensor == sd)
+				tegra_vi_channel_event(chan, arg);
+			mutex_unlock(&chan->input->lock);
+		}
+		mutex_unlock(&chan->lock);
+	}
+}
+
 static int tegra_vi_sensor_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_subdev *subdev,
 				struct v4l2_async_subdev *asd)
@@ -1830,6 +1869,7 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 	tegra_unpowergate_partition(TEGRA_POWERGATE_DISA);
 	tegra_unpowergate_partition(TEGRA_POWERGATE_DISB);
 
+	vi2->v4l2_dev.notify = tegra_vi_notify;
 	err = v4l2_device_register(&pdev->dev, &vi2->v4l2_dev);
 	if (err) {
 		dev_err(&pdev->dev, "Failed to register V4L2 device\n");
