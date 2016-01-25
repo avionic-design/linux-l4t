@@ -73,7 +73,7 @@ static int tegra_vi_channel_set_format(
 	struct tegra_vi_channel *chan, struct v4l2_pix_format *pf);
 
 static int tegra_vi_input_get_csi_params(
-	struct tegra_vi_input *input, int *csi_lanes, int *csi_channel,
+	const struct tegra_vi_input *input, int *csi_lanes, int *csi_channel,
 	bool *continuous_clk);
 
 static struct device_dma_parameters dma_parameters = {
@@ -435,7 +435,7 @@ static int tegra_vi_sensor_support_mbus(
 }
 
 static int tegra_vi_channel_update_sensor_formats(
-	struct tegra_vi_channel *chan, struct tegra_vi_input *input)
+	struct tegra_vi_channel *chan, const struct tegra_vi_input *input)
 {
 	struct v4l2_subdev *sensor = input->sensor;
 	enum v4l2_mbus_pixelcode code;
@@ -497,7 +497,7 @@ static int tegra_vi_channel_update_sensor_formats(
 }
 
 static u32 tegra_vi_channel_find_format_for_mbus(
-	struct tegra_vi_channel *chan, enum v4l2_mbus_pixelcode code)
+	const struct tegra_vi_channel *chan, enum v4l2_mbus_pixelcode code)
 {
 	const struct tegra_formats *best_fmt = NULL;
 	int f, m, best_fmt_pos = 0;
@@ -748,7 +748,7 @@ static int tegra_vi_channel_enum_fmt_vid_cap(
 }
 
 static const struct tegra_formats *tegra_vi_channel_get_format(
-	struct tegra_vi_channel *chan, u32 pixfmt)
+	const struct tegra_vi_channel *chan, u32 pixfmt)
 {
 	unsigned i;
 
@@ -761,7 +761,8 @@ static const struct tegra_formats *tegra_vi_channel_get_format(
 	return NULL;
 }
 
-void tegra_vi_input_start(struct tegra_vi2 *vi2, struct tegra_vi_input *input)
+void tegra_vi_input_start(const struct tegra_vi2 *vi2,
+			const struct tegra_vi_input *input)
 {
 	u32 ctrl0 = 0x46;
 	u32 cfg0;
@@ -809,7 +810,8 @@ void tegra_vi_input_start(struct tegra_vi2 *vi2, struct tegra_vi_input *input)
 	vi_writel(cfg0, &vi2->phy_regs->cil_command);
 }
 
-void tegra_vi_input_stop(struct tegra_vi2 *vi2, struct tegra_vi_input *input)
+void tegra_vi_input_stop(const struct tegra_vi2 *vi2,
+			const struct tegra_vi_input *input)
 {
 	u32 val;
 
@@ -946,7 +948,7 @@ disable_clk:
 }
 
 static int tegra_vi_input_get_mbus_flags(
-	struct tegra_vi_input *input, unsigned int *flags)
+	const struct tegra_vi_input *input, unsigned int *flags)
 {
 	struct v4l2_mbus_config mbus_cfg = {
 		.type = V4L2_MBUS_CSI2,
@@ -981,7 +983,7 @@ static int tegra_vi_input_get_mbus_flags(
 }
 
 static int tegra_vi_input_get_csi_params(
-	struct tegra_vi_input *input, int *csi_lanes, int *csi_channel,
+	const struct tegra_vi_input *input, int *csi_lanes, int *csi_channel,
 	bool *continuous_clk)
 {
 	int mbus_flags;
@@ -1040,12 +1042,12 @@ static int tegra_vi_input_get_csi_params(
 	return 0;
 }
 
-static int tegra_vi_channel_get_mbus_framefmt(struct tegra_vi_channel *chan,
+static int tegra_vi_channel_get_mbus_framefmt(const struct tegra_vi_channel *chan,
 					struct v4l2_pix_format *pf,
 					struct v4l2_mbus_framefmt *framefmt,
 					int *nv_fmt)
 {
-	struct video_device *vdev = &chan->vdev;
+	const struct video_device *vdev = &chan->vdev;
 	const struct tegra_formats *fmt;
 	int err = -EINVAL;
 	unsigned i;
@@ -1596,7 +1598,7 @@ static int tegra_vi_input_init(struct platform_device *pdev,
 	return 0;
 }
 
-static void tegra_vi_input_reset(struct tegra_vi_input *input, bool reset)
+static void tegra_vi_input_reset(const struct tegra_vi_input *input, bool reset)
 {
 	if (input->cil_regs[0])
 		vi_writel(reset ? 1 : 0, &input->cil_regs[0]->sensor_reset);
@@ -1726,7 +1728,7 @@ static void tegra_vi_channel_uninit(struct tegra_vi_channel *chan)
 	v4l2_device_unregister_subdev(chan->tpg.sensor);
 }
 
-static void tegra_vi_channel_reset(struct tegra_vi_channel *chan, bool reset)
+static void tegra_vi_channel_reset(const struct tegra_vi_channel *chan, bool reset)
 {
 	if (reset)
 		vi_writel(0, &chan->vi_regs->image_dt);
