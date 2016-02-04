@@ -1752,6 +1752,9 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			ams,major-rev = <1>;
 			ams,minor-rev = <2>;
 			ams,system-power-controller;
@@ -1770,6 +1773,13 @@
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&as3722_default>;
+
+			as3722_input: input@0 {
+				status = "okay";
+
+				compatible = "ams,as3722-input";
+				reg = <0>;
+			};
 
 			as3722_default: pinmux@0 {
 				gpio0 {
