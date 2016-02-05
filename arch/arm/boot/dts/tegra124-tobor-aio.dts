@@ -175,6 +175,19 @@
 		};
 	};
 
+	/* SPI2 */
+	spi@7000d600 {
+		status = "okay";
+		spi-max-frequency = <8000000>;
+
+		spi@0 {
+			compatible = "invensense,icm20608";
+			reg = <0>;
+
+			spi-max-frequency = <8000000>;
+		};
+	};
+
 	/* Limit MMC3 to 1.8V for TI SDIO */
 	i2c@7000d000 {
 		pmic: pmic@40 {
