@@ -2036,6 +2036,9 @@
 		wp-gpios = <&gpio TEGRA_GPIO(Q, 4) GPIO_ACTIVE_HIGH>;
 		bus-width = <4>;
 		vddio_sdmmc-supply = <&vddio_sdmmc3>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 
 	/* eMMC */
