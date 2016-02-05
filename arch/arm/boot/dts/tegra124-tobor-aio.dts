@@ -175,29 +175,6 @@
 		};
 	};
 
-	/* SPI2 */
-	spi@7000d600 {
-		status = "okay";
-		spi-max-frequency = <25000000>;
-		cs-gpios = <0>, <0>, <0>, <&gpio TEGRA_GPIO(R, 7) GPIO_ACTIVE_LOW>;
-
-		lsm330d@0 {
-			compatible = "st,lsm330d_accel";
-			reg = <0>;
-			spi-max-frequency = <10000000>;
-
-			controller-data {
-				nvidia,enable-hw-based-cs;
-			};
-		};
-
-		lsm330d@3 {
-			compatible = "st,lsm330d_gyro";
-			reg = <3>;
-			spi-max-frequency = <10000000>;
-		};
-	};
-
 	/* Limit MMC3 to 1.8V for TI SDIO */
 	i2c@7000d000 {
 		pmic: pmic@40 {
