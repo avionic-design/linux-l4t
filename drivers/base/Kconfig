@@ -156,6 +156,15 @@ config FW_LOADER_USER_HELPER
 	  no longer required unless you have a special firmware file that
 	  resides in a non-standard path.
 
+config RETRY_DEFERRED_DRIVER_PROBES_EARLY
+	bool "Retry deferred driver probing early"
+	default n
+	help
+	  Say Y here if deferred driver probes should be retried early
+	  during boot. This can speedup initialization of devices which
+	  do not have their dependencies satisified in the first round
+	  of driver probing.
+
 config DEBUG_DRIVER
 	bool "Driver Core verbose debug messages"
 	depends on DEBUG_KERNEL

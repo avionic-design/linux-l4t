@@ -176,7 +176,7 @@ static void driver_deferred_probe_trigger(void)
  *
  * We don't want to get in the way when the bulk of drivers are getting probed.
  * Instead, this initcall makes sure that deferred probing is delayed until
- * late_initcall time.
+ * late_initcall time, or subsys_initcall time if so configured.
  */
 static int deferred_probe_initcall(void)
 {
@@ -190,7 +190,11 @@ static int deferred_probe_initcall(void)
 	flush_workqueue(deferred_wq);
 	return 0;
 }
+#ifdef CONFIG_RETRY_DEFERRED_DRIVER_PROBES_EARLY
+subsys_initcall(deferred_probe_initcall);
+#else
 late_initcall(deferred_probe_initcall);
+#endif
 
 static void driver_bound(struct device *dev)
 {
