@@ -119,31 +119,6 @@
 		usb_vbus-supply = <&vdd_usb0_vbus>;
 	};
 
-	/* USB 3.0 */
-	usb@7d008000 {
-		status = "okay";
-		nvidia,has-host;
-		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
-		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
-
-		nvidia,hotplug;
-		nvidia,remote-wakeup-supported;
-		nvidia,power-off-on-suspend;
-
-		nvidia,hssync-start-delay = <0>;
-		nvidia,elastic-limit = <16>;
-		nvidia,idle-wait-delay = <17>;
-		nvidia,term-range-adj = <6>;
-		nvidia,xcvr-setup = <8>;
-		nvidia,xcvr-lsfslew = <2>;
-		nvidia,xcvr-lsrslew = <2>;
-		nvidia,xcvr-setup-offset = <0>;
-		nvidia,xcvr-use-fuses = <1>;
-		nvidia,vbus-oc-map = <0x5>;
-
-		usb_vbus-supply = <&vdd_usb2_vbus>;
-	};
-
 	xusb@70090000 {
 		nvidia,gpio_ss1_sata = <0>;
 		nvidia,portmap = <(XUSB_MUX_USB2_P2 | XUSB_MUX_SS_P1)>;
