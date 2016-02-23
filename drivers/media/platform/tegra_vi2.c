@@ -47,6 +47,7 @@
 
 #define TEGRA_MBUS_FORMATS_YUV422	\
 	V4L2_MBUS_FMT_UYVY8_2X8,	\
+	V4L2_MBUS_FMT_YUYV8_2X8,	\
 	V4L2_MBUS_FMT_UYVY8_1X16
 
 #define TEGRA_FORMATS_RAW(order)				\
@@ -263,6 +264,7 @@ static int mbus_format_to_tegra_data_type(enum v4l2_mbus_pixelcode mbus)
 {
 	switch(mbus) {
 	case V4L2_MBUS_FMT_UYVY8_2X8:
+	case V4L2_MBUS_FMT_YUYV8_2X8:
 	case V4L2_MBUS_FMT_UYVY8_1X16:
 		return 30;
 	case V4L2_MBUS_FMT_RGB444_2X8_PADHI_LE:
