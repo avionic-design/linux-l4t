@@ -1403,8 +1403,6 @@ static const struct v4l2_file_operations tegra_vi_channel_fops = {
 static void tegra_vi_channel_event(struct tegra_vi_channel *chan,
 				struct v4l2_event *ev)
 {
-	struct video_device *vdev = &chan->vdev;
-
 	switch(ev->type) {
 	/* Handle source change like an EOS for now */
 	case V4L2_EVENT_SOURCE_CHANGE:
