@@ -11,6 +11,7 @@
 #define TEGRA_VI2_H__
 
 #include <media/v4l2-device.h>
+#include <media/v4l2-ctrls.h>
 #include <media/videobuf2-core.h>
 
 struct platform_device;
@@ -289,6 +290,7 @@ struct tegra_vi2 {
 	struct tegra_vi_input input[3];
 
 	struct v4l2_device v4l2_dev;
+	struct v4l2_ctrl_handler ctrl_handler;
 
 	struct v4l2_async_subdev* asd[3];
 	struct v4l2_async_notifier sd_notifier;
