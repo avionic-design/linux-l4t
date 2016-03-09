@@ -193,6 +193,18 @@ static const struct tegra_formats tegra_formats[] = {
 			V4L2_MBUS_FMT_RGB565_2X8_LE,
 			V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE,
 			V4L2_MBUS_FMT_RGB444_2X8_PADHI_LE,
+			V4L2_MBUS_FMT_Y8_1X8,
+			V4L2_MBUS_FMT_Y10_1X10,
+			V4L2_MBUS_FMT_Y12_1X12,
+		},
+	},
+	{
+		.v4l2 = V4L2_PIX_FMT_Y14,
+		.nv = 32,
+		.mbus = {
+			V4L2_MBUS_FMT_Y12_1X12,
+			V4L2_MBUS_FMT_Y10_1X10,
+			V4L2_MBUS_FMT_Y8_1X8,
 		},
 	},
 };
@@ -272,16 +284,19 @@ static int mbus_format_to_csi_data_type(enum v4l2_mbus_pixelcode mbus)
 	case V4L2_MBUS_FMT_SGBRG8_1X8:
 	case V4L2_MBUS_FMT_SGRBG8_1X8:
 	case V4L2_MBUS_FMT_SRGGB8_1X8:
+	case V4L2_MBUS_FMT_Y8_1X8:
 		return 42;
 	case V4L2_MBUS_FMT_SBGGR10_1X10:
 	case V4L2_MBUS_FMT_SGBRG10_1X10:
 	case V4L2_MBUS_FMT_SGRBG10_1X10:
 	case V4L2_MBUS_FMT_SRGGB10_1X10:
+	case V4L2_MBUS_FMT_Y10_1X10:
 		return 43;
 	case V4L2_MBUS_FMT_SBGGR12_1X12:
 	case V4L2_MBUS_FMT_SGBRG12_1X12:
 	case V4L2_MBUS_FMT_SGRBG12_1X12:
 	case V4L2_MBUS_FMT_SRGGB12_1X12:
+	case V4L2_MBUS_FMT_Y12_1X12:
 		return 44;
 
 	default:

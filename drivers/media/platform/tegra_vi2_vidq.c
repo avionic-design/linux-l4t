@@ -43,6 +43,7 @@ static int v4l2_pix_format_stride(const struct v4l2_pix_format *pf, int *stride)
 	case V4L2_PIX_FMT_SGBRG14:
 	case V4L2_PIX_FMT_SGRBG14:
 	case V4L2_PIX_FMT_SRGGB14:
+	case V4L2_PIX_FMT_Y14:
 	case V4L2_PIX_FMT_YUYV:
 	case V4L2_PIX_FMT_YVYU:
 	case V4L2_PIX_FMT_UYVY:
