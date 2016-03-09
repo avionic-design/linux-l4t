@@ -260,7 +260,7 @@ static int tegra_vi_fill_pix_format(struct v4l2_pix_format *pf,
 	return v4l2_pix_format_set_sizeimage(pf);
 }
 
-static int mbus_format_to_tegra_data_type(enum v4l2_mbus_pixelcode mbus)
+static int mbus_format_to_csi_data_type(enum v4l2_mbus_pixelcode mbus)
 {
 	switch(mbus) {
 	case V4L2_MBUS_FMT_UYVY8_2X8:
@@ -1079,7 +1079,7 @@ static int tegra_vi_channel_set_format(
 {
 	struct tegra_vi_input *input = chan->input;
 	struct video_device *vdev = &chan->vdev;
-	int src, nv_mbus, nv_fmt, line_size;
+	int src, csi_dt, nv_fmt, line_size;
 	struct v4l2_mbus_framefmt framefmt;
 	unsigned int interlaced;
 	int err;
@@ -1131,15 +1131,15 @@ static int tegra_vi_channel_set_format(
 	}
 
 	/* Get the nvidia type for this bus format */
-	nv_mbus = mbus_format_to_tegra_data_type(framefmt.code);
-	if (nv_mbus < 0) {
-		dev_err(&vdev->dev, "No NV data type found for MBUS format %x\n",
+	csi_dt = mbus_format_to_csi_data_type(framefmt.code);
+	if (csi_dt < 0) {
+		dev_err(&vdev->dev, "No CSI data type found for MBUS format %x\n",
 			framefmt.code);
-		return nv_mbus;
+		return csi_dt;
 	}
 
 	/* Get the line size in bytes */
-	switch (nv_mbus) {
+	switch (csi_dt) {
 	case 24: /* YUV420_8 */
 	case 42: /* RAW8 */
 		line_size = framefmt.width;
@@ -1216,7 +1216,7 @@ static int tegra_vi_channel_set_format(
 	/* Setup the output format with MEM output */
 	vi_writel((nv_fmt << 16) | BIT(0), &chan->vi_regs->image_def);
 	/* Bus format */
-	vi_writel(nv_mbus | (input->csi_channel << 8) | (interlaced << 12),
+	vi_writel(csi_dt | (input->csi_channel << 8) | (interlaced << 12),
 		&chan->vi_regs->image_dt);
 	/* Line size on the memory bus rounded up to the next word */
 	vi_writel((line_size + 1) & ~1,
