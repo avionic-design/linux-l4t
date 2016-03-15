@@ -574,6 +574,7 @@ static int tegra_vi_channel_set_input(
 		chan->input = NULL;
 		memset(&chan->pixfmt, 0, sizeof(chan->pixfmt));
 		chan->formats_count = 0;
+		chan->vdev.ctrl_handler = NULL;
 	}
 
 	if (!input)
@@ -649,6 +650,9 @@ static int tegra_vi_channel_set_input(
 		dev_warn(&vdev->dev, "Failed to set format for input %d\n", i);
 		goto disable_input;
 	}
+
+	/* Connect ctrl_handler */
+	chan->vdev.ctrl_handler = input->sensor->ctrl_handler;
 
 	mutex_unlock(&input->lock);
 
@@ -1873,18 +1877,11 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 	tegra_unpowergate_partition(TEGRA_POWERGATE_DISA);
 	tegra_unpowergate_partition(TEGRA_POWERGATE_DISB);
 
-	err = v4l2_ctrl_handler_init(&vi2->ctrl_handler, 16);
-	if (err) {
-		dev_err(&pdev->dev, "Failed to init ctrl handler\n");
-		goto powergate_partition;
-	}
-
-	vi2->v4l2_dev.ctrl_handler = &vi2->ctrl_handler;
 	vi2->v4l2_dev.notify = tegra_vi_notify;
 	err = v4l2_device_register(&pdev->dev, &vi2->v4l2_dev);
 	if (err) {
 		dev_err(&pdev->dev, "Failed to register V4L2 device\n");
-		goto ctrl_handler_free;
+		goto powergate_partition;
 	}
 
 	for (input = 0; input < ARRAY_SIZE(vi2->input); input++) {
@@ -1929,8 +1926,6 @@ uninit_channels:
 		tegra_vi_channel_uninit(&vi2->channel[chan]);
 v4l2_unregister:
 	v4l2_device_unregister(&vi2->v4l2_dev);
-ctrl_handler_free:
-	v4l2_ctrl_handler_free(&vi2->ctrl_handler);
 powergate_partition:
 	tegra_powergate_partition(TEGRA_POWERGATE_DISB);
 	tegra_powergate_partition(TEGRA_POWERGATE_DISA);
