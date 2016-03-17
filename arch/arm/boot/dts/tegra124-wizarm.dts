@@ -30,6 +30,13 @@
 			dap2_sclk_pa3 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+
+			/* Set a pull up on GPIO PJ2 */
+			pj2 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 		};
 	};
 
@@ -47,6 +54,20 @@
 
 		hdmi {
 			status = "okay";
+		};
+
+		vi {
+			port@0 {
+				endpoint@0 {
+					remote-endpoint = <&hdmi_bridge_ep0>;
+				};
+			};
+
+			port@1 {
+				endpoint@0 {
+					remote-endpoint = <&hdmi_bridge_ep1>;
+				};
+			};
 		};
 	};
 
@@ -71,6 +92,52 @@
 				    0x0   /* Output GPIO low, no pulls */
 				    0xffffffff
 				    0xffffffff>;
+		};
+	};
+
+	i2c@7000c500 {
+		status = "okay";
+
+		tc358840xbg@1f {
+			compatible = "toshiba,tc358840xbg";
+			reg = <0x1f>;
+
+			vddc11-supply = <&vdd_1v1_tc35840>;
+			vddio18-supply = <&vdd_1v8_tc35840>;
+			vddio33-supply = <&vdd_3v3_tc35840>;
+			vdd33-hdmi-supply = <&vdd_3v3_tc35840>;
+			vdd11-hdmi-supply = <&vdd_1v1_tc35840>;
+			vdd12-mipi0-supply = <&vdd_1v2_tc35840>;
+			vdd12-mipi1-supply = <&vdd_1v2_tc35840>;
+
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(J, 2) IRQ_TYPE_LEVEL_HIGH>;
+
+			reset-gpios = <&gpio TEGRA_GPIO(BB, 3) GPIO_ACTIVE_LOW>;
+
+			clock-rate = <48000000>;
+
+			port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				hdmi_bridge_ep0: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&csi_ab_ep>;
+					clock-lanes = <0>;
+					data-lanes = <1>, <2>, <3>, <4>;
+					clock-noncontinuous;
+				};
+
+				hdmi_bridge_ep1: endpoint@1 {
+					status = "disabled";
+					reg = <1>;
+					remote-endpoint = <&csi_cd_ep>;
+					clock-lanes = <0>;
+					data-lanes = <1>, <2>, <3>, <4>;
+					clock-noncontinuous;
+				};
+			};
 		};
 	};
 
@@ -391,6 +458,54 @@
 			enable-active-high;
 			gpio-open-drain;
 		};
+
+		vdd_1v8_tc35840: regulator@114 {
+			compatible = "regulator-fixed";
+			reg = <114>;
+			regulator-name = "+1V8_TC35840";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			vin-supply = <&vdd_3v3_ext>;
+			gpio = <&gpio TEGRA_GPIO(H, 2) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
+		vdd_1v2_tc35840: regulator@115 {
+			compatible = "regulator-fixed";
+			reg = <115>;
+			regulator-name = "+1V2_TC35840";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			vin-supply = <&vdd_3v3_ext>;
+			gpio = <&gpio TEGRA_GPIO(H, 4) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
+		vdd_1v1_tc35840: regulator@116 {
+			compatible = "regulator-fixed";
+			reg = <116>;
+			regulator-name = "+1V1_TC35840";
+			regulator-min-microvolt = <1100000>;
+			regulator-max-microvolt = <1100000>;
+			vin-supply = <&vdd_3v3_ext>;
+			gpio = <&gpio TEGRA_GPIO(H, 5) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
+		vdd_3v3_tc35840: regulator@117 {
+			compatible = "regulator-fixed";
+			reg = <117>;
+			regulator-name = "+3V3_TC35840";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			/* The regulator need 3ms, but we also add 1ms for
+			 * the clock to be available. */
+			regulator-enable-ramp-delay = <4000>;
+			vin-supply = <&vdd_5v0_ext>;
+			gpio = <&gpio TEGRA_GPIO(I, 7) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
 	};
  };
 
