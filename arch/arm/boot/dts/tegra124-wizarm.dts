@@ -96,7 +96,6 @@
 	sdhci@700b0400 {
 		status = "okay";
 		vddio_sd_slot-supply = <&vdd_3v3_sd>;
-		cd-gpios = <&gpio TEGRA_GPIO(V, 2) GPIO_ACTIVE_HIGH>;
 		wp-gpios = <>;
 	};
 
