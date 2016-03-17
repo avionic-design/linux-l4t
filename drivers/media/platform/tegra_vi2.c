@@ -61,16 +61,7 @@
 		},						\
 	},							\
 	{							\
-		.v4l2 = V4L2_PIX_FMT_S ## order ## 10,		\
-		.nv = 32,					\
-		.mbus = {					\
-			V4L2_MBUS_FMT_S ## order ## 10_1X10,	\
-			V4L2_MBUS_FMT_S ## order ## 12_1X12,	\
-			V4L2_MBUS_FMT_S ## order ## 8_1X8,	\
-		},						\
-	},							\
-	{							\
-		.v4l2 = V4L2_PIX_FMT_S ## order ## 12,		\
+		.v4l2 = V4L2_PIX_FMT_S ## order ## 14,		\
 		.nv = 32,					\
 		.mbus = {					\
 			V4L2_MBUS_FMT_S ## order ## 12_1X12,	\
