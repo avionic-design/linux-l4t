@@ -1346,18 +1346,22 @@ static int tegra_vi_channel_release(struct file *file)
 	struct video_device *vdev = video_devdata(file);
 	struct tegra_vi_channel *chan =
 		container_of(vdev, struct tegra_vi_channel, vdev);
-	int err = 0;
+	int err;
+
+	/* vb2_fop_release() must be called without lock as it will
+	 * stop the vidq if it is running. This would deadlock as
+	 * the capture thread need the lock to properly finish. */
+	err = vb2_fop_release(file);
+	if (err)
+		return err;
 
 	mutex_lock(&chan->lock);
 
-	if (chan->use_count == 1)
+	if (chan->use_count == 1) {
 		err = tegra_vi_channel_set_input(chan, INPUT_NONE);
-
-	if (!err)
-		err = vb2_fop_release(file);
-
-	if (!err)
-		chan->use_count--;
+		if (!err)
+			chan->use_count--;
+	}
 
 	mutex_unlock(&chan->lock);
 
