@@ -1678,9 +1678,29 @@ static int tegra_i2c_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int tegra_i2c_check_client_can_shutdown(struct device *dev, void *data)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct tegra_i2c_dev *i2c_dev = data;
+
+	/* Skip devices that are not on this bus */
+	if (dev->parent != &i2c_dev->adapter.dev)
+		return 0;
+
+	/* Reject devices with a driver that doesn't handle shutdown */
+	if (client->driver && !client->driver->shutdown)
+		return -ENOTSUPP;
+
+	return 0;
+}
+
 static void tegra_i2c_shutdown(struct platform_device *pdev)
 {
 	struct tegra_i2c_dev *i2c_dev = platform_get_drvdata(pdev);
+
+	/* Only shutdown the bus if all clients support it */
+	if (i2c_for_each_dev(i2c_dev, tegra_i2c_check_client_can_shutdown))
+		return;
 
 	dev_info(i2c_dev->dev, "Bus is shutdown down..\n");
 	i2c_shutdown_adapter(&i2c_dev->adapter);
