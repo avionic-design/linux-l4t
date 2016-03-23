@@ -835,6 +835,10 @@ static void __init tegra_init_power(void)
 	tegra_powergate_partition_with_clk_off(TEGRA_POWERGATE_XUSBC);
 #endif
 
+#ifdef CONFIG_ARCH_TEGRA_12x_SOC
+	tegra_powergate_partition_with_clk_off(TEGRA_POWERGATE_SOR);
+#endif
+
 }
 
 static inline unsigned long gizmo_readl(unsigned long offset)
