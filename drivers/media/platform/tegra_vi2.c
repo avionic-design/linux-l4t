@@ -1875,8 +1875,6 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 
 	/* VI */
 	tegra_unpowergate_partition(TEGRA_POWERGATE_VENC);
-	/* MIPI CAL */
-	tegra_unpowergate_partition(TEGRA_POWERGATE_SOR);
 	/* Depends on DIS? See comment in t124.c on t124_vi_info */
 	tegra_unpowergate_partition(TEGRA_POWERGATE_DISA);
 	tegra_unpowergate_partition(TEGRA_POWERGATE_DISB);
@@ -1933,7 +1931,6 @@ v4l2_unregister:
 powergate_partition:
 	tegra_powergate_partition(TEGRA_POWERGATE_DISB);
 	tegra_powergate_partition(TEGRA_POWERGATE_DISA);
-	tegra_powergate_partition(TEGRA_POWERGATE_SOR);
 	tegra_powergate_partition(TEGRA_POWERGATE_VENC);
 	clk_disable_unprepare(vi2->csus_clk);
 disable_isp_clk:
