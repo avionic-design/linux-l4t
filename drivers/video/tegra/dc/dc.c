@@ -3183,6 +3183,10 @@ static int tegra_dc_probe(struct platform_device *ndev)
 	    (dc->out->type == TEGRA_DC_OUT_HDMI)) {
 		struct fb_monspecs specs;
 		struct tegra_dc_hdmi_data *hdmi = tegra_dc_get_outdata(dc);
+
+		/* Give display some time before reading edid. */
+		msleep(60);
+
 		if (!tegra_edid_get_monspecs(hdmi->edid, &specs)) {
 			struct tegra_dc_mode *dcmode = &dc->out->modes[0];
 			dcmode->pclk          = specs.modedb->pixclock;
