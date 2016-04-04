@@ -1849,10 +1849,16 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 		return err;
 	}
 
+	err = nvhost_module_enable_clk(pdev->dev.parent);
+	if (err) {
+		dev_err(&pdev->dev, "Failed to enable host1x clocks\n");
+		goto regulator_disable;
+	}
+
 	err = clk_prepare_enable(vi2->vi_clk);
 	if (err) {
 		dev_err(&pdev->dev, "Failed to enable VI clock\n");
-		goto regulator_disable;
+		goto host1x_disable;
 	}
 
 	err = clk_prepare_enable(vi2->csi_clk);
@@ -1939,6 +1945,8 @@ disable_csi_clk:
 	clk_disable_unprepare(vi2->csi_clk);
 disable_vi_clk:
 	clk_disable_unprepare(vi2->vi_clk);
+host1x_disable:
+	nvhost_module_disable_clk(pdev->dev.parent);
 regulator_disable:
 	WARN_ON(regulator_disable(vi2->csi_reg));
 	return err;
