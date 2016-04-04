@@ -1224,7 +1224,7 @@ static int uh2c_remove(struct i2c_client *client)
 }
 
 static const struct i2c_device_id uh2c_id[] = {
-	{ "uh2c", 0 },
+	{ "tc358840xbg", 0 },
 	{ }
 };
 
