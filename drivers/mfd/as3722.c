@@ -40,11 +40,12 @@ enum {
 	AS3722_PINCTRL_ID,
 	AS3722_REGULATOR_ID,
 	AS3722_RTC_ID,
-	AS3722_ADC,
+	AS3722_ADC_EXTCON_ID,
 	AS3722_POWER_OFF_ID,
 	AS3722_CLK_ID,
 	AS3722_WATCHDOG_ID,
 	AS3722_INPUT_ID,
+	AS3722_ADC_ID,
 };
 
 static const struct resource as3722_rtc_resource[] = {
@@ -88,7 +89,7 @@ static struct mfd_cell as3722_devs[] = {
 		.name = "as3722-adc-extcon",
 		.num_resources = ARRAY_SIZE(as3722_adc_resource),
 		.resources = as3722_adc_resource,
-		.id = AS3722_ADC,
+		.id = AS3722_ADC_EXTCON_ID,
 	},
 	{
 		.name = "as3722-power-off",
@@ -101,6 +102,10 @@ static struct mfd_cell as3722_devs[] = {
 	{
 		.name = "as3722-input",
 		.id = AS3722_INPUT_ID,
+	},
+	{
+		.name = "as3722-adc",
+		.id = AS3722_ADC_ID,
 	},
 };
 
