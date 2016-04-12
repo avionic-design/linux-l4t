@@ -412,3 +412,7 @@ config SND_SOC_TEGRA_TOBOR_ADC
 	tristate "SoC Audio support for the ADC on the Tobor board"
 	depends on SND_SOC_TEGRA
 	select SND_SOC_CS53L30
+
+config SND_SOC_TEGRA_UH2C
+	tristate "SoC Audio support for the UH2C"
+	depends on SND_SOC_TEGRA && VIDEO_UH2C
