@@ -21,10 +21,19 @@
 #include <media/v4l2-of.h>
 #include <media/soc_camera.h>
 
+#include <sound/soc.h>
+#include <sound/pcm_params.h>
+
 /* Global */
 #define CHIPID					0x0000
 #define SYSCTL					0x0002
 #define CONFCTL0				0x0004
+#define CONFCTL0_AUD_OUT_SEL_SHIFT		3
+#define CONFCTL0_AUD_OUT_SEL_MASK		(3 << CONFCTL0_AUD_OUT_SEL_SHIFT)
+#define CONFCTL0_AUD_OUT_SEL_CSI_TX0		(0 << CONFCTL0_AUD_OUT_SEL_SHIFT)
+#define CONFCTL0_AUD_OUT_SEL_CSI_TX1		(1 << CONFCTL0_AUD_OUT_SEL_SHIFT)
+#define CONFCTL0_AUD_OUT_SEL_I2S		(2 << CONFCTL0_AUD_OUT_SEL_SHIFT)
+#define CONFCTL0_AUD_OUT_SEL_TDM		(3 << CONFCTL0_AUD_OUT_SEL_SHIFT)
 #define CONFCTL1				0x0006
 
 /* Interrupt Registers */
@@ -91,9 +100,21 @@
 #define EDID_LEN2				0x85E4
 
 /* HDMI Rx Audio Control */
+#define FORCE_MUTE				0x8600
+#define FS_MUTE					0x8607
+#define MUTE_MODE				0x8608
+#define FS_IMODE				0x8620
+#define FS_SET					0x8621
 #define LOCK_REF_FREQA				0x8630
 #define LOCK_REF_FREQB				0x8631
 #define LOCK_REF_FREQC				0x8632
+#define SDO_MODE0				0x8651
+#define SDO_MODE1				0x8652
+#define SDO_MODE1_FMT_SHIFT			0
+#define SDO_MODE1_FMT_MASK			7
+#define SDO_MODE1_FMT_RIGHT_J			(0 << SDO_MODE1_FMT_SHIFT)
+#define SDO_MODE1_FMT_LEFT_J			(1 << SDO_MODE1_FMT_SHIFT)
+#define SDO_MODE1_FMT_I2S			(2 << SDO_MODE1_FMT_SHIFT)
 #define NCO_F0_MOD				0x8670
 #define NCO_48F0A				0x8671
 #define NCO_48F0B				0x8672
@@ -570,6 +591,282 @@ static struct v4l2_subdev_ops uh2c_subdev_ops = {
 	.video = &uh2c_subdev_video_ops,
 };
 
+#if IS_ENABLED(CONFIG_SND_SOC)
+static int uh2c_dai_set_fmt(struct snd_soc_dai *dai,
+			      unsigned int fmt)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct uh2c *priv = snd_soc_codec_get_drvdata(codec);
+	unsigned mode0 = 0, mode1 = 0, confctl0 = 0;
+	int err;
+
+	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
+	case SND_SOC_DAIFMT_CBM_CFM:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
+	case SND_SOC_DAIFMT_LEFT_J:
+		mode1 |= SDO_MODE1_FMT_LEFT_J;
+		confctl0 |= CONFCTL0_AUD_OUT_SEL_I2S;
+		break;
+	case SND_SOC_DAIFMT_RIGHT_J:
+		mode1 |= SDO_MODE1_FMT_RIGHT_J;
+		confctl0 |= CONFCTL0_AUD_OUT_SEL_I2S;
+		break;
+	case SND_SOC_DAIFMT_I2S:
+		mode1 |= SDO_MODE1_FMT_I2S;
+		confctl0 |= CONFCTL0_AUD_OUT_SEL_I2S;
+		break;
+	case SND_SOC_DAIFMT_DSP_A:
+		confctl0 |= BIT(8);
+	case SND_SOC_DAIFMT_DSP_B:
+		confctl0 |= CONFCTL0_AUD_OUT_SEL_TDM;
+		mode1 |= SDO_MODE1_FMT_LEFT_J;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
+	case SND_SOC_DAIFMT_NB_NF:
+		break;
+	case SND_SOC_DAIFMT_NB_IF:
+		mode0 |= BIT(0);
+		break;
+	case SND_SOC_DAIFMT_IB_NF:
+		mode0 |= BIT(2);
+		break;
+	case SND_SOC_DAIFMT_IB_IF:
+		mode0 |= BIT(0) | BIT(2);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* Update AudOutSel and I2SDlyOpt */
+	err = regmap_update_bits(priv->ctl_regmap, CONFCTL0,
+				CONFCTL0_AUD_OUT_SEL_MASK | BIT(8),
+				confctl0);
+	if (err)
+		return err;
+	/* Update LR_POL and BCK_POL */
+	err = regmap_update_bits(priv->hdmi_regmap, SDO_MODE0,
+				BIT(0) | BIT(2), mode0);
+	if (err)
+		return err;
+	/* Update SDO_FMT */
+	err = regmap_update_bits(priv->hdmi_regmap, SDO_MODE1,
+				SDO_MODE1_FMT_MASK, mode1);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+static unsigned uh2c_audio_rates[16] = {
+	/* 0 */
+	44100,
+	0,
+	48000,
+	32000,
+	/* 4 */
+	22050,
+	384000,
+	24000,
+	352800,
+	/* 8 */
+	88200,
+	768000,
+	96000,
+	705600,
+	/* C */
+	176400,
+	0,
+	192000,
+	0,
+};
+
+static int uh2c_dai_hw_params(struct snd_pcm_substream *substream,
+			struct snd_pcm_hw_params *params,
+			struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct uh2c *priv = snd_soc_codec_get_drvdata(codec);
+	unsigned channels = params_channels(params);
+	unsigned rate = params_rate(params);
+	unsigned max_channels;
+	unsigned mode1 = 0;
+	unsigned confctl0;
+	unsigned fs_set;
+	int err;
+
+	/* Check that we have a signal */
+	mutex_lock(&priv->lock);
+
+	if (!priv->vsync) {
+		mutex_unlock(&priv->lock);
+		return -ENODATA;
+	}
+
+	mutex_unlock(&priv->lock);
+
+	err = regmap_read(priv->ctl_regmap, CONFCTL0, &confctl0);
+	if (err)
+		return err;
+
+	/* I2S mode only supports stereo, TDM up to 8 */
+	max_channels = (confctl0 & CONFCTL0_AUD_OUT_SEL_MASK) ==
+			CONFCTL0_AUD_OUT_SEL_I2S ? 2 : 8;
+	if (channels > max_channels) {
+		dev_err(codec->dev, "Too many channels\n");
+		return -EINVAL;
+	}
+
+	err = regmap_read(priv->hdmi_regmap, FS_SET, &fs_set);
+	if (err)
+		return err;
+
+	/* Check that we have PCM audio at the requested rate */
+	if (fs_set & BIT(4)) {
+		dev_err(codec->dev, "Audio is compressed\n");
+		return -EINVAL;
+	}
+
+	if (rate != uh2c_audio_rates[fs_set & 0xF]) {
+		dev_err(codec->dev, "Current rate is %d, requested %d\n",
+			uh2c_audio_rates[fs_set & 0xF], rate);
+		return -EINVAL;
+	}
+
+	switch (params_format(params)) {
+	case SNDRV_PCM_FORMAT_S16_LE:
+		break;
+	case SNDRV_PCM_FORMAT_S18_3LE:
+		mode1 |= 2 << 4;
+		break;
+	case SNDRV_PCM_FORMAT_S20_3LE:
+		mode1 |= 4 << 4;
+		break;
+	case SNDRV_PCM_FORMAT_S24_LE:
+		mode1 |= 6 << 4;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	err = regmap_update_bits(priv->hdmi_regmap, SDO_MODE1, 7 << 4, mode1);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+static int uh2c_dai_startup(struct snd_pcm_substream *substream,
+			struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct uh2c *priv = snd_soc_codec_get_drvdata(codec);
+	int err;
+
+	err = regmap_update_bits(priv->ctl_regmap, CONFCTL0, BIT(5), BIT(5));
+	if (err)
+		return err;
+
+	err = regmap_write(priv->hdmi_regmap, FORCE_MUTE, 0);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+static void uh2c_dai_shutdown(struct snd_pcm_substream *substream,
+			struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct uh2c *priv = snd_soc_codec_get_drvdata(codec);
+
+	regmap_write(priv->hdmi_regmap, FORCE_MUTE, BIT(0) | BIT(4));
+	regmap_update_bits(priv->ctl_regmap, CONFCTL0, BIT(5), 0);
+}
+
+static const struct snd_soc_dai_ops uh2c_dai_ops = {
+	.hw_params	= uh2c_dai_hw_params,
+	.set_fmt	= uh2c_dai_set_fmt,
+	.startup	= uh2c_dai_startup,
+	.shutdown	= uh2c_dai_shutdown,
+};
+
+static struct snd_soc_dai_driver uh2c_dai = {
+	.name = "uh2c-hifi",
+	.capture = {
+		.stream_name = "Capture",
+		.channels_min = 1,
+		.channels_max = 8,
+		.rates = SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_48000 |
+			SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_22050 |
+			/* SNDRV_PCM_RATE_24000 |*/ SNDRV_PCM_RATE_88200 |
+			SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_176400 |
+			SNDRV_PCM_RATE_192000,
+		.formats = SNDRV_PCM_FMTBIT_S16_LE |
+			SNDRV_PCM_FMTBIT_S18_3LE |
+			SNDRV_PCM_FMTBIT_S20_3LE |
+			SNDRV_PCM_FMTBIT_S24_LE,
+	},
+	.ops = &uh2c_dai_ops,
+	.symmetric_rates = 0,
+};
+
+static struct snd_soc_codec_driver soc_codec_dev_uh2c = {
+};
+
+static int uh2c_audio_register(struct uh2c *priv)
+{
+	int err;
+
+	/* Enable the I2S/TDM clock only when needed */
+	err = regmap_update_bits(priv->ctl_regmap,
+				CONFCTL0, BIT(12), BIT(12));
+	if (err)
+		return err;
+
+	/* FS_IMODE: FS/NLPCM from AUD_Info */
+	err = regmap_write(priv->hdmi_regmap, FS_IMODE, BIT(1) | BIT(5));
+	if (err)
+		return err;
+
+	/* Mute unsupported sample rates */
+	err = regmap_write(priv->hdmi_regmap, FS_MUTE,
+			BIT(0) | BIT(5) | BIT(7));
+	if (err)
+		return err;
+
+	/* Mute all I2S lines on MUTE */
+	err = regmap_update_bits(priv->hdmi_regmap, MUTE_MODE,
+				BIT(0) | BIT(1) | BIT(2),
+				BIT(0) | BIT(1) | BIT(2));
+	if (err)
+		return err;
+
+	/* Enable the I2S interface */
+	err = regmap_update_bits(priv->ctl_regmap,
+				SYSCTL, BIT(7), 0);
+	if (err)
+		return err;
+
+	return snd_soc_register_codec(&priv->i2c_client->dev,
+				&soc_codec_dev_uh2c, &uh2c_dai, 1);
+
+}
+#else
+static int uh2c_audio_register(struct uh2c *priv)
+{
+	return 0;
+}
+#endif
+
 static int uh2c_hdmi_vsync_changed_irq_handler(struct uh2c *priv)
 {
 	unsigned int status, width, height, vi_status, vi_status1;
@@ -749,14 +1046,14 @@ static const u32 uh2c_default_edid[] = {
 	0x00367040, 0x0063843A, 0x00001E00, 0x5400FC00,
 	0x4948534F, 0x542D4142, 0x20200A56, 0xFD000000,
 	0x0F4C1700, 0x0A000F51, 0x20202020, 0xA9012020,
-	0x70250302, 0x04051049, 0x06020703, 0x09262001,
-	0x07150707, 0x0C036CC0, 0x38003000, 0x2B2BCF2D,
-	0x00E23333, 0x801D017F, 0x161C7118, 0x252C5820,
-	0x63844000, 0x8C9E0000, 0x208AD00A, 0x10102DE0,
-	0xB000963E, 0x00004384, 0x001F0E18, 0x1E005180,
-	0x37804030, 0x5384DC00, 0xF11C0000, 0x51A00027,
-	0x50302500, 0xDC003780, 0x00005384, 0x001AA91C,
-	0x160050A0, 0x37203030, 0x5384DC00, 0xA21A0000,
+	0x70220302, 0x04051049, 0x06020703, 0x09232001,
+	0x036C077F, 0x0030000C, 0x2BCF2D38, 0xE233332B,
+	0x1D017F00, 0x1C711880, 0x2C582016, 0x84400025,
+	0x9E000063, 0x8AD00A8C, 0x102DE020, 0x00963E10,
+	0x004384B0, 0x1F0E1800, 0x00518000, 0x8040301E,
+	0x84DC0037, 0x1C000053, 0xA00027F1, 0x30250051,
+	0x00378050, 0x005384DC, 0x1AA91C00, 0x0050A000,
+	0x20303016, 0x84DC0037, 0x1A000053, 0x0C000000,
 };
 
 static unsigned int clk_count(u64 rate, unsigned int ns)
@@ -1217,12 +1514,21 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	err = v4l2_async_register_subdev(&priv->subdev);
 	if (err) {
 		dev_err(&client->dev, "Failed to register async subdev\n");
-		v4l2_device_unregister_subdev(&priv->subdev);
-		goto reset;
+		goto v4l2_device_unregister;
+	}
+
+	err = uh2c_audio_register(priv);
+	if (err) {
+		dev_err(&client->dev, "Failed to register audio codec\n");
+		goto v4l2_async_unregister;
 	}
 
 	return 0;
 
+v4l2_async_unregister:
+	v4l2_async_unregister_subdev(&priv->subdev);
+v4l2_device_unregister:
+	v4l2_device_unregister_subdev(&priv->subdev);
 reset:
 	if (priv->reset_gpio)
 		gpiod_set_value_cansleep(priv->reset_gpio, 1);
