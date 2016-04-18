@@ -20,7 +20,7 @@
 #define XUSB_MUX_SS_P1 2
 #define XUSB_UTMI_INDEX 8
 #define XUSB_MUX_USB2_P0 (1 << XUSB_UTMI_INDEX)
-#define XUSB_MUX_USB2_P1 (1 << (XUSB_UTMI_INDEX + 1)
+#define XUSB_MUX_USB2_P1 (1 << (XUSB_UTMI_INDEX + 1))
 #define XUSB_MUX_USB2_P2 (1 << (XUSB_UTMI_INDEX + 2))
 
 #endif
