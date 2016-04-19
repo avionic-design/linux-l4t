@@ -705,7 +705,7 @@ static int adv7182_init(struct adv7180_state *state)
 {
 	if (state->chip_info->flags & ADV7180_FLAG_MIPI_CSI2)
 		adv7180_write(state, ADV7180_REG_CSI_SLAVE_ADDR,
-			ADV7180_DEFAULT_CSI_I2C_ADDR << 1);
+			(state->csi_client->addr) << 1);
 
 	if (state->chip_info->flags & ADV7180_FLAG_V2) {
 		/* ADI recommended writes for improved video quality */
@@ -1029,6 +1029,7 @@ out_unlock:
 static int adv7180_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
+	u32 addr = ADV7180_DEFAULT_CSI_I2C_ADDR;
 	struct adv7180_state *state;
 	struct v4l2_subdev *sd;
 	int ret;
@@ -1048,8 +1049,9 @@ static int adv7180_probe(struct i2c_client *client,
 	state->chip_info = (struct adv7180_chip_info *)id->driver_data;
 
 	if (state->chip_info->flags & ADV7180_FLAG_MIPI_CSI2) {
-		state->csi_client = i2c_new_dummy(client->adapter,
-				ADV7180_DEFAULT_CSI_I2C_ADDR);
+		of_property_read_u32_index(client->dev.of_node, "reg", 1,
+				&addr);
+		state->csi_client = i2c_new_dummy(client->adapter, addr);
 		if (!state->csi_client)
 			return -ENOMEM;
 	}
