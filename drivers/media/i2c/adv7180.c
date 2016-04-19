@@ -21,6 +21,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/errno.h>
+#include <linux/gpio/consumer.h>
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/i2c.h>
@@ -192,6 +193,7 @@ struct adv7180_state {
 	bool			autodetect;
 	bool			powered;
 	u8			input;
+	struct gpio_desc*	reset_gpio;
 
 	struct i2c_client	*client;
 	unsigned int		register_page;
@@ -1052,6 +1054,19 @@ static int adv7180_probe(struct i2c_client *client,
 			return -ENOMEM;
 	}
 
+	state->reset_gpio = devm_gpiod_get_optional(
+		&client->dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(state->reset_gpio)) {
+		if (PTR_ERR(state->reset_gpio) != -EPROBE_DEFER)
+			dev_err(&client->dev, "failed to get reset GPIO\n");
+		return PTR_ERR(state->reset_gpio);
+	}
+
+	if (state->reset_gpio) {
+		gpiod_set_value_cansleep(state->reset_gpio, 0);
+		usleep_range(10, 20);
+	}
+
 	state->irq = client->irq;
 	mutex_init(&state->mutex);
 	state->autodetect = true;
@@ -1093,6 +1108,10 @@ err_free_ctrl:
 err_unregister_csi_client:
 	if (state->chip_info->flags & ADV7180_FLAG_MIPI_CSI2)
 		i2c_unregister_device(state->csi_client);
+
+	if (state->reset_gpio)
+		gpiod_set_value_cansleep(state->reset_gpio, 1);
+
 	mutex_destroy(&state->mutex);
 	return ret;
 }
@@ -1111,6 +1130,9 @@ static int adv7180_remove(struct i2c_client *client)
 
 	if (state->chip_info->flags & ADV7180_FLAG_MIPI_CSI2)
 		i2c_unregister_device(state->csi_client);
+
+	if (state->reset_gpio)
+		gpiod_set_value_cansleep(state->reset_gpio, 1);
 
 	mutex_destroy(&state->mutex);
 
