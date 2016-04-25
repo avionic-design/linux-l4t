@@ -31,6 +31,17 @@
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
+			/* i2s3 (DAP4) */
+			dap4_din_pp5 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+			dap4_fs_pp4 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+			dap4_sclk_pp7 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
 			/* Set a pull up on GPIO PJ2 */
 			pj2 {
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
@@ -98,9 +109,11 @@
 	i2c@7000c500 {
 		status = "okay";
 
-		tc358840xbg@1f {
+		hdmi_bridge: tc358840xbg@1f {
 			compatible = "toshiba,tc358840xbg";
 			reg = <0x1f>;
+
+			#sound-dai-cells = <0>;
 
 			vddc11-supply = <&vdd_1v1_tc35840>;
 			vddio18-supply = <&vdd_1v8_tc35840>;
@@ -200,6 +213,10 @@
 		i2s@70301100 {
 			status = "okay";
 		};
+
+		i2s@70301300 {
+			status = "okay";
+		};
 	};
 
 	sound {
@@ -220,6 +237,16 @@
 		nvidia,i2s-is-master;
 		nvidia,audio-codec = <&wm8903>;
 	};
+
+	hdmi_bridge_sound {
+		compatible = "ad,uh2c-adc";
+		nvidia,model = "Avionic Design UH2C Audio";
+
+		nvidia,memory-clients = <SWGID_PPCS>;
+		nvidia,i2s-controller = <&tegra_i2s3>;
+		sound-dai = <&hdmi_bridge>;
+	};
+
 
 	/* USB0 / Client */
 	tegra_ehci_0: usb@7d000000 {
