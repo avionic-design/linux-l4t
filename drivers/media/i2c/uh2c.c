@@ -205,7 +205,28 @@ static const struct regmap_config csi_regmap_config = {
 };
 
 static const struct regmap_range hdmi_regmap_rw_ranges[] = {
-	regmap_reg_range(0x8410, 0x8ab0),
+	/* HDMI Rx System Control */
+	regmap_reg_range(0x8410, 0x8414),
+	regmap_reg_range(0x84F0, 0x84F4),
+	regmap_reg_range(0x8500, 0x8528),
+	regmap_reg_range(0x8540, 0x854A),
+	regmap_reg_range(0x8560, 0x8561),
+	regmap_reg_range(0x857A, 0x8593),
+	regmap_reg_range(0x85E0, 0x85E4),
+	/* HDMI Rx Audio Control */
+	regmap_reg_range(0x8600, 0x8608),
+	regmap_reg_range(0x8620, 0x8627),
+	regmap_reg_range(0x862E, 0x8632),
+	regmap_reg_range(0x8651, 0x8652),
+	regmap_reg_range(0x8670, 0x8678),
+	regmap_reg_range(0x8680, 0x8680),
+	/* HDMI Rx InfoFrame Data */
+	regmap_reg_range(0x8700, 0x87EE),
+	/* HDMI Rx HDCP Registers */
+	regmap_reg_range(0x8840, 0x8843),
+	/* VIDEO Output Format */
+	regmap_reg_range(0x8A00, 0x8A0D),
+	regmap_reg_range(0x8AB0, 0x8AB0),
 };
 
 static const struct regmap_access_table hdmi_regmap_access = {
