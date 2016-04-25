@@ -184,6 +184,12 @@
 	/* Limit MMC3 to 1.8V for TI SDIO */
 	i2c@7000d000 {
 		pmic: pmic@40 {
+			ams,backup-battery-chargable;
+			ams,battery-backup-charge-voltage = <AS3722_BBVOLT_3_0V>;
+			ams,battery-backup-charge-current = <AS3722_BBCCUR_50UA>;
+			ams,battery-backup-enable-bypass;
+			ams,battery-backup-charge-mode = <AS3722_BBCMODE_ACT_STBY_OFF>;
+
 			regulators {
 				vddio_sdmmc3: ldo6 {
 					regulator-max-microvolt = <1800000>;
