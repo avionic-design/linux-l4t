@@ -365,6 +365,10 @@
 
 #define AS3722_CTRL_SEQ1_AC_OK_PWR_ON			BIT(0)
 
+#define AS3722_BBCVOLT_MASK				BIT(5)
+#define AS3722_BBCVOLT_VAL(n)				((n) << 5)
+#define AS3722_BBCVOLT_2_5V				AS3722_BBCVOLT_VAL(0)
+#define AS3722_BBCVOLT_3_0V				AS3722_BBCVOLT_VAL(1)
 #define AS3722_BBCCUR_MASK				0x18
 #define AS3722_BBCCUR_VAL(n)				((n)  << 3)
 #define AS3722_BBCCUR_50UA				AS3722_BBCCUR_VAL(0)
@@ -448,6 +452,7 @@ struct as3722 {
 	bool shutdown;
 	bool backup_battery_chargable;
 	bool battery_backup_enable_bypass;
+	u32 backup_battery_charge_voltage;
 	u32 backup_battery_charge_current;
 	u32 battery_backup_charge_mode;
 	u32 oc_pg_mask;

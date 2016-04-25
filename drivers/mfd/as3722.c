@@ -508,6 +508,8 @@ static int as3722_i2c_of_probe(struct i2c_client *i2c,
 	of_property_read_u32(np, "ams,minor-rev", &as3722->minor_rev);
 	as3722->backup_battery_chargable =
 		of_property_read_bool(np, "ams,backup-battery-chargable");
+	of_property_read_u32(np, "ams,battery-backup-charge-voltage",
+				&as3722->backup_battery_charge_voltage);
 	of_property_read_u32(np, "ams,battery-backup-charge-current",
 				&as3722->backup_battery_charge_current);
 	as3722->battery_backup_enable_bypass =
@@ -535,6 +537,8 @@ static int as3722_i2c_non_of_probe(struct i2c_client *i2c,
 	as3722->major_rev = pdata->major_rev;
 	as3722->minor_rev = pdata->minor_rev;
 	as3722->backup_battery_chargable = pdata->backup_battery_chargable;
+	as3722->backup_battery_charge_voltage =
+		pdata->backup_battery_charge_voltage;
 	as3722->backup_battery_charge_current =
 		pdata->backup_battery_charge_current;
 	as3722->battery_backup_enable_bypass =
@@ -604,6 +608,15 @@ static int as3722_i2c_probe(struct i2c_client *i2c,
 		goto scrub;
 	}
 	if (as3722->backup_battery_chargable) {
+		ret = as3722_update_bits(as3722, AS3722_BB_CHARGER_REG,
+			AS3722_BBCVOLT_MASK,
+			AS3722_BBCVOLT_VAL(as3722->backup_battery_charge_voltage)
+			);
+		if (ret < 0) {
+			dev_err(as3722->dev,
+			"BB_CHARGING voltage update failed: %d\n", ret);
+			goto scrub;
+		}
 		ret = as3722_update_bits(as3722, AS3722_BB_CHARGER_REG,
 			AS3722_BBCCUR_MASK,
 			AS3722_BBCCUR_VAL(as3722->backup_battery_charge_current)

@@ -173,6 +173,7 @@ struct as3722_platform_data {
 	bool enable_clk32k_out;
 	bool backup_battery_chargable;
 	bool battery_backup_enable_bypass;
+	u32 backup_battery_charge_voltage;
 	u32 backup_battery_charge_current;
 	u32 battery_backup_charge_mode;
 	u32 oc_pg_mask;
