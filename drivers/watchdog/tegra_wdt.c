@@ -278,6 +278,7 @@ static int tegra_wdt_runtime_resume(struct device *dev)
 
 static const struct of_device_id tegra_wdt_of_match[] = {
 	{ .compatible = "nvidia,tegra30-timer", },
+	{ .compatible = "nvidia,tegra-nvtimer", },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, tegra_wdt_of_match);
