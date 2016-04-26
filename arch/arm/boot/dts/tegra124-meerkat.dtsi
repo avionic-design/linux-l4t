@@ -1716,10 +1716,6 @@
 		status = "okay";
 	};
 
-	wdt@60005100 {
-		status = "okay";
-	};
-
 	/* tegra124-soc.dtsi enable all the i2c bus and HDMI, disable them again here
 	   because not all baseboards will use them. */
 	i2c@7000c000 {
