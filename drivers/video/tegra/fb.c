@@ -624,18 +624,22 @@ void tegra_fb_update_monspecs(struct tegra_fb_info *fb_info,
 	mutex_lock(&fb_info->info->lock);
 
 	fb_notifier_call_chain(FB_EVENT_NEW_MODELIST, &event);
+	fb_info->info->mode = (struct fb_videomode *)fb_find_best_display(specs,
+			&fb_info->info->modelist);
 	/* When we can't satify the requested mode, we will fall back
 	 to default mode */
-	if (PICOS2KHZ(specs->modedb[0].pixclock) >
+	if (!fb_info->info->mode ||
+		PICOS2KHZ(fb_info->info->mode->pixclock) >
 		PICOS2KHZ(tegra_dc_get_out_max_pixclock(fb_info->win.dc))) {
 		/* Program DC with default mode */
 		tegra_dc_set_fb_mode(fb_info->win.dc,
 				&tegra_dc_vga_mode, false);
 		fb_videomode_to_var(&fb_info->info->var, &tegra_dc_vga_mode);
+		fb_info->info->mode = &tegra_dc_vga_mode;
 	} else {
-		/* Program DC with first mode */
-		tegra_dc_set_fb_mode(fb_info->win.dc, specs->modedb, false);
-		fb_videomode_to_var(&fb_info->info->var, &specs->modedb[0]);
+		/* Program DC with best match */
+		tegra_dc_set_fb_mode(fb_info->win.dc, fb_info->info->mode, false);
+		fb_videomode_to_var(&fb_info->info->var, fb_info->info->mode);
 	}
 	fb_notifier_call_chain(FB_EVENT_MODE_CHANGE_ALL, &event);
 
