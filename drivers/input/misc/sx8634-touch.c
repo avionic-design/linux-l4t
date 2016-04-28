@@ -509,5 +509,5 @@ module_platform_driver(sx8634_touch_driver);
 
 MODULE_AUTHOR("Thierry Reding <thierry.reding@avionic-design.de>");
 MODULE_AUTHOR("Alban Bedel <alban.bedel@avionic-design.de>");
-MODULE_DESCRIPTION("Semtech SX8634 Controller Driver");
+MODULE_DESCRIPTION("Semtech SX8634 Controller Touch Driver");
 MODULE_LICENSE("GPL");
