@@ -12,6 +12,15 @@
 	nvidia,dtsfilename = __FILE__;
 
 	host1x {
+		vi {
+			port@0 {
+				reg = <0>;
+				csi_a: endpoint {
+					remote-endpoint = <&cam_csi>;
+				};
+			};
+		};
+
 		dc@54200000 {
 			status = "okay";
 
@@ -98,6 +107,25 @@
 		nvidia,lane_owner = <2>; /* PCIe lane1 owner = USB3_SS port1 */
 		nvidia,ulpicap = <0>;
 		usb_vbus2-supply = <&vdd_usb3_vbus>;
+	};
+
+	i2c@7000c400 {
+		status = "okay";
+
+		imx219@10 {
+			compatible = "sony,imx219";
+			reg = <0x10>;
+
+			vdd-supply = <&vdd_3v3_ext>;
+
+			reset-gpio = <&gpio TEGRA_GPIO(H, 4) GPIO_ACTIVE_LOW>;
+
+			port {
+				cam_csi: endpoint {
+					remote-endpoint = <&csi_a>;
+				};
+			};
+		};
 	};
 
 	/* HDMI DDC */
