@@ -530,7 +530,7 @@ void hdmi_state_machine_set_pending_hpd(void)
 
 	/* We always schedule work any time there is a pending HPD event */
 	/* But only if the state machine has been inited */
-	if (unlikely(work_state.hdmi)) {
+	if (likely(work_state.hdmi)) {
 		work_state.pending_hpd_evt = 1;
 		hdmi_state_machine_sched_work_l(0);
 	}
