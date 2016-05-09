@@ -57,9 +57,6 @@
 		dc@54200000 {
 			status = "okay";
 
-			/* controller needs to be enabled on probe for panel
-			   initialisation to work */
-			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
 			nvidia,dc-connection = "internal-lcd";
 		};
 

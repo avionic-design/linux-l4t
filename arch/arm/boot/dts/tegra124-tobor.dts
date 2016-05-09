@@ -86,8 +86,6 @@
 		/* tegradc.0 */
 		dc@54200000 {
 			status = "okay";
-			/* Critical to be enabled for panel init */
-			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
 			nvidia,dc-connection = "internal-lcd";
 			nvidia,cmu-enable = <1>;
 			panel = <&panel>;

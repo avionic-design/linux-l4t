@@ -1654,6 +1654,8 @@
 			nvidia,fb-bpp = <32>;
 			nvidia,emc-clk-rate = <204000000>;
 			nvidia,low-v-win = <2>;
+
+			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
 		};
 		dc@54240000 {
 			avdd_hdmi-supply = <&vdd_3v3_hdmi>;
@@ -1661,6 +1663,8 @@
 			avdd_dsi_csi-supply = <&avdd_dsi_csi>;
 			nvidia,fb-bpp = <32>;
 			nvidia,emc-clk-rate = <300000000>;
+
+			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
 		};
 		hdmi {
 			status = "disabled";
