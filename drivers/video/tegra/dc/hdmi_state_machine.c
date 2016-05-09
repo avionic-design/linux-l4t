@@ -152,8 +152,14 @@ static void hdmi_state_machine_handle_hpd_l(int cur_hpd)
 		 * we do not actively disable HDMI.  Worker will check HPD
 		 * level again when it's woke up after 40ms.
 		 */
-		tgt_state = HDMI_STATE_CHECK_PLUG_STATE;
-		timeout = HPD_STABILIZE_MS;
+		if (work_state.hdmi->dc->pdata->flags & TEGRA_DC_FLAG_ENABLED) {
+			work_state.edid_reads = 0;
+			tgt_state = HDMI_STATE_DONE_RECHECK_EDID;
+			timeout = CHECK_EDID_DELAY_MS;
+		} else {
+			tgt_state = HDMI_STATE_CHECK_PLUG_STATE;
+			timeout = HPD_STABILIZE_MS;
+		}
 	} else {
 		/* Looks like there was HPD activity while we were neither
 		 * waiting for it to go away during steady state output, nor
