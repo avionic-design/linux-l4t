@@ -351,8 +351,7 @@ static int uh2c_priv_try_fmt(struct uh2c *priv,
 static int uh2c_try_fmt(struct v4l2_subdev *sd,
 		struct v4l2_mbus_framefmt *fmt)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct uh2c *priv = i2c_get_clientdata(client);
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 	int err;
 
 	mutex_lock(&priv->lock);
@@ -365,8 +364,7 @@ static int uh2c_try_fmt(struct v4l2_subdev *sd,
 static int uh2c_g_fmt(struct v4l2_subdev *sd,
 		struct v4l2_mbus_framefmt *fmt)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct uh2c *priv = i2c_get_clientdata(client);
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 	int err = 0;
 
 	mutex_lock(&priv->lock);
@@ -382,8 +380,8 @@ static int uh2c_g_fmt(struct v4l2_subdev *sd,
 static int uh2c_s_fmt(struct v4l2_subdev *sd,
 		struct v4l2_mbus_framefmt *fmt)
 {
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct uh2c *priv = i2c_get_clientdata(client);
 	unsigned int mode, colorspace;
 	unsigned csi_fmt;
 	int err;
@@ -490,8 +488,7 @@ static int uh2c_g_mbus_config(struct v4l2_subdev *sd,
 
 static int uh2c_cropcap(struct v4l2_subdev *sd, struct v4l2_cropcap *cc)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct uh2c *priv = i2c_get_clientdata(client);
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 
 	cc->bounds.left = 0;
 	cc->bounds.top = 0;
@@ -505,8 +502,7 @@ static int uh2c_cropcap(struct v4l2_subdev *sd, struct v4l2_cropcap *cc)
 
 static int uh2c_s_stream(struct v4l2_subdev *sd, int on)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct uh2c *priv = i2c_get_clientdata(client);
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 	int i, err = 0;
 
 	mutex_lock(&priv->lock);
@@ -549,8 +545,7 @@ static int uh2c_s_stream(struct v4l2_subdev *sd, int on)
 static int uh2c_g_chip_ident(struct v4l2_subdev *sd,
 		struct v4l2_dbg_chip_ident *id)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct uh2c *priv = i2c_get_clientdata(client);
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 	unsigned int val;
 	int err;
 
@@ -1456,7 +1451,6 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	}
 
 	priv->i2c_client = client;
-	i2c_set_clientdata(client, priv);
 
 	priv->ctl_regmap = devm_regmap_init_i2c(client, &ctl_regmap_config);
 	if (IS_ERR(priv->ctl_regmap)) {
@@ -1538,7 +1532,8 @@ reset:
 
 static int uh2c_remove(struct i2c_client *client)
 {
-	struct uh2c *priv = i2c_get_clientdata(client);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 
 	v4l2_async_unregister_subdev(&priv->subdev);
 	v4l2_device_unregister_subdev(&priv->subdev);
