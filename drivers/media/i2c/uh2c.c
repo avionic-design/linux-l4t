@@ -147,7 +147,6 @@ static const struct regulator_bulk_data uh2c_regulators[] = {
 
 struct uh2c {
 	struct v4l2_subdev subdev;
-	struct i2c_client *i2c_client;
 
 	struct regmap *ctl_regmap;
 	struct regmap *csi_regmap;
@@ -819,6 +818,7 @@ static struct snd_soc_codec_driver soc_codec_dev_uh2c = {
 
 static int uh2c_audio_register(struct uh2c *priv)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	int err;
 
 	/* Enable the I2S/TDM clock only when needed */
@@ -851,7 +851,7 @@ static int uh2c_audio_register(struct uh2c *priv)
 	if (err)
 		return err;
 
-	return snd_soc_register_codec(&priv->i2c_client->dev,
+	return snd_soc_register_codec(&client->dev,
 				&soc_codec_dev_uh2c, &uh2c_dai, 1);
 
 }
@@ -864,6 +864,7 @@ static int uh2c_audio_register(struct uh2c *priv)
 
 static int uh2c_hdmi_vsync_changed_irq_handler(struct uh2c *priv)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	unsigned int status, width, height, vi_status, vi_status1;
 	struct v4l2_event ev = {};
 	unsigned int repeat = 0;
@@ -873,7 +874,7 @@ static int uh2c_hdmi_vsync_changed_irq_handler(struct uh2c *priv)
 	if (err)
 		return 0;
 
-	dev_dbg(&priv->i2c_client->dev, "VSync changed: %s (0x%02x)\n",
+	dev_dbg(&client->dev, "VSync changed: %s (0x%02x)\n",
 		(status & BIT(7)) ? "found" : "lost", status);
 
 	mutex_lock(&priv->lock);
@@ -921,7 +922,7 @@ static int uh2c_hdmi_vsync_changed_irq_handler(struct uh2c *priv)
 			ev.type = V4L2_EVENT_SOURCE_CHANGE;
 			ev.u.src_change.changes = V4L2_EVENT_SRC_CH_RESOLUTION;
 
-			dev_dbg(&priv->i2c_client->dev,
+			dev_dbg(&client->dev,
 				"Got new resolution: %ux%u%c (repeat %d)\n",
 				width, height,
 				(vi_status1 & BIT(0)) ? 'i' : 'p',
@@ -989,7 +990,7 @@ static int uh2c_hdmi_irq_handler(struct uh2c *priv)
 static irqreturn_t uh2c_irq_handler(int irq, void *ctx)
 {
 	struct uh2c *priv = ctx;
-	struct i2c_client *client = priv->i2c_client;
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	unsigned int status;
 	int err, ret = 0;
 
@@ -1063,6 +1064,7 @@ static int uh2c_init_csi_tx(struct uh2c *priv, unsigned id,
 			    unsigned long csi_rate)
 {
 	unsigned int tclk_pre, tclk_prepare, tclk_zero, tclk_exit, tclk_trail;
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	unsigned int ths_prepare, ths_zero, ths_exit, ths_trail;
 	unsigned int lptxcnt, t_wakeup, tclk_post;
 	unsigned long hsck_rate = csi_rate * 2;
@@ -1111,8 +1113,7 @@ static int uh2c_init_csi_tx(struct uh2c *priv, unsigned id,
 
 	/* Make sure have valid settings */
 	if (best_prd == -1 || best_fbd == -1) {
-		dev_err(&priv->i2c_client->dev,
-			"Failed to configure CSI PLL\n");
+		dev_err(&client->dev, "Failed to configure CSI PLL\n");
 		return -EINVAL;
 	}
 
@@ -1449,8 +1450,6 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		gpiod_set_value_cansleep(priv->reset_gpio, 0);
 		usleep_range(10, 20);
 	}
-
-	priv->i2c_client = client;
 
 	priv->ctl_regmap = devm_regmap_init_i2c(client, &ctl_regmap_config);
 	if (IS_ERR(priv->ctl_regmap)) {
