@@ -1780,6 +1780,11 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 		of_node_put(sd);
 	}
 
+	if (!vi2->sd_notifier.num_subdevs) {
+		dev_err(&pdev->dev, "No sensor defined in DT\n");
+		return -ENODEV;
+	}
+
 	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!regs) {
 		dev_err(&pdev->dev, "Missing the mem resource\n");
