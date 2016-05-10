@@ -52,6 +52,7 @@ AFLAGS_sleep.o :=-Wa,-march=armv7-a$(plus_sec)
 obj-y                                   += kfuse.o
 obj-$(CONFIG_TEGRA_PTM)                 += tegra_ptm.o
 
+obj-y                                   += dc-early-get-conn.o
 obj-y                                   += powergate.o
 obj-y                                   += powergate-ops-txx.o
 obj-y                                   += powergate-ops-t1xx.o

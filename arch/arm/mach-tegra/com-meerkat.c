@@ -25,6 +25,7 @@
 #include <mach/io_dpd.h>
 #include <mach/edp.h>
 #include <mach/isomgr.h>
+#include <mach/dc.h>
 
 #include "com-meerkat.h"
 #include "board.h"
@@ -187,27 +188,35 @@ void __init tegra_meerkat_init(void)
 	tegra_meerkat_dt_init(meerkat_auxdata_lookup);
 }
 
+#ifdef CONFIG_FRAMEBUFFER_CONSOLE
+
+/* Reserve framebuffer large enough for 4K display:
+ * 4096*2160*4*2 = 70778880 bytes */
+#define FRAMEBUFFER_EXT_DISP_SIZ (SZ_64M + SZ_8M)
+
+#else
+
+/* Reserve framebuffer large enough for HD display:
+ * 1920*1080*4*2 = 16588800 bytes */
+#define FRAMEBUFFER_EXT_DISP_SIZ (SZ_16M)
+
+#endif
+
 void __init tegra_meerkat_reserve(void)
 {
-#ifdef CONFIG_TEGRA_HDMI_PRIMARY
-	ulong tmp;
-#endif /* CONFIG_TEGRA_HDMI_PRIMARY */
-
-	ulong carveout_size = 0;
-	ulong fb2_size = SZ_16M;
-	ulong fb1_size = SZ_16M + SZ_2M;
+	/* Use a lookup table for fb memory sizes, depending on
+	 * dc and display connection type */
+	const ulong fb_size_lut[2][TEGRA_DC_CONN_TYPECOUNT] = {
+		{ 0, SZ_16M + SZ_2M, FRAMEBUFFER_EXT_DISP_SIZ },
+		{ 0, SZ_16M, FRAMEBUFFER_EXT_DISP_SIZ }
+	};
+	enum tegra_dc_conn_type dc_conn[2] = {0, 0};
 	ulong vpr_size = 186 * SZ_1M;
+	ulong carveout_size = 0;
 
-#ifdef CONFIG_FRAMEBUFFER_CONSOLE
-	/* support FBcon on 4K monitors */
-	fb2_size = SZ_64M + SZ_8M;	/* 4096*2160*4*2 = 70778880 bytes */
-#endif /* CONFIG_FRAMEBUFFER_CONSOLE */
-
-#ifdef CONFIG_TEGRA_HDMI_PRIMARY
-	tmp = fb1_size;
-	fb1_size = fb2_size;
-	fb2_size = tmp;
-#endif /* CONFIG_TEGRA_HDMI_PRIMARY */
-
-	tegra_reserve4(carveout_size, fb1_size, fb2_size, vpr_size);
+	tegra_dc_early_get_dc_connections(dc_conn);
+	tegra_reserve4(carveout_size,
+			fb_size_lut[0][dc_conn[0]],
+			fb_size_lut[1][dc_conn[1]],
+			vpr_size);
 }

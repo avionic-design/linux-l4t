@@ -413,6 +413,13 @@ enum {
 	TEGRA_DC_OUT_NVSR_DP,
 };
 
+enum tegra_dc_conn_type {
+	TEGRA_DC_CONN_NONE,
+	TEGRA_DC_CONN_INTERNAL,
+	TEGRA_DC_CONN_EXTERNAL,
+	TEGRA_DC_CONN_TYPECOUNT
+};
+
 struct tegra_dc_out_pin {
 	int	name;
 	int	pol;
@@ -800,6 +807,8 @@ struct tegra_dc_bw_data {
 #define TEGRA_DC_FLAG_ENABLED		(1 << 0)
 
 struct drm_mode_modeinfo;
+
+int tegra_dc_early_get_dc_connections(enum tegra_dc_conn_type *dc_conn);
 
 int tegra_dc_get_stride(struct tegra_dc *dc, unsigned win);
 struct tegra_dc *tegra_dc_get_dc(unsigned idx);
