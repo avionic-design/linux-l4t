@@ -1493,27 +1493,26 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		goto reset;
 	}
 
-	err = uh2c_priv_init(priv);
-	if (err) {
-		dev_err(&client->dev, "failed to init chip: %d\n", err);
-		goto reset;
-	}
+	v4l2_i2c_subdev_init(&priv->subdev, client, &uh2c_subdev_ops);
 
-	err = devm_request_threaded_irq(&client->dev, client->irq,
-					NULL, uh2c_irq_handler, IRQF_ONESHOT,
-					dev_name(&client->dev), priv);
+	err = request_threaded_irq(client->irq, NULL, uh2c_irq_handler,
+				IRQF_ONESHOT, dev_name(&client->dev), priv);
 	if (err) {
 		dev_err(&client->dev, "failed to request IRQ %d: %d\n",
 			client->irq, err);
 		goto reset;
 	}
 
-	v4l2_i2c_subdev_init(&priv->subdev, client, &uh2c_subdev_ops);
+	err = uh2c_priv_init(priv);
+	if (err) {
+		dev_err(&client->dev, "failed to init chip: %d\n", err);
+		goto free_irq;
+	}
 
 	err = v4l2_async_register_subdev(&priv->subdev);
 	if (err) {
 		dev_err(&client->dev, "Failed to register async subdev\n");
-		goto reset;
+		goto free_irq;
 	}
 
 	err = uh2c_audio_register(priv);
@@ -1526,6 +1525,9 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 v4l2_async_unregister:
 	v4l2_async_unregister_subdev(&priv->subdev);
+free_irq:
+	regmap_write(priv->ctl_regmap, INT_MASK, ~0);
+	free_irq(client->irq, priv);
 reset:
 	if (priv->reset_gpio)
 		gpiod_set_value_cansleep(priv->reset_gpio, 1);
@@ -1539,6 +1541,10 @@ static int uh2c_remove(struct i2c_client *client)
 	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 
 	v4l2_async_unregister_subdev(&priv->subdev);
+
+	/* Make sure we get no stray interrupt when going into reset */
+	regmap_write(priv->ctl_regmap, INT_MASK, ~0);
+	free_irq(client->irq, priv);
 
 	if (priv->reset_gpio)
 		gpiod_set_value_cansleep(priv->reset_gpio, 1);
