@@ -1568,7 +1568,6 @@ static int ov5640_remove(struct i2c_client *client)
 {
 	struct ov5640_priv *priv = i2c_get_clientdata(client);
 	v4l2_async_unregister_subdev(&priv->subdev);
-	v4l2_device_unregister_subdev(&priv->subdev);
 	return 0;
 }
 

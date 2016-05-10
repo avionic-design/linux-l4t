@@ -1513,7 +1513,7 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	err = v4l2_async_register_subdev(&priv->subdev);
 	if (err) {
 		dev_err(&client->dev, "Failed to register async subdev\n");
-		goto v4l2_device_unregister;
+		goto reset;
 	}
 
 	err = uh2c_audio_register(priv);
@@ -1526,8 +1526,6 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 v4l2_async_unregister:
 	v4l2_async_unregister_subdev(&priv->subdev);
-v4l2_device_unregister:
-	v4l2_device_unregister_subdev(&priv->subdev);
 reset:
 	if (priv->reset_gpio)
 		gpiod_set_value_cansleep(priv->reset_gpio, 1);
@@ -1541,7 +1539,6 @@ static int uh2c_remove(struct i2c_client *client)
 	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
 
 	v4l2_async_unregister_subdev(&priv->subdev);
-	v4l2_device_unregister_subdev(&priv->subdev);
 
 	if (priv->reset_gpio)
 		gpiod_set_value_cansleep(priv->reset_gpio, 1);
