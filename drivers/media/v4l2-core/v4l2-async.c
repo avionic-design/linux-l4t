@@ -202,6 +202,7 @@ void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier)
 	list_del(&notifier->list);
 
 	list_for_each_entry_safe(sd, tmp, &notifier->done, async_list) {
+		struct v4l2_async_subdev *asd = sd->asd;
 		struct device *d;
 
 		d = get_device(sd->dev);
@@ -212,7 +213,7 @@ void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier)
 		device_release_driver(d);
 
 		if (notifier->unbind)
-			notifier->unbind(notifier, sd, sd->asd);
+			notifier->unbind(notifier, sd, asd);
 
 		/*
 		 * Store device at the device cache, in order to call
@@ -287,6 +288,7 @@ EXPORT_SYMBOL(v4l2_async_register_subdev);
 void v4l2_async_unregister_subdev(struct v4l2_subdev *sd)
 {
 	struct v4l2_async_notifier *notifier = sd->notifier;
+	struct v4l2_async_subdev *asd = sd->asd;
 
 	if (!sd->asd) {
 		if (!list_empty(&sd->async_list))
@@ -301,7 +303,7 @@ void v4l2_async_unregister_subdev(struct v4l2_subdev *sd)
 	v4l2_async_cleanup(sd);
 
 	if (notifier->unbind)
-		notifier->unbind(notifier, sd, sd->asd);
+		notifier->unbind(notifier, sd, asd);
 
 	mutex_unlock(&list_lock);
 }
