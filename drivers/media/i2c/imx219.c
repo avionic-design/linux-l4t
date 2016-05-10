@@ -31,7 +31,6 @@ struct imx219_mode {
 
 struct imx219 {
 	struct v4l2_subdev subdev;
-	struct i2c_client *i2c_client;
 
 	struct regmap *regmap;
 
@@ -239,8 +238,7 @@ static int imx219_try_fmt(struct v4l2_subdev *sd,
 static int imx219_g_fmt(struct v4l2_subdev *sd,
 		struct v4l2_mbus_framefmt *fmt)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct imx219 *priv = i2c_get_clientdata(client);
+	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 
 	*fmt = priv->mode->framefmt;
 
@@ -250,9 +248,8 @@ static int imx219_g_fmt(struct v4l2_subdev *sd,
 static int imx219_s_fmt(struct v4l2_subdev *sd,
 		struct v4l2_mbus_framefmt *fmt)
 {
+	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 	const struct imx219_mode *mode = imx219_get_mode(fmt);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct imx219 *priv = i2c_get_clientdata(client);
 	int err;
 
 	/* Set the mode only if needed */
@@ -283,8 +280,7 @@ static int imx219_g_mbus_config(struct v4l2_subdev *sd,
 
 static int imx219_s_stream(struct v4l2_subdev *sd, int on)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct imx219 *priv = i2c_get_clientdata(client);
+	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 
 	return regmap_write(priv->regmap, 0x100, on ? 1 : 0);
 }
@@ -292,8 +288,7 @@ static int imx219_s_stream(struct v4l2_subdev *sd, int on)
 static int imx219_g_chip_ident(struct v4l2_subdev *sd,
 		struct v4l2_dbg_chip_ident *id)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct imx219 *priv = i2c_get_clientdata(client);
+	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 	u8 desc[0xF];
 	int err;
 
@@ -309,8 +304,8 @@ static int imx219_g_chip_ident(struct v4l2_subdev *sd,
 
 static int imx219_s_power(struct v4l2_subdev *sd, int on)
 {
+	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct imx219 *priv = i2c_get_clientdata(client);
 	int err = 0;
 
 	if (on) {
@@ -400,9 +395,6 @@ static int imx219_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	priv->mode = &imx219_modes[0];
 
-	priv->i2c_client = client;
-	i2c_set_clientdata(client, priv);
-
 	priv->regmap = devm_regmap_init_i2c(client, &imx219_regmap_config);
 	if (IS_ERR(priv->regmap)) {
 		dev_err(&client->dev,
@@ -425,7 +417,8 @@ static int imx219_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 static int imx219_remove(struct i2c_client *client)
 {
-	struct imx219 *priv = i2c_get_clientdata(client);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 
 	v4l2_async_unregister_subdev(&priv->subdev);
 
