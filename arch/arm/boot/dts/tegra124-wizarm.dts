@@ -139,6 +139,7 @@
 					remote-endpoint = <&csi_ab_ep>;
 					clock-lanes = <0>;
 					data-lanes = <0>, <1>, <2>, <3>;
+					clock-noncontinuous;
 				};
 
 				hdmi_bridge_ep1: endpoint@1 {
@@ -147,6 +148,7 @@
 					remote-endpoint = <&csi_cd_ep>;
 					clock-lanes = <0>;
 					data-lanes = <0>, <1>, <2>, <3>;
+					clock-noncontinuous;
 				};
 			};
 		};
