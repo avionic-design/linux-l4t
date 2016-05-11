@@ -102,16 +102,24 @@ static int v4l2_async_test_notify(struct v4l2_async_notifier *notifier,
 	list_move(&sd->async_list, &notifier->done);
 
 	ret = v4l2_device_register_subdev(notifier->v4l2_dev, sd);
-	if (ret < 0) {
-		if (notifier->unbind)
-			notifier->unbind(notifier, sd, asd);
-		return ret;
+	if (ret < 0)
+		goto err_subdev_register;
+
+	if (list_empty(&notifier->waiting) && notifier->complete) {
+		ret = notifier->complete(notifier);
+		if (ret < 0)
+			goto err_subdev_call;
 	}
 
-	if (list_empty(&notifier->waiting) && notifier->complete)
-		return notifier->complete(notifier);
-
 	return 0;
+
+err_subdev_call:
+	v4l2_device_unregister_subdev(sd);
+err_subdev_register:
+	if (notifier->unbind)
+		notifier->unbind(notifier, sd, asd);
+
+	return ret;
 }
 
 static void v4l2_async_cleanup(struct v4l2_subdev *sd)
