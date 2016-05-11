@@ -477,10 +477,16 @@ finish:
 static int uh2c_g_mbus_config(struct v4l2_subdev *sd,
 		struct v4l2_mbus_config *cfg)
 {
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
+	struct v4l2_of_bus_mipi_csi2 *ep =
+		priv->ep[0].flags ? &priv->ep[0] : &priv->ep[1];
+
+	if (ep->num_data_lanes < 1 || ep->num_data_lanes > 4)
+		return -EINVAL;
+
 	cfg->type = V4L2_MBUS_CSI2;
-	cfg->flags = V4L2_MBUS_CSI2_4_LANE |
-		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK |
-		V4L2_MBUS_CSI2_CHANNEL_0;
+	cfg->flags = ep->flags | V4L2_MBUS_CSI2_CHANNEL_0;
+	cfg->flags |= V4L2_MBUS_CSI2_1_LANE << (ep->num_data_lanes - 1);
 
 	return 0;
 }
