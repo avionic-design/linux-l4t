@@ -1,3 +1,15 @@
+/*
+ * Early lookup of the display connection types for the tegra video
+ * controllers.
+ *
+ * Copyright (C) 2016 Avionic Design GmbH
+ * Copyright (C) 2016 Nikolaus Schulz <nikolaus.schulz@avionic-design.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2.
+ */
+
 #include <linux/of_fdt.h>
 #include <linux/printk.h>
 #include <linux/string.h>
