@@ -16,10 +16,21 @@
 #include <linux/gpio/consumer.h>
 #include <linux/delay.h>
 
+#include <media/v4l2-ctrls.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
 
+#define EXPOSURE_MIN 1
+#define EXPOSURE_MAX 199000
+#define EXPOSURE_DEFAULT 100000
+#define GAIN_MIN 0
+#define GAIN_MAX 244
+#define GAIN_DEFAULT 100
 #define WAKE_UP_DURATION 5
+
+#define IMX219_ANA_GAIN_GLOBAL 0x157
+#define IMX219_COARSE_INT_TIME_HI 0x15A
+#define IMX219_COARSE_INT_TIME_LO 0x15B
 
 static const struct regulator_bulk_data imx219_regulators[] = {
 	{ "vdd" },
@@ -29,9 +40,11 @@ struct imx219_mode {
 	struct v4l2_mbus_framefmt framefmt;
 	const struct reg_default *regs;
 	unsigned num_regs;
+	int line_length_ns;
 };
 
 struct imx219 {
+	struct v4l2_ctrl_handler ctrl_handler;
 	struct v4l2_subdev subdev;
 
 	struct regmap *regmap;
@@ -157,6 +170,7 @@ const struct imx219_mode imx219_modes[] = {
 		.framefmt = IMX219_FRAMEFMT(1920, 1080),
 		.regs = regs_1920x1080_p48,
 		.num_regs = ARRAY_SIZE(regs_1920x1080_p48),
+		.line_length_ns = 18915,
 	},
 	{ /* HACK: We use a width of 3264 instead of 3280 because
 	     the tegra VI doesn't cope with the resulting WC alignement.
@@ -164,6 +178,7 @@ const struct imx219_mode imx219_modes[] = {
 		.framefmt = IMX219_FRAMEFMT(3264, 2464),
 		.regs = regs_3280x2464_p15,
 		.num_regs = ARRAY_SIZE(regs_3280x2464_p15),
+		.line_length_ns = 26624,
 	},
 };
 
@@ -193,6 +208,70 @@ const struct reg_default regs_imx219_init[] = {
 	{0x4797, 0x0E},
 	{0x479B, 0x0E},
 };
+
+static void imx219_set_exposure(struct imx219 *imx219, int exp_value)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
+	int new_exp_value;
+	int err;
+
+	new_exp_value = (1000 * exp_value) / imx219->mode->line_length_ns;
+	err = regmap_write(imx219->regmap, IMX219_COARSE_INT_TIME_HI,
+				(new_exp_value >> 8) & 0xFF);
+	if (err)
+		dev_err(&client->dev, "failed to write exposure\n");
+	if (!err) {
+		err = regmap_write(imx219->regmap, IMX219_COARSE_INT_TIME_LO,
+				new_exp_value & 0xFF);
+		if (err)
+			dev_err(&client->dev, "failed to write exposure_lo\n");
+	}
+}
+
+/*
+ * Register value goes from 0 to 224 (analog gain) -> IMX219_ANA_GAIN_GLOBAL
+ */
+static void imx219_set_gain(struct imx219 *imx219, int gain_value)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
+	int err;
+
+	err = regmap_write(imx219->regmap, IMX219_ANA_GAIN_GLOBAL, gain_value);
+	if (err)
+		dev_err(&client->dev, "failed to write gain\n");
+}
+
+static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct imx219 *imx219 = container_of(ctrl->handler, struct imx219,
+						ctrl_handler);
+	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
+	switch (ctrl->id){
+	case V4L2_CID_EXPOSURE:
+		if ((ctrl->val > EXPOSURE_MAX) ||
+			(ctrl->val < EXPOSURE_MIN)) {
+			dev_err(&client->dev, "wrong exposure value\n");
+			return -EINVAL;
+		}
+		imx219_set_exposure(imx219, ctrl->val);
+		break;
+
+	case V4L2_CID_GAIN:
+		if ((ctrl->val > GAIN_MAX) ||
+			(ctrl->val < GAIN_MIN)) {
+			dev_err(&client->dev, "wrong gain value\n");
+			return -EINVAL;
+		}
+		imx219_set_gain(imx219, ctrl->val);
+		break;
+
+	default:
+		dev_err(&client->dev, "Invalid control id\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 static int imx219_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
 		enum v4l2_mbus_pixelcode *code)
@@ -337,29 +416,36 @@ static int imx219_s_power(struct v4l2_subdev *sd, int on)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int err = 0;
 
-	if (on) {
-		err = imx219_power_up(priv, client);
-		if (err)
-			return err;
-		/* Set the basic settings */
-		err = regmap_multi_reg_write(priv->regmap, regs_imx219_init,
-					ARRAY_SIZE(regs_imx219_init));
-		if (err)
-			dev_err(&client->dev, "failed to set init settings\n");
-		/* And the current mode */
-		if (!err) {
-			err = regmap_multi_reg_write(priv->regmap,
-						priv->mode->regs,
-						priv->mode->num_regs);
-			if (err)
-				dev_err(&client->dev, "failed to set mode settings\n");
-		}
-		if (!err)
-			return 0;
+	if (!on)
+		goto power_off;
+
+	err = imx219_power_up(priv, client);
+	if (err)
+		return err;
+	/* Set the basic settings */
+	err = regmap_multi_reg_write(priv->regmap, regs_imx219_init,
+				ARRAY_SIZE(regs_imx219_init));
+	if (err) {
+		dev_err(&client->dev, "failed to set init settings\n");
+		goto power_off;
 	}
+	/* And the current mode */
+	err = regmap_multi_reg_write(priv->regmap, priv->mode->regs,
+				priv->mode->num_regs);
+	if (err) {
+		dev_err(&client->dev, "failed to set mode settings\n");
+		goto power_off;
+	}
+	err = v4l2_ctrl_handler_setup(&priv->ctrl_handler);
+	if (err) {
+		dev_err(&client->dev,"Failed to setup control\n");
+		goto power_off;
+	}
+	return 0;
 
+
+power_off:
 	imx219_power_off(priv, client);
-
 	return err;
 }
 
@@ -372,9 +458,20 @@ static struct v4l2_subdev_video_ops imx219_subdev_video_ops = {
 	.s_stream = imx219_s_stream,
 };
 
+static const struct v4l2_ctrl_ops imx219_ctrl_ops = {
+	.s_ctrl = imx219_s_ctrl,
+};
+
 static struct v4l2_subdev_core_ops imx219_subdev_core_ops = {
+	.queryctrl = v4l2_subdev_queryctrl,
+	.querymenu = v4l2_subdev_querymenu,
+	.g_ext_ctrls = v4l2_subdev_g_ext_ctrls,
+	.try_ext_ctrls = v4l2_subdev_try_ext_ctrls,
+	.s_ext_ctrls = v4l2_subdev_s_ext_ctrls,
 	.g_chip_ident = imx219_g_chip_ident,
 	.s_power = imx219_s_power,
+	.s_ctrl = v4l2_subdev_s_ctrl,
+	.g_ctrl = v4l2_subdev_g_ctrl,
 };
 
 static struct v4l2_subdev_ops imx219_subdev_ops = {
@@ -456,6 +553,23 @@ static int imx219_probe(struct i2c_client *client, const struct i2c_device_id *i
 		return err;
 	}
 
+	v4l2_ctrl_handler_init(&priv->ctrl_handler, 2);
+
+	priv->subdev.ctrl_handler = &priv->ctrl_handler;
+
+	v4l2_ctrl_new_std(&priv->ctrl_handler, &imx219_ctrl_ops,
+			V4L2_CID_EXPOSURE, EXPOSURE_MIN, EXPOSURE_MAX,
+			1, EXPOSURE_DEFAULT);
+
+	v4l2_ctrl_new_std(&priv->ctrl_handler, &imx219_ctrl_ops,
+			V4L2_CID_GAIN, GAIN_MIN, GAIN_MAX, 1, GAIN_DEFAULT);
+
+	if (priv->ctrl_handler.error) {
+		dev_err(&client->dev, "failed to get controller\n");
+		v4l2_ctrl_handler_free(&priv->ctrl_handler);
+		return err;
+	}
+
 	err = v4l2_async_register_subdev(&priv->subdev);
 	if (err) {
 		dev_err(&client->dev, "Failed to register async subdev\n");
@@ -472,6 +586,7 @@ static int imx219_remove(struct i2c_client *client)
 	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 
 	v4l2_async_unregister_subdev(&priv->subdev);
+	v4l2_ctrl_handler_free(&priv->ctrl_handler);
 
 	return 0;
 }
