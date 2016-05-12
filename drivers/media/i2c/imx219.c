@@ -19,6 +19,8 @@
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
 
+#define WAKE_UP_DURATION 5
+
 static const struct regulator_bulk_data imx219_regulators[] = {
 	{ "vdd" },
 };
@@ -302,6 +304,33 @@ static int imx219_g_chip_ident(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int imx219_power_up(struct imx219 *priv, struct i2c_client *client)
+{
+	int err;
+
+	err = regulator_bulk_enable(ARRAY_SIZE(priv->regulators),
+				priv->regulators);
+	if (err) {
+		dev_err(&client->dev, "failed to enable regulators\n");
+		return err;
+	}
+
+	if (priv->reset_gpio) {
+		gpiod_set_value_cansleep(priv->reset_gpio, 0);
+		msleep(WAKE_UP_DURATION);
+	}
+
+	return err;
+}
+
+static void imx219_power_off(struct imx219 *priv, struct i2c_client *client)
+{
+	if (priv->reset_gpio)
+		gpiod_set_value_cansleep(priv->reset_gpio, 1);
+	/* Ignore errors here as we can't recover */
+	regulator_bulk_disable(ARRAY_SIZE(priv->regulators), priv->regulators);
+}
+
 static int imx219_s_power(struct v4l2_subdev *sd, int on)
 {
 	struct imx219 *priv = container_of(sd, struct imx219, subdev);
@@ -309,18 +338,9 @@ static int imx219_s_power(struct v4l2_subdev *sd, int on)
 	int err = 0;
 
 	if (on) {
-		/* Power up */
-		err = regulator_bulk_enable(
-			ARRAY_SIZE(priv->regulators), priv->regulators);
-		if (err) {
-			dev_err(&client->dev, "failed to enable regulators\n");
+		err = imx219_power_up(priv, client);
+		if (err)
 			return err;
-		}
-		/* Take out of reset */
-		if (priv->reset_gpio) {
-			gpiod_set_value_cansleep(priv->reset_gpio, 0);
-			msleep(5);
-		}
 		/* Set the basic settings */
 		err = regmap_multi_reg_write(priv->regmap, regs_imx219_init,
 					ARRAY_SIZE(regs_imx219_init));
@@ -336,14 +356,9 @@ static int imx219_s_power(struct v4l2_subdev *sd, int on)
 		}
 		if (!err)
 			return 0;
-		/* Fallback to power off */
 	}
 
-	if (priv->reset_gpio)
-		gpiod_set_value_cansleep(priv->reset_gpio, 1);
-	/* Ignore errors here as we can't recover */
-	regulator_bulk_disable(
-		ARRAY_SIZE(priv->regulators), priv->regulators);
+	imx219_power_off(priv, client);
 
 	return err;
 }
@@ -366,6 +381,36 @@ static struct v4l2_subdev_ops imx219_subdev_ops = {
 	.core = &imx219_subdev_core_ops,
 	.video = &imx219_subdev_video_ops,
 };
+
+
+static int imx219_check_id(struct v4l2_subdev *sd)
+{
+	struct imx219 *priv = container_of(sd, struct imx219, subdev);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	unsigned int ident_hi, ident_lo;
+	int err;
+
+	err = imx219_power_up(priv, client);
+	if (err)
+		return err;
+	/* Read id */
+	err = regmap_read(priv->regmap, 0x0, &ident_hi);
+	if (err)
+		goto power_off;
+	err = regmap_read(priv->regmap, 0x1, &ident_lo);
+	if (err)
+		goto power_off;
+
+	if (((ident_hi << 8) | ident_lo) != 0x219) {
+		dev_err(&client->dev, "Wrong id 0x%x\n",
+			((ident_hi << 8) | ident_lo));
+		err = -ENOMEM;
+	}
+
+power_off:
+	imx219_power_off(priv, client);
+	return err;
+}
 
 static int imx219_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
@@ -404,6 +449,12 @@ static int imx219_probe(struct i2c_client *client, const struct i2c_device_id *i
 	}
 
 	v4l2_i2c_subdev_init(&priv->subdev, client, &imx219_subdev_ops);
+
+	err = imx219_check_id(&priv->subdev);
+	if (err){
+		dev_err(&client->dev, "failed to check ID\n");
+		return err;
+	}
 
 	err = v4l2_async_register_subdev(&priv->subdev);
 	if (err) {
