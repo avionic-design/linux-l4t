@@ -164,6 +164,10 @@ enum v4l2_colorfx {
  * We reserve 16 controls for this driver. */
 #define V4L2_CID_USER_ADV7180_BASE		(V4L2_CID_USER_BASE + 0x1070)
 
+/* The base for the uh2c driver controls.
+ * We reserve 16 controls for this driver. */
+#define V4L2_CID_USER_UH2C_BASE			(V4L2_CID_USER_BASE + 0x10F0)
+
 /* MPEG-class control IDs */
 
 #define V4L2_CID_MPEG_BASE 			(V4L2_CTRL_CLASS_MPEG | 0x900)

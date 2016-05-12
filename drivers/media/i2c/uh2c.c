@@ -135,6 +135,9 @@
 #define EDID_RAM				0x8C00
 #define EDID_MAX_SIZE				0x400
 
+/* Custom controls */
+#define V4L2_CID_UH2C_AUDIO_SAMPLING_RATE	(V4L2_CID_USER_UH2C_BASE + 0)
+
 static const struct regulator_bulk_data uh2c_regulators[] = {
 	{ "vddc11" },
 	{ "vdd11-hdmi" },
@@ -147,6 +150,7 @@ static const struct regulator_bulk_data uh2c_regulators[] = {
 
 struct uh2c {
 	struct v4l2_subdev subdev;
+	struct v4l2_ctrl_handler ctrl_handler;
 
 	struct regmap *ctl_regmap;
 	struct regmap *csi_regmap;
@@ -584,6 +588,13 @@ static struct v4l2_subdev_core_ops uh2c_subdev_core_ops = {
 	.s_power = uh2c_s_power,
 	.subscribe_event = v4l2_src_change_event_subdev_subscribe,
 	.unsubscribe_event = v4l2_event_subdev_unsubscribe,
+	.queryctrl = v4l2_subdev_queryctrl,
+	.querymenu = v4l2_subdev_querymenu,
+	.g_ctrl = v4l2_subdev_g_ctrl,
+	.s_ctrl = v4l2_subdev_s_ctrl,
+	.g_ext_ctrls = v4l2_subdev_g_ext_ctrls,
+	.try_ext_ctrls = v4l2_subdev_try_ext_ctrls,
+	.s_ext_ctrls = v4l2_subdev_s_ext_ctrls,
 };
 
 static struct v4l2_subdev_ops uh2c_subdev_ops = {
@@ -822,10 +833,70 @@ static struct snd_soc_dai_driver uh2c_dai = {
 static struct snd_soc_codec_driver soc_codec_dev_uh2c = {
 };
 
+static int uh2c_audio_g_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct uh2c *priv = container_of(
+		ctrl->handler, struct uh2c, ctrl_handler);
+	unsigned fs_set;
+	bool vsync;
+	int err;
+
+	switch (ctrl->id) {
+	case V4L2_CID_UH2C_AUDIO_SAMPLING_RATE:
+		/* Return 0 if there is no vsync */
+		mutex_lock(&priv->lock);
+		vsync = priv->vsync;
+		mutex_unlock(&priv->lock);
+
+		if (!vsync) {
+			ctrl->val = 0;
+			return 0;
+		}
+
+		/* Get the current rate */
+		err = regmap_read(priv->hdmi_regmap, FS_SET, &fs_set);
+		if (err)
+			return err;
+
+		/* Return 0 if the audio is compressed */
+		if (fs_set & BIT(4))
+			ctrl->val = 0;
+		else
+			ctrl->val = uh2c_audio_rates[fs_set & 0xF];
+
+		return 0;
+
+	default:
+		return -EINVAL;
+	}
+}
+
+static const struct v4l2_ctrl_ops uh2c_audio_ctrl_ops = {
+	.g_volatile_ctrl = uh2c_audio_g_ctrl,
+};
+
+static const struct v4l2_ctrl_config uh2c_audio_ctrl_sampling_rate = {
+	.ops = &uh2c_audio_ctrl_ops,
+	.id = V4L2_CID_UH2C_AUDIO_SAMPLING_RATE,
+	.name = "Audio sampling rate",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 0,
+	.max = 768000,
+	.step = 1,
+	.def = 0,
+	.flags = V4L2_CTRL_FLAG_READ_ONLY | V4L2_CTRL_FLAG_VOLATILE,
+};
+
 static int uh2c_audio_register(struct uh2c *priv)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	int err;
+
+	v4l2_ctrl_new_custom(&priv->ctrl_handler,
+			     &uh2c_audio_ctrl_sampling_rate, NULL);
+
+	if (priv->ctrl_handler.error)
+		return priv->ctrl_handler.error;
 
 	/* Enable the I2S/TDM clock only when needed */
 	err = regmap_update_bits(priv->ctl_regmap,
@@ -1494,13 +1565,15 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	}
 
 	v4l2_i2c_subdev_init(&priv->subdev, client, &uh2c_subdev_ops);
+	v4l2_ctrl_handler_init(&priv->ctrl_handler, 2);
+	priv->subdev.ctrl_handler = &priv->ctrl_handler;
 
 	err = request_threaded_irq(client->irq, NULL, uh2c_irq_handler,
 				IRQF_ONESHOT, dev_name(&client->dev), priv);
 	if (err) {
 		dev_err(&client->dev, "failed to request IRQ %d: %d\n",
 			client->irq, err);
-		goto reset;
+		goto free_ctrl_handler;
 	}
 
 	err = uh2c_priv_init(priv);
@@ -1528,6 +1601,8 @@ v4l2_async_unregister:
 free_irq:
 	regmap_write(priv->ctl_regmap, INT_MASK, ~0);
 	free_irq(client->irq, priv);
+free_ctrl_handler:
+	v4l2_ctrl_handler_free(&priv->ctrl_handler);
 reset:
 	if (priv->reset_gpio)
 		gpiod_set_value_cansleep(priv->reset_gpio, 1);
