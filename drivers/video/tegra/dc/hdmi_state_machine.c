@@ -147,12 +147,18 @@ static void hdmi_state_machine_handle_hpd_l(int cur_hpd)
 		return;
 	} else
 	if (HDMI_STATE_INIT_FROM_BOOTLOADER == work_state.state && cur_hpd) {
+		struct tegra_dc_edid *dc_edid = NULL;
 		/* We follow the same protocol as HDMI_STATE_RESET in the
 		 * last branch here, but avoid actually entering that state so
 		 * we do not actively disable HDMI.  Worker will check HPD
 		 * level again when it's woke up after 40ms.
+		 * We only take the re-check path if the EDID was actually read.
 		 */
-		if (work_state.hdmi->dc->pdata->flags & TEGRA_DC_FLAG_ENABLED) {
+		if (work_state.hdmi->dc->pdata->flags & TEGRA_DC_FLAG_ENABLED)
+			dc_edid = tegra_edid_get_data(work_state.hdmi->edid);
+
+		if (dc_edid) {
+			tegra_edid_put_data(dc_edid);
 			work_state.edid_reads = 0;
 			tgt_state = HDMI_STATE_DONE_RECHECK_EDID;
 			timeout = CHECK_EDID_DELAY_MS;
@@ -392,6 +398,8 @@ static int hdmi_recheck_edid(struct tegra_dc_hdmi_data *hdmi, int *match)
 	pr_info("%s: read_edid_into_buffer() returned %d\n", __func__, ret);
 	if (ret > 0) {
 		struct tegra_dc_edid *data = tegra_edid_get_data(hdmi->edid);
+		if (!data)
+			return -ENODATA;
 		pr_info("old edid len = %ld\n", (long int)data->len);
 		*match = ((ret == data->len) &&
 			  !memcmp(tmp, data->buf, data->len));
