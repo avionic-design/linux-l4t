@@ -645,7 +645,16 @@ static int as3722_i2c_probe(struct i2c_client *i2c,
 				"BB_CHARGING mode update failed: %d\n", ret);
 			goto scrub;
 		}
+	} else {
+		ret = as3722_update_bits(as3722, AS3722_BB_CHARGER_REG,
+				AS3722_BBCMODE_MASK, AS3722_BBCMODE_OFF);
+		if (ret < 0) {
+			dev_err(as3722->dev,
+				"BB_CHARGING mode update failed: %d\n", ret);
+			goto scrub;
+		}
 	}
+
 	if (as3722->oc_pg_mask) {
 		unsigned int mask1 = 0;
 		unsigned int mask2 = 0;
