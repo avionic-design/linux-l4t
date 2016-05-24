@@ -1,6 +1,9 @@
 #include <dt-bindings/pinctrl/pinctrl-tegra.h>
 #include <dt-bindings/display/tegra-dc.h>
 #include <dt-bindings/thermal/thermal.h>
+#include <dt-bindings/usb/tegra-ehci.h>
+#include <dt-bindings/usb/tegra-xhci.h>
+#include <dt-bindings/pci/tegra-pcie.h>
 #include <dt-bindings/mfd/as3722.h>
 #include "tegra124.dtsi"
 

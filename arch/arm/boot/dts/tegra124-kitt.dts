@@ -1,10 +1,5 @@
 /dts-v1/;
 
-#include <dt-bindings/display/tegra-dc.h>
-#include <dt-bindings/usb/tegra-ehci.h>
-#include <dt-bindings/usb/tegra-xhci.h>
-#include <dt-bindings/pci/tegra-pcie.h>
-
 #include "tegra124-meerkat.dtsi"
 #include "panel-auo-b101uan01.dtsi"
 

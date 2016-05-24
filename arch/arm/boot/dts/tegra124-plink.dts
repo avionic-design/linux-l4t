@@ -1,7 +1,5 @@
 /dts-v1/;
 
-#include <dt-bindings/pci/tegra-pcie.h>
-
 #include "tegra124-meerkat.dtsi"
 
 / {
