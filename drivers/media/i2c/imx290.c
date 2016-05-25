@@ -871,10 +871,13 @@ static int imx290_poweron(struct imx290_priv *priv)
 		return ret;
 	}
 
-	ret = clk_prepare_enable(priv->inck);
-	if (ret) {
-		dev_err(&priv->client->dev, "Error enabling clock: %d\n", ret);
-		goto disable_regulators;
+	if (priv->inck) {
+		ret = clk_prepare_enable(priv->inck);
+		if (ret) {
+			dev_err(&client->dev,
+				"Error enabling clock: %d\n", ret);
+			goto disable_regulators;
+		}
 	}
 	usleep_range(1, 5);
 
@@ -912,7 +915,8 @@ disable_regulators:
 static void imx290_poweroff(struct imx290_priv *priv)
 {
 	gpiod_set_value(priv->xclr, 1);
-	clk_disable_unprepare(priv->inck);
+	if (priv->inck)
+		clk_disable_unprepare(priv->inck);
 	regulator_bulk_disable(ARRAY_SIZE(priv->regulators), priv->regulators);
 }
 
@@ -1144,18 +1148,17 @@ static int imx290_of_parse(struct i2c_client *client,
 	ret = of_property_read_string(client->dev.of_node,
 		"inck-name", &clkname);
 	if (ret) {
-		dev_err(&client->dev,
-			"Error reading inck name from DT: %d\n",
-			ret);
-		return ret;
-	}
-
-	priv->inck = devm_clk_get(&client->dev, clkname);
-	if (IS_ERR(priv->inck)) {
-		dev_err(&client->dev,
-			"Error getting clock %s: %ld\n",
-			clkname, PTR_ERR(priv->inck));
-		return PTR_ERR(priv->inck);
+		dev_dbg(&client->dev,
+			"Missing inck-name in DT. Assuming external clock.\n");
+		ret = 0;
+	} else {
+		priv->inck = devm_clk_get(&client->dev, clkname);
+		if (IS_ERR(priv->inck)) {
+			dev_err(&client->dev,
+				"Error getting clock %s: %ld\n",
+				clkname, PTR_ERR(priv->inck));
+			return PTR_ERR(priv->inck);
+		}
 	}
 
 	/* Assume a single port and endpoint child for now. */
@@ -1240,12 +1243,15 @@ static int imx290_probe(struct i2c_client *client,
 
 	mutex_init(&priv->lock);
 
-	ret = clk_set_rate(priv->inck, IMX290_INCK_RATE);
-	if (ret) {
-		dev_err(&client->dev, "Error setting clock rate: %d\n", ret);
-		goto destroy_mutex;
-	}
 	priv->inck_rate = IMX290_INCK_RATE;
+	if (priv->inck) {
+		ret = clk_set_rate(priv->inck, priv->inck_rate);
+		if (ret) {
+			dev_err(&client->dev,
+				"Error setting clock rate: %d\n", ret);
+			goto destroy_mutex;
+		}
+	}
 
 	imx290_set_default_fmt(priv);
 
