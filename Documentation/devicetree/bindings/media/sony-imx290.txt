@@ -1,0 +1,54 @@
+Sony IMX290LLR and IMX290LQR CMOS sensor
+----------------------------------------
+
+Required properties:
+
+- compatible		: "sony,imx290llr" or "sony,imx290lqr";
+- reg			: I2C slave address of the sensor;
+- xclr-gpio		: GPIO pin for sensor reset;
+- dvdd-supply		: digital power supply (1.2V);
+- ovdd-supply		: I/O power supply (1.8V);
+- avdd-supply		: analog power supply (2.9V);
+
+Optional properties:
+
+- inck-name		: Name of the output master clock. If ommitted no
+			  clock is sent and an external clock is assumed;
+- xvs-output-len	: Length of the XVS output signal. Acceptible
+			  values are 0, 1, 2, 4, 8. 0 is default and
+			  means no XVS output;
+
+The device node should contain one 'port' child node with one child 'endpoint'
+node, according to the bindings defined in Documentation/devicetree/bindings/
+media/video-interfaces.txt. The following are properties specific to those
+nodes.
+
+endpoint node
+-------------
+
+- data-lanes	: specifies MIPI CSI-2 data lanes as covered in
+		  video-interfaces.txt.
+		  The device supports only 2 or 4 data lanes.
+
+Example:
+
+camera@1a {
+	compatible = "sony,imx290llr";
+	reg = <0x1a>;
+
+	inck-name = "mclk";
+	xvs-output-len = <8>;
+	xclr-gpio = <&gpio TEGRA_GPIO(BB, 3) GPIO_ACTIVE_LOW>;
+
+	dvdd-supply = <&dvdd_1v2_cam>;
+	ovdd-supply = <&ovdd_1v8_cam>;
+	avdd-supply = <&avdd_2v9_cam>;
+
+	port {
+		imx290llr_1: endpoint {
+			remote-endpoint = <&csi_ab_ep>;
+			clock-lanes = <0>;
+			data-lanes = <0 1 2 3>;
+		};
+	};
+};
