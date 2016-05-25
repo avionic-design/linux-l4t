@@ -75,6 +75,20 @@
 		hdmi {
 			status = "okay";
 		};
+
+		vi {
+			status = "okay";
+			port@0 {
+				csi_ab_ep: endpoint@0 {
+					remote-endpoint = <&imx290llr_1>;
+				};
+			};
+			port@1 {
+				csi_cd_ep: endpoint@0 {
+					remote-endpoint = <&imx290lqr_2>;
+				};
+			};
+		};
 	};
 
 	serial@70006300 {
@@ -140,6 +154,72 @@
 	/* HDMI DDC */
 	i2c@7000c700 {
 		status = "okay";
+	};
+
+	/* Cam I2C */
+	i2c@7000c500 {
+		status = "okay";
+
+		i2c-switch@71 {
+			compatible = "nxp,pca9543";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x71>;
+			vcc-supply = <&vddio_1v8>;
+
+			i2c@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+
+				 camera@1a {
+					compatible = "sony,imx290llr";
+					reg = <0x1a>;
+
+					inck-name = "mclk";
+					xvs-output-len = <8>;
+					xclr-gpio = <&gpio TEGRA_GPIO(BB, 3) GPIO_ACTIVE_LOW>;
+
+					dvdd-supply = <&dvdd_1v2_cam>;
+					ovdd-supply = <&ovdd_1v8_cam>;
+					avdd-supply = <&avdd_2v9_cam>;
+
+					port {
+						imx290llr_1: endpoint {
+							remote-endpoint = <&csi_ab_ep>;
+							clock-lanes = <0>;
+							data-lanes = <0 1>;
+						};
+					};
+				};
+			};
+
+			i2c@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <1>;
+
+				camera2@1a {
+					compatible = "sony,imx290lqr";
+					reg = <0x1a>;
+
+					inck-name = "mclk2";
+					xclr-gpio = <&gpio TEGRA_GPIO(Y, 1) GPIO_ACTIVE_LOW>;
+
+					dvdd-supply = <&dvdd_1v2_cam2>;
+					ovdd-supply = <&ovdd_1v8_cam2>;
+					avdd-supply = <&avdd_2v9_cam2>;
+
+					port {
+						imx290lqr_2: endpoint {
+							remote-endpoint = <&csi_cd_ep>;
+							clock-lanes = <0>;
+							data-lanes = <0 1 2 3>;
+						};
+					};
+				};
+			};
+		};
 	};
 
 	i2c@7000d000 {
@@ -251,6 +331,68 @@
 			enable-active-high;
 			gpio-open-drain;
 			vin-supply = <&vdd_5v0_sys>;
+		};
+
+		vdd_ltc_vref: regulator@106 {
+			compatible = "regulator-fixed";
+			reg = <106>;
+			regulator-name = "LTC26xx VREF";
+			regulator-min-microvolt = <2500000>;
+			regulator-max-microvolt = <2500000>;
+			vin-supply = <&vdd_5v0_sys>;
+		};
+
+		dvdd_1v2_cam: regulator@107 {
+			compatible = "regulator-fixed";
+			reg = <107>;
+			regulator-name = "DVDD_CAM";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		ovdd_1v8_cam: regulator@108 {
+			compatible = "regulator-fixed";
+			reg = <108>;
+			regulator-name = "OVDD";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		avdd_2v9_cam: regulator@109 {
+			compatible = "regulator-fixed";
+			reg = <109>;
+			regulator-name = "AVDD";
+			regulator-min-microvolt = <2900000>;
+			regulator-max-microvolt = <2900000>;
+			vin-supply = <&vdd_3v3>;
+		};
+		dvdd_1v2_cam2: regulator@110 {
+			compatible = "regulator-fixed";
+			reg = <110>;
+			regulator-name = "DVDD";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		ovdd_1v8_cam2: regulator@111 {
+			compatible = "regulator-fixed";
+			reg = <111>;
+			regulator-name = "OVDD";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		avdd_2v9_cam2: regulator@112 {
+			compatible = "regulator-fixed";
+			reg = <112>;
+			regulator-name = "AVDD";
+			regulator-min-microvolt = <2900000>;
+			regulator-max-microvolt = <2900000>;
+			vin-supply = <&vdd_3v3>;
 		};
 	};
 
