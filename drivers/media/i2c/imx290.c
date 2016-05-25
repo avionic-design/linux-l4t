@@ -39,6 +39,8 @@
 #define IMX290_REG_VMAX			0x3018
 #define IMX290_REG_HMAX			0x301c
 #define IMX290_REG_SHS1			0x3020
+#define IMX290_REG_XVSLNG		0x3048
+#define IMX290_REG_XVHSOUTSEL		0x304b
 #define IMX290_REG_PGMODE		0x308c
 #define IMX290_REG_PHYSICAL_LANE_NUM	0x3407
 #define IMX290_REG_CSI_DT_FMT		0x3441
@@ -55,7 +57,11 @@
 #define IMX290_REGLEN_HMAX		16
 #define IMX290_REGLEN_VMAX		18
 #define IMX290_REGLEN_FRSEL		2
+#define IMX290_XVSLNG_SHIFT		4
+#define IMX290_XVSOUTSEL_MASK		0x03
 
+#define IMX290_XVSOUTSEL_VSYNC		0x02
+#define IMX290_XVSOUTSEL_HIGH		0x00
 #define IMX290_BLACKLEVEL_DFT		0xf0
 #define IMX290_BLACKLEVEL_MAX		0x1ff
 #define IMX290_GAIN_MAX			0xf0
@@ -167,6 +173,8 @@ struct imx290_priv {
 	int				ident;
 	u8				revision;
 	u8				num_data_lanes;
+	u8				xvslng;
+	u8				xvsoutsel;
 
 	struct v4l2_ctrl_handler	ctrls;
 	struct v4l2_ctrl		*exposure_ctrl;
@@ -898,6 +906,15 @@ static int imx290_poweron(struct imx290_priv *priv)
 	if (ret)
 		goto set_xclr;
 
+	ret = regmap_write(priv->regmap, IMX290_REG_XVSLNG, priv->xvslng);
+	if (ret)
+		goto set_xclr;
+
+	ret = regmap_update_bits(priv->regmap, IMX290_REG_XVHSOUTSEL,
+		IMX290_XVSOUTSEL_MASK, priv->xvsoutsel);
+	if (ret)
+		goto set_xclr;
+
 	ret = imx290_reconfigure(priv, priv->mode, priv->rate);
 	if (ret)
 		goto set_xclr;
@@ -1134,6 +1151,7 @@ static int imx290_of_parse(struct i2c_client *client,
 	struct v4l2_of_endpoint endpoint;
 	struct device_node *ep;
 	const char *clkname;
+	u32 xvs_output_len;
 	int ret;
 
 	of_id = of_match_node(imx290_of_match, client->dev.of_node);
@@ -1158,6 +1176,37 @@ static int imx290_of_parse(struct i2c_client *client,
 				"Error getting clock %s: %ld\n",
 				clkname, PTR_ERR(priv->inck));
 			return PTR_ERR(priv->inck);
+		}
+	}
+
+	/* xvs_output_len */
+	/* valid values: 0, 1, 2, 4, 8 */
+	/* 0 means off */
+	ret = of_property_read_u32_array(client->dev.of_node,
+		"xvs-output-len", &xvs_output_len, 1);
+	if (!ret) {
+		priv->xvsoutsel = (xvs_output_len > 0) ?
+			IMX290_XVSOUTSEL_VSYNC : IMX290_XVSOUTSEL_HIGH;
+
+		switch (xvs_output_len) {
+		case 0:
+		case 1:
+			priv->xvslng = (0 << IMX290_XVSLNG_SHIFT);
+			break;
+		case 2:
+			priv->xvslng = (1 << IMX290_XVSLNG_SHIFT);
+			break;
+		case 4:
+			priv->xvslng = (2 << IMX290_XVSLNG_SHIFT);
+			break;
+		case 8:
+			priv->xvslng = (3 << IMX290_XVSLNG_SHIFT);
+			break;
+		default:
+			dev_err(&client->dev,
+				"Invalid value for xvs-output-len. Ignoring.\n");
+			priv->xvsoutsel = IMX290_XVSOUTSEL_HIGH;
+			break;
 		}
 	}
 
