@@ -433,6 +433,14 @@ config VIDEO_APTINA_PLL
 config VIDEO_SMIAPP_PLL
 	tristate
 
+config VIDEO_IMX290
+	tristate "Sony IMX290 sensor support"
+	depends on I2C && VIDEO_V4L2
+	depends on MEDIA_CAMERA_SUPPORT
+	help
+	  This is a V4L2 sensor-level driver for the Sony IMX290LQR-C
+	  and IMX290LLR-C camera.
+
 config VIDEO_IMX219
 	tristate "Sony IMX219 sensor support"
 	depends on I2C && VIDEO_V4L2
