@@ -319,6 +319,7 @@ static void tegra_dc_dsi_idle_work(struct work_struct *work);
 static void tegra_dsi_send_dc_frames(struct tegra_dc *dc,
 				     struct tegra_dc_dsi_data *dsi,
 				     int no_of_frames);
+static void tegra_dsi_bl_on(struct tegra_dc_dsi_data *dsi);
 
 unsigned long tegra_dsi_controller_readl(struct tegra_dc_dsi_data *dsi,
 							u32 reg, int index)
@@ -2527,6 +2528,8 @@ static int tegra_dsi_init_hw(struct tegra_dc *dc,
 	if (!tegra_cpu_is_asim() && DSI_USE_SYNC_POINTS)
 		tegra_dsi_syncpt_reset(dsi);
 
+	tegra_dsi_bl_on(dsi);
+
 	return 0;
 }
 
@@ -4626,13 +4629,32 @@ static bool tegra_dc_dsi_osidle(struct tegra_dc *dc)
 		return false;
 }
 
-static void tegra_dsi_bl_off(struct backlight_device *bd)
+static void tegra_dsi_bl_off(struct tegra_dc_dsi_data *dsi)
 {
+	struct backlight_device *bd =
+		get_backlight_device_by_name(dsi->info.bl_name);
+
 	if (!bd)
 		return;
 
+	dsi->last_bl_brightness = bd->props.brightness;
+
 	bd->props.brightness = 0;
 	backlight_update_status(bd);
+}
+
+static void tegra_dsi_bl_on(struct tegra_dc_dsi_data *dsi)
+{
+	struct backlight_device *bd =
+		get_backlight_device_by_name(dsi->info.bl_name);
+
+	if (!bd)
+		return;
+
+	if (dsi->last_bl_brightness) {
+		bd->props.brightness = dsi->last_bl_brightness;
+		backlight_update_status(bd);
+	}
 }
 
 static int tegra_dsi_deep_sleep(struct tegra_dc *dc,
@@ -4646,7 +4668,7 @@ static int tegra_dsi_deep_sleep(struct tegra_dc *dc,
 
 	cancel_delayed_work(&dsi->idle_work);
 
-	tegra_dsi_bl_off(get_backlight_device_by_name(dsi->info.bl_name));
+	tegra_dsi_bl_off(dsi);
 
 	/* Suspend DSI panel */
 	err = tegra_dsi_send_panel_cmd(dc, dsi,
