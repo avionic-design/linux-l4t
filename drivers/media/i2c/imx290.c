@@ -44,7 +44,6 @@
 
 #define IMX290_PGREGEN_SHIFT		0
 #define IMX290_PGMODE_SHIFT		4
-#define IMX290_PGMODE_STRIPES		0x02
 #define IMX290_VREVERSE_MASK		BIT(0)
 #define IMX290_HREVERSE_MASK		BIT(1)
 #define IMX290_REGLEN_SHS1		18
@@ -117,6 +116,17 @@ static const struct regulator_bulk_data imx290_regulators[] = {
 	{ "avdd" },
 };
 
+static const char * const imx290_test_pattern_menu[] = {
+	"Disabled",
+	"Sequence Pattern 1",
+	"Horizontal Color-bar Chart",
+	"Vertical Color-bar Chart",
+	"Sequence Pattern 2",
+	"Gradation Pattern 1",
+	"Gradation Pattern 2",
+	"Toggle Pattern",
+};
+
 struct imx290_mode {
 	unsigned			width;
 	unsigned			height;
@@ -132,6 +142,8 @@ struct imx290_priv {
 	u8				revision;
 
 	struct v4l2_ctrl_handler	ctrls;
+	struct v4l2_ctrl		*black_level_ctrl;
+	struct v4l2_ctrl		*test_pattern_ctrl;
 
 	const struct imx290_mode	*mode;
 
@@ -322,6 +334,34 @@ static int imx290_write_regbits(struct regmap *regmap, unsigned reg,
 	ret2 = regmap_write(regmap, IMX290_REG_REGHOLD, 0);
 	if (!ret2)
 		return ret2;
+
+	return ret;
+}
+
+static int imx290_set_patterngen(struct imx290_priv *priv, int mode)
+{
+	int enable = mode > 0;
+	int black_level;
+	int ret;
+
+	/* Blacklevel must be set to 0 for pg */
+	black_level = enable ? 0 : priv->black_level_ctrl->cur.val;
+	ret = imx290_write_regbits(priv->regmap, IMX290_REG_BLKLEVEL,
+				black_level, IMX290_REGLEN_BLKLEVEL);
+	if (ret)
+		return ret;
+
+	ret = regmap_write(priv->regmap, 0x300e, !enable);
+	if (ret)
+		return ret;
+
+	ret = regmap_write(priv->regmap, 0x300f, !enable);
+	if (ret)
+		return ret;
+
+	ret = regmap_write(priv->regmap, IMX290_REG_PGMODE,
+			(mode << IMX290_PGMODE_SHIFT) |
+			(enable << IMX290_PGREGEN_SHIFT));
 
 	return ret;
 }
@@ -556,9 +596,13 @@ static int imx290_s_ctrl(struct v4l2_ctrl *ctrl)
 				IMX290_REG_SHS1,
 				ctrl->val, IMX290_REGLEN_SHS1);
 	case V4L2_CID_BLACK_LEVEL:
-		ret = imx290_write_regbits(
-			priv->regmap, IMX290_REG_BLKLEVEL,
-			ctrl->val, IMX290_REGLEN_BLKLEVEL);
+		if (!priv->test_pattern_ctrl->cur.val)
+			ret = imx290_write_regbits(
+				priv->regmap, IMX290_REG_BLKLEVEL,
+				ctrl->val, IMX290_REGLEN_BLKLEVEL);
+		break;
+	case V4L2_CID_TEST_PATTERN:
+		ret = imx290_set_patterngen(priv, ctrl->val);
 		break;
 	}
 	mutex_unlock(&priv->lock);
@@ -706,9 +750,13 @@ static int imx290_probe(struct i2c_client *client,
 			V4L2_CID_HFLIP, 0, 1, 1, 0);
 	v4l2_ctrl_new_std(&priv->ctrls, &imx290_ctrl_ops,
 			V4L2_CID_VFLIP, 0, 1, 1, 0);
-	v4l2_ctrl_new_std(&priv->ctrls, &imx290_ctrl_ops,
-			V4L2_CID_BLACK_LEVEL, 0, IMX290_BLACKLEVEL_MAX,
-			1, IMX290_BLACKLEVEL_DFT);
+	priv->black_level_ctrl = v4l2_ctrl_new_std(
+		&priv->ctrls, &imx290_ctrl_ops, V4L2_CID_BLACK_LEVEL,
+		0, IMX290_BLACKLEVEL_MAX, 1, IMX290_BLACKLEVEL_DFT);
+	priv->test_pattern_ctrl = v4l2_ctrl_new_std_menu_items(
+		&priv->ctrls, &imx290_ctrl_ops, V4L2_CID_TEST_PATTERN,
+		ARRAY_SIZE(imx290_test_pattern_menu) - 1, 0, 0,
+		imx290_test_pattern_menu);
 
 	if (priv->ctrls.error) {
 		ret = priv->ctrls.error;
