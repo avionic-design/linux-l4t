@@ -51,3 +51,12 @@ config MMC_FREQ_SCALING
 	  device frequency dynamically. Enable this config only if
 	  there is a custom implementation to determine the frequency
 	  using the device stats.
+
+config MMC_BOOT_PARTITIONS_WRITABLE
+	bool "Enable write access to boot partitions !=0"
+	depends on MMC
+	default n
+	help
+	  Say Y here to allow write access to all boot partitions
+	  except boot partition 0. Boot partition 0 always remains
+	  write protected.
