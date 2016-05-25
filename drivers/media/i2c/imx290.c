@@ -27,13 +27,16 @@
 #include <media/v4l2-chip-ident.h>
 #include <media/v4l2-async.h>
 #include <media/v4l2-ctrls.h>
+#include <media/v4l2-of.h>
 
 #define IMX290_REG_STANDBY		0x3000
 #define IMX290_REG_REGHOLD		0x3001
 #define IMX290_REG_XMSTA		0x3002
 #define IMX290_REG_VHREV_WINMODE	0x3007
+#define IMX290_REG_FRSEL		0x3009
 #define IMX290_REG_BLKLEVEL		0x300a
 #define IMX290_REG_GAIN			0x3014
+#define IMX290_REG_HMAX			0x301c
 #define IMX290_REG_SHS1			0x3020
 #define IMX290_REG_PGMODE		0x308c
 #define IMX290_REG_PHYSICAL_LANE_NUM	0x3407
@@ -48,6 +51,8 @@
 #define IMX290_HREVERSE_MASK		BIT(1)
 #define IMX290_REGLEN_SHS1		18
 #define IMX290_REGLEN_BLKLEVEL		9
+#define IMX290_REGLEN_HMAX		16
+#define IMX290_REGLEN_FRSEL		2
 
 #define IMX290_VMAX			0x465
 #define IMX290_EXPOSURE_MAX		(IMX290_VMAX-2)
@@ -130,11 +135,27 @@ static const char * const imx290_test_pattern_menu[] = {
 	"Toggle Pattern",
 };
 
+struct imx290_csi_timing {
+	const struct reg_default	*regs_datarate;
+	unsigned			regs_datarate_size;
+};
+
+struct imx290_mode_rate {
+	int				framerate;
+	/* Timing for each possible number of lanes */
+	const struct imx290_csi_timing	*csi_timing[5];
+
+	u16				hmax;
+	u8				frsel;
+};
+
 struct imx290_mode {
 	unsigned			width;
 	unsigned			height;
 	const struct reg_default	*regs;
 	unsigned			regs_size;
+	const struct imx290_mode_rate	*rates;
+	unsigned			rates_size;
 };
 
 struct imx290_priv {
@@ -143,12 +164,14 @@ struct imx290_priv {
 
 	int				ident;
 	u8				revision;
+	u8				num_data_lanes;
 
 	struct v4l2_ctrl_handler	ctrls;
 	struct v4l2_ctrl		*black_level_ctrl;
 	struct v4l2_ctrl		*test_pattern_ctrl;
 
 	const struct imx290_mode	*mode;
+	const struct imx290_mode_rate	*rate;
 
 	struct regmap			*regmap;
 	struct regulator_bulk_data	regulators[ARRAY_SIZE(imx290_regulators)];
@@ -165,9 +188,6 @@ static const struct reg_default imx290_720_regs[] = {
 	{ 0x3018, 0xee },
 	{ 0x3019, 0x02 },
 	{ 0x301a, 0x00 },
-	/* HMAX */
-	{ 0x301c, 0xf0 },
-	{ 0x301d, 0x1e },
 	/* INCKSEL */
 	{ 0x305c, 0x20 },
 	{ 0x305d, 0x00 },
@@ -176,7 +196,27 @@ static const struct reg_default imx290_720_regs[] = {
 	{ 0x315e, 0x1a },
 	{ 0x3164, 0x1a },
 	{ 0x3480, 0x49 },
-	/* CSI Timing */
+};
+
+static const struct reg_default imx290_1080_regs[] = {
+	/* WINMODE */
+	{ 0x3007, 0x00 },
+	/* VMAX */
+	{ 0x3018, 0x65 },
+	{ 0x3019, 0x04 },
+	{ 0x301a, 0x00 },
+	/* INCKSEL */
+	{ 0x305c, 0x18 },
+	{ 0x305d, 0x03 },
+	{ 0x305e, 0x20 },
+	{ 0x305f, 0x01 },
+	{ 0x315e, 0x1a },
+	{ 0x3164, 0x1a },
+	{ 0x3480, 0x49 },
+};
+
+/* Some settings for frame rate and CSI lanes */
+static const struct reg_default imx290_timing_149mbps_regs[] = {
 	{ 0x3446, 0x47 },
 	{ 0x3447, 0x00 },
 	{ 0x3448, 0x17 },
@@ -193,27 +233,15 @@ static const struct reg_default imx290_720_regs[] = {
 	{ 0x3453, 0x00 },
 	{ 0x3454, 0x0f },
 	{ 0x3455, 0x00 },
+	{ 0x3405, 0x20 }, /* REPETITION */
 };
 
-static const struct reg_default imx290_1080_regs[] = {
-	/* WINMODE */
-	{ 0x3007, 0x00 },
-	/* VMAX */
-	{ 0x3018, 0x65 },
-	{ 0x3019, 0x04 },
-	{ 0x301a, 0x00 },
-	/* HMAX */
-	{ 0x301c, 0xa0 },
-	{ 0x301d, 0x14 },
-	/* INCKSEL */
-	{ 0x305c, 0x18 },
-	{ 0x305d, 0x03 },
-	{ 0x305e, 0x20 },
-	{ 0x305f, 0x01 },
-	{ 0x315e, 0x1a },
-	{ 0x3164, 0x1a },
-	{ 0x3480, 0x49 },
-	/* CSI Timing */
+static const struct imx290_csi_timing imx290_timing_149mbps = {
+	.regs_datarate = imx290_timing_149mbps_regs,
+	.regs_datarate_size = ARRAY_SIZE(imx290_timing_149mbps_regs),
+};
+
+static const struct reg_default imx290_timing_223mbps_regs[] = {
 	{ 0x3446, 0x47 },
 	{ 0x3447, 0x00 },
 	{ 0x3448, 0x1f },
@@ -230,6 +258,198 @@ static const struct reg_default imx290_1080_regs[] = {
 	{ 0x3453, 0x00 },
 	{ 0x3454, 0x0f },
 	{ 0x3455, 0x00 },
+	{ 0x3405, 0x20 }, /* REPETITION */
+};
+
+static const struct imx290_csi_timing imx290_timing_223mbps = {
+	.regs_datarate = imx290_timing_223mbps_regs,
+	.regs_datarate_size = ARRAY_SIZE(imx290_timing_223mbps_regs),
+};
+
+static const struct reg_default imx290_timing_297mbps_regs[] = {
+	{ 0x3446, 0x4f },
+	{ 0x3447, 0x00 },
+	{ 0x3448, 0x2f },
+	{ 0x3449, 0x00 },
+	{ 0x344a, 0x17 },
+	{ 0x344b, 0x00 },
+	{ 0x344c, 0x17 },
+	{ 0x344d, 0x00 },
+	{ 0x344e, 0x17 },
+	{ 0x344f, 0x00 },
+	{ 0x3450, 0x57 },
+	{ 0x3451, 0x00 },
+	{ 0x3452, 0x17 },
+	{ 0x3453, 0x00 },
+	{ 0x3454, 0x17 },
+	{ 0x3455, 0x00 },
+	{ 0x3405, 0x10 }, /* REPETITION */
+};
+
+static const struct imx290_csi_timing imx290_timing_297mbps = {
+	.regs_datarate = imx290_timing_297mbps_regs,
+	.regs_datarate_size = ARRAY_SIZE(imx290_timing_297mbps_regs),
+};
+
+static const struct reg_default imx290_timing_446mbps_regs[] = {
+	{ 0x3446, 0x57 },
+	{ 0x3447, 0x00 },
+	{ 0x3448, 0x37 },
+	{ 0x3449, 0x00 },
+	{ 0x344a, 0x1f },
+	{ 0x344b, 0x00 },
+	{ 0x344c, 0x1f },
+	{ 0x344d, 0x00 },
+	{ 0x344e, 0x1f },
+	{ 0x344f, 0x00 },
+	{ 0x3450, 0x77 },
+	{ 0x3451, 0x00 },
+	{ 0x3452, 0x1f },
+	{ 0x3453, 0x00 },
+	{ 0x3454, 0x17 },
+	{ 0x3455, 0x00 },
+	{ 0x3405, 0x10 }, /* REPETITION */
+};
+
+static const struct imx290_csi_timing imx290_timing_446mbps = {
+	.regs_datarate = imx290_timing_446mbps_regs,
+	.regs_datarate_size = ARRAY_SIZE(imx290_timing_446mbps_regs),
+};
+
+static const struct reg_default imx290_timing_594mbps_regs[] = {
+	{ 0x3446, 0x67 },
+	{ 0x3447, 0x00 },
+	{ 0x3448, 0x57 },
+	{ 0x3449, 0x00 },
+	{ 0x344a, 0x2f },
+	{ 0x344b, 0x00 },
+	{ 0x344c, 0x27 },
+	{ 0x344d, 0x00 },
+	{ 0x344e, 0x2f },
+	{ 0x344f, 0x00 },
+	{ 0x3450, 0xbf },
+	{ 0x3451, 0x00 },
+	{ 0x3452, 0x2f },
+	{ 0x3453, 0x00 },
+	{ 0x3454, 0x27 },
+	{ 0x3455, 0x00 },
+	{ 0x3405, 0x00 }, /* REPETITION */
+};
+
+static const struct imx290_csi_timing imx290_timing_594mbps = {
+	.regs_datarate = imx290_timing_594mbps_regs,
+	.regs_datarate_size = ARRAY_SIZE(imx290_timing_594mbps_regs),
+};
+
+static const struct reg_default imx290_timing_891mbps_regs[] = {
+	{ 0x3446, 0x77 },
+	{ 0x3447, 0x00 },
+	{ 0x3448, 0x67 },
+	{ 0x3449, 0x00 },
+	{ 0x344a, 0x47 },
+	{ 0x344b, 0x00 },
+	{ 0x344c, 0x37 },
+	{ 0x344d, 0x00 },
+	{ 0x344e, 0x3f },
+	{ 0x344f, 0x00 },
+	{ 0x3450, 0xff },
+	{ 0x3451, 0x00 },
+	{ 0x3452, 0x3f },
+	{ 0x3453, 0x00 },
+	{ 0x3454, 0x37 },
+	{ 0x3455, 0x00 },
+	{ 0x3405, 0x00 }, /* REPETITION */
+};
+
+static const struct imx290_csi_timing imx290_timing_891mbps = {
+	.regs_datarate = imx290_timing_891mbps_regs,
+	.regs_datarate_size = ARRAY_SIZE(imx290_timing_891mbps_regs),
+};
+
+static const struct imx290_mode_rate imx290_720_rates[] = {
+	{
+		.framerate = 25,
+		.csi_timing[2] = &imx290_timing_297mbps,
+		.csi_timing[4] = &imx290_timing_149mbps,
+		.hmax = 0x1ef0,
+		.frsel = 0x02,
+	},
+	{
+		.framerate = 30,
+		.csi_timing[2] = &imx290_timing_297mbps,
+		.csi_timing[4] = &imx290_timing_149mbps,
+		.hmax = 0x19c8,
+		.frsel = 0x02,
+	},
+	{
+		.framerate = 50,
+		.csi_timing[2] = &imx290_timing_594mbps,
+		.csi_timing[4] = &imx290_timing_297mbps,
+		.hmax = 0x0f78,
+		.frsel = 0x01,
+	},
+	{
+		.framerate = 60,
+		.csi_timing[2] = &imx290_timing_594mbps,
+		.csi_timing[4] = &imx290_timing_297mbps,
+		.hmax = 0x0ce4,
+		.frsel = 0x01,
+	},
+	{
+		.framerate = 100,
+		.csi_timing[4] = &imx290_timing_594mbps,
+		.hmax = 0x07bc,
+		.frsel = 0x00,
+	},
+	{
+		.framerate = 120,
+		.csi_timing[4] = &imx290_timing_594mbps,
+		.hmax = 0x0672,
+		.frsel = 0x00,
+	},
+};
+
+static const struct imx290_mode_rate imx290_1080_rates[] = {
+	{
+		.framerate = 25,
+		.csi_timing[2] = &imx290_timing_446mbps,
+		.csi_timing[4] = &imx290_timing_223mbps,
+		.hmax = 0x14a0,
+		.frsel = 0x02,
+	},
+	{
+		.framerate = 30,
+		.csi_timing[2] = &imx290_timing_446mbps,
+		.csi_timing[4] = &imx290_timing_223mbps,
+		.hmax = 0x1130,
+		.frsel = 0x02,
+	},
+	{
+		.framerate = 50,
+		.csi_timing[2] = &imx290_timing_891mbps,
+		.csi_timing[4] = &imx290_timing_446mbps,
+		.hmax = 0x0a50,
+		.frsel = 0x01,
+	},
+	{
+		.framerate = 60,
+		.csi_timing[2] = &imx290_timing_891mbps,
+		.csi_timing[4] = &imx290_timing_446mbps,
+		.hmax = 0x0898,
+		.frsel = 0x01,
+	},
+	{
+		.framerate = 100,
+		.csi_timing[4] = &imx290_timing_891mbps,
+		.hmax = 0x0528,
+		.frsel = 0x00,
+	},
+	{
+		.framerate = 120,
+		.csi_timing[4] = &imx290_timing_891mbps,
+		.hmax = 0x044c,
+		.frsel = 0x00,
+	},
 };
 
 static const struct imx290_mode imx290_modes[] = {
@@ -238,12 +458,16 @@ static const struct imx290_mode imx290_modes[] = {
 		.height = 720,
 		.regs = imx290_720_regs,
 		.regs_size = ARRAY_SIZE(imx290_720_regs),
+		.rates = imx290_720_rates,
+		.rates_size = ARRAY_SIZE(imx290_720_rates),
 	},
 	{
 		.width = 1920,
 		.height = 1080,
 		.regs = imx290_1080_regs,
 		.regs_size = ARRAY_SIZE(imx290_1080_regs),
+		.rates = imx290_1080_rates,
+		.rates_size = ARRAY_SIZE(imx290_1080_rates),
 	},
 };
 
@@ -297,10 +521,6 @@ static const struct reg_default imx290_reg_default[] = {
 	/* Clock speed selection */
 	{ 0x3444, 0x20 },
 	{ 0x3445, 0x25 },
-
-	/* CSI 4 lanes */
-	{ 0x3407, 0x03 },
-	{ 0x3443, 0x03 },
 
 	/* CSI format RAW12 */
 	{ 0x3441, 0x0c },
@@ -369,6 +589,63 @@ static int imx290_set_patterngen(struct imx290_priv *priv, int mode)
 	return ret;
 }
 
+static int imx290_reconfigure(struct imx290_priv *priv,
+			const struct imx290_mode *mode,
+			const struct imx290_mode_rate *rate)
+{
+	const struct imx290_mode_rate *old_rate = priv->rate;
+	const struct imx290_mode *old_mode = priv->mode;
+	const struct imx290_csi_timing* csi_timing;
+	int ret;
+
+	csi_timing = rate->csi_timing[priv->num_data_lanes];
+	if (!csi_timing)
+		return -EINVAL;
+
+	ret = regmap_multi_reg_write(priv->regmap, mode->regs,
+				mode->regs_size);
+	if (ret < 0)
+		goto error;
+
+	ret = regmap_multi_reg_write(priv->regmap, csi_timing->regs_datarate,
+				csi_timing->regs_datarate_size);
+	if (ret < 0)
+		goto error;
+
+	ret = imx290_write_regbits(priv->regmap, IMX290_REG_HMAX,
+				rate->hmax, IMX290_REGLEN_HMAX);
+	if (ret < 0)
+		goto error;
+
+	ret = imx290_write_regbits(priv->regmap, IMX290_REG_FRSEL,
+				rate->frsel, IMX290_REGLEN_FRSEL);
+	if (ret < 0)
+		goto error;
+
+	/* Apply the new mode/rate */
+	priv->mode = mode;
+	priv->rate = rate;
+
+	/* We need to release the lock to allow the ctrl updates to
+	 * get the lock again */
+	mutex_unlock(&priv->lock);
+	ret = v4l2_ctrl_handler_setup(priv->subdev.ctrl_handler);
+	mutex_lock(&priv->lock);
+	if (ret < 0)
+		goto error;
+
+	return 0;
+
+error:
+	/* If we changed mode or rate try to restore the old one */
+	if (mode != old_mode || rate != old_rate) {
+		priv->mode = old_mode;
+		priv->rate = old_rate;
+		imx290_reconfigure(priv, priv->mode, priv->rate);
+	}
+	return ret;
+}
+
 static u32 imx290_get_framefmt_code(struct imx290_priv *priv, int bits)
 {
 	if (bits == 10) {
@@ -400,6 +677,9 @@ static void imx290_set_default_fmt(struct imx290_priv *priv)
 	mf->code = imx290_get_framefmt_code(priv, 12);
 	mf->field = V4L2_FIELD_NONE;
 	mf->colorspace = V4L2_COLORSPACE_SRGB;
+
+	priv->mode = &imx290_modes[0];
+	priv->rate = &priv->mode->rates[0];
 }
 
 static const struct imx290_mode *imx290_get_framefmt(
@@ -442,23 +722,28 @@ static int imx290_s_fmt(struct v4l2_subdev *sd,
 			struct v4l2_mbus_framefmt *mf)
 {
 	struct imx290_priv *priv = to_imx290(sd);
+	const struct imx290_mode_rate *rate;
 	const struct imx290_mode *mode;
-	int ret;
+	unsigned old_framerate;
+	int i, ret;
 
 	mutex_lock(&priv->lock);
 
 	mode = imx290_get_framefmt(priv, mf);
 
-	/* Apply the incksel registers */
-	ret = regmap_multi_reg_write(
-		priv->regmap, mode->regs, mode->regs_size);
-	if (ret < 0) {
-		mutex_unlock(&priv->lock);
-		return ret;
+	old_framerate = priv->rate->framerate;
+	for (i = 0; i < mode->rates_size; i++) {
+		if (mode->rates[i].framerate >= old_framerate) {
+			rate = &mode->rates[i];
+			break;
+		}
 	}
+	if (i >= mode->rates_size)
+		rate = &mode->rates[mode->rates_size - 1];
 
-	priv->mode = mode;
-	priv->mf = *mf;
+	ret = imx290_reconfigure(priv, mode, rate);
+	if (!ret)
+		priv->mf = *mf;
 
 	mutex_unlock(&priv->lock);
 
@@ -490,10 +775,16 @@ static int imx290_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
 static int imx290_g_mbus_config(struct v4l2_subdev *sd,
 				struct v4l2_mbus_config *cfg)
 {
+	struct imx290_priv *priv = to_imx290(sd);
+
 	cfg->type = V4L2_MBUS_CSI2;
-	cfg->flags = V4L2_MBUS_CSI2_4_LANE |
-		V4L2_MBUS_CSI2_CHANNEL_0 |
+	cfg->flags = V4L2_MBUS_CSI2_CHANNEL_0 |
 		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
+
+	if (priv->num_data_lanes == 2)
+		cfg->flags |= V4L2_MBUS_CSI2_2_LANE;
+	else
+		cfg->flags |= V4L2_MBUS_CSI2_4_LANE;
 
 	return 0;
 }
@@ -544,11 +835,16 @@ static int imx290_poweron(struct imx290_priv *priv)
 	if (ret)
 		goto set_xclr;
 
-	/* We need to release the lock to allow the ctrl updates to
-	 * get the lock again */
-	mutex_unlock(&priv->lock);
-	ret = v4l2_ctrl_handler_setup(priv->subdev.ctrl_handler);
-	mutex_lock(&priv->lock);
+	ret = regmap_write(priv->regmap, IMX290_REG_PHYSICAL_LANE_NUM,
+			priv->num_data_lanes - 1);
+	if (ret)
+		goto set_xclr;
+	ret = regmap_write(priv->regmap, IMX290_REG_CSI_LANE_MODE,
+			priv->num_data_lanes - 1);
+	if (ret)
+		goto set_xclr;
+
+	ret = imx290_reconfigure(priv, priv->mode, priv->rate);
 	if (ret)
 		goto set_xclr;
 
@@ -676,6 +972,8 @@ static int imx290_of_parse(struct i2c_client *client,
 	struct imx290_priv *priv)
 {
 	const struct of_device_id *of_id;
+	struct v4l2_of_endpoint endpoint;
+	struct device_node *ep;
 	const char *clkname;
 	int ret;
 
@@ -704,6 +1002,30 @@ static int imx290_of_parse(struct i2c_client *client,
 			clkname, PTR_ERR(priv->inck));
 		return PTR_ERR(priv->inck);
 	}
+
+	/* Assume a single port and endpoint child for now. */
+	ep = v4l2_of_get_next_endpoint(client->dev.of_node, NULL);
+	if (!ep) {
+		dev_err(&client->dev, "Couldn't get DT endpoint child node.");
+		return -EINVAL;
+	}
+
+	v4l2_of_parse_endpoint(ep, &endpoint);
+	of_node_put(ep);
+
+	if (endpoint.bus_type != V4L2_MBUS_CSI2) {
+		dev_err(&client->dev,
+			"Only MIPI CSI-2 endpoint supported.\n");
+		return -EINVAL;
+	}
+
+	if ((endpoint.bus.mipi_csi2.num_data_lanes != 4) &&
+		(endpoint.bus.mipi_csi2.num_data_lanes != 2)) {
+		dev_err(&client->dev,
+			"Only 2 or 4 lane MIPI interface supported.\n");
+		return -EINVAL;
+	}
+	priv->num_data_lanes = endpoint.bus.mipi_csi2.num_data_lanes;
 
 	return 0;
 }
