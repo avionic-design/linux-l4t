@@ -1,7 +1,7 @@
 /dts-v1/;
 
 #include "tegra124-meerkat.dtsi"
-#include "panel-auo-b101uan01.dtsi"
+#include "panel-tianma-tm057jdhp04.dtsi"
 
 / {
 	model = "Avionic Design Kitt";
@@ -58,8 +58,9 @@
 		dsi {
 			nvidia,dsi-controller-vs = <DSI_VS_1>;
 			status = "okay";
-			panel: panel-auo-b101uan01 {
+			panel: panel-tianma-tm057jdhp04 {
 				enable-gpios = <&gpio TEGRA_GPIO(H, 3) GPIO_ACTIVE_HIGH>;
+				nvidia,dsi-te-gpio = <&gpio TEGRA_GPIO(K, 0) GPIO_ACTIVE_HIGH>;
 				backlight = <&display_bl>;
 			};
 		};

@@ -1,0 +1,385 @@
+/*
+ * Copyright (c) 2016, Avionic Design GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ */
+#include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/display/tegra-panel.h>
+
+#define TIANMA_SHIFT TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM 0x00
+#define TIANMA_LONGW TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE
+#define TIANMA_REG TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM
+/ {
+	host1x {
+		dsi {
+			panel-tianma-tm057jdhp04 {
+				status = "okay";
+				compatible = "tianma,tm057jdhp04", "none,panel-generic";
+				nvidia,dsi-instance = <DSI_INSTANCE_0>;
+				nvidia,dsi-n-data-lanes = <4>;
+				nvidia,dsi-pixel-format = <TEGRA_DSI_PIXEL_FORMAT_24BIT_P>;
+				nvidia,dsi-refresh-rate = <60>;
+				nvidia,dsi-rated-refresh-rate = <60>;
+				nvidia,dsi-video-data-type = <TEGRA_DSI_VIDEO_TYPE_VIDEO_MODE>;
+				nvidia,dsi-video-burst-mode = <TEGRA_DSI_VIDEO_NONE_BURST_MODE>;
+				nvidia,dsi-video-clock-mode = <TEGRA_DSI_VIDEO_CLOCK_CONTINUOUS>;
+				nvidia,dsi-controller-vs = <DSI_VS_1>;
+				nvidia,dsi-virtual-channel = <TEGRA_DSI_VIRTUAL_CHANNEL_0>;
+				nvidia,dsi-panel-reset = <TEGRA_DSI_ENABLE>;
+				nvidia,dsi-power-saving-suspend = <TEGRA_DSI_ENABLE>;
+				nvidia,dsi-lp00-pre-panel-wakeup = <TEGRA_DSI_ENABLE>;
+				nvidia,dsi-ulpm-not-support = <TEGRA_DSI_ENABLE>;
+				nvidia,dsi-suspend-aggr = <DSI_HOST_SUSPEND_LV2>;
+				nvidia,dsi-bl-name = "pwm-backlight";
+						/* For DSI packets each DT cell is interpreted as u8 not u32 */
+						/* Short Packet: <TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_[0/1]_PARAM data0 data1 ecc */
+						/* Long Packet: <TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE length_lsb length_msb ecc data[] checksum> */
+						/* ecc is always ignored. Use 0 */
+						/* checksum is CRC-16-CCITT and mandatory */
+				nvidia,dsi-init-cmd = < TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 4 0 0 0xff 0x12 0x83 0x01 0x8a 0xbc /* CMD2_ENA1 enable cmd & en shift function */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_LONGW 3 0 0 0xff 0x12 0x83 0x05 0xc7 /* CMD2_ENA2: enable Orise Command */
+							TIANMA_SHIFT 0xA2 0
+							TIANMA_REG 0xC1 0x08 0 /* Unknown */
+							TIANMA_SHIFT 0xA4 0
+							TIANMA_REG 0xC1 0xF0 0 /* Unknown */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_REG 0xC4 0x30 0 /* SD_PCH_CTRL: GND at vert blanking */
+							TIANMA_SHIFT 0x8A 0
+							TIANMA_REG 0xC4 0x40 0 /* Unknown */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_LONGW 10 0 0 0xC0 0x00 0x64 0x00 0x0E 0x12 0x00 0x64 0x0E 0x12 0x3F 0x12 /* TCON settings */
+							TIANMA_SHIFT 0xB4 0
+							TIANMA_REG 0xC0 0x55 0 /* Panel Driving Mode */
+							TIANMA_SHIFT 0x81 0
+							TIANMA_REG 0xC1 0x55 0 /* Oscilator adjust */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_LONGW 3 0 0 0xC4 0x00 0x84 0xA7 0xE7 /* Source driver precharge */
+							TIANMA_SHIFT 0x90 0
+							TIANMA_REG 0xC4 0x49 0 /* Unknown */
+							TIANMA_SHIFT 0x82 0
+							TIANMA_REG 0xC4 0x02 0 /* Unknown */
+							TIANMA_SHIFT 0xC6 0
+							TIANMA_REG 0xB0 0x03 0 /* Unknown */
+							TIANMA_SHIFT 0xA4 0
+							TIANMA_REG 0xC0 0x00 0 /* Panel Timing setting param 4 */
+							TIANMA_SHIFT 0x87 0
+							TIANMA_REG 0xC4 0x18 0 /* Unknown */
+							TIANMA_SHIFT 0xC3 0
+							TIANMA_REG 0xF5 0x81 0 /* Unknown */
+							TIANMA_SHIFT 0x82 0
+							TIANMA_REG 0xF4 0x00 0 /* Unknown */
+							TIANMA_SHIFT 0xB1 0
+							TIANMA_REG 0xC6 0x03 0 /* PWM Param 3 */
+							TIANMA_SHIFT 0xA0 0
+							TIANMA_LONGW 15 0 0 0xC4 0x05 0x10 0x06 0x02 0x05 0x15 0x10 0x05 0x10 0x07 0x02 0x05 0x15 0x10 0xB9 0xA7 /* Boost VSP VSN Ctrl */
+							TIANMA_SHIFT 0xB0 0
+							TIANMA_LONGW 3 0 0 0xC4 0x00 0x00 0xAB 0x36 /* Boost clamp setting */
+							TIANMA_SHIFT 0xBB 0
+							TIANMA_REG 0xC5 0x80 0 /* LVD Setting */
+							TIANMA_SHIFT 0x91 0
+							TIANMA_LONGW 3 0 0 0xC5 0x16 0x50 0xBB 0xF2 /* VGH/VGL Voltage Setting */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 3 0 0 0xD8 0xB2 0x8E 0x80 0x08 /* GVDD/NGVDD Setting */
+							TIANMA_REG 0x36 0x00 0 /* Unknown: Memory Data Access Control? */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 17 0 0 0xE1 0x07 0x13 0x19 0x0E 0x07 0x13 0x0b 0x0b 0x02 0x06 0x09 0x06 0x0D 0x11 0x0d 0x03 0x41 0x0E /* Gamma Correction (2.2+) */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 17 0 0 0xE2 0x07 0x13 0x1a 0x0E 0x07 0x13 0x0b 0x0b 0x02 0x06 0x08 0x06 0x0D 0x12 0x0c 0x03 0x05 0x9D /* Gamma Correction (2.2-) */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 34 0 0 0xEC 0x40 0x34 0x34 0x43 0x43 0x44 0x34 0x34 0x43 0x43 0x43 0x44 0x34 0x34 0x43 0x43 0x44 0x34 0x34 0x43 0x43 0x44 0x34 0x34 0x43 0x43 0x43 0x44 0x34 0x34 0x43 0x43 0x04 0x43 0x2E /* Digital Gamma R */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 34 0 0 0xED 0x40 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x04 0xA3 0x0A /* Digital Gamma G */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 34 0 0 0xEE 0x40 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x44 0x04 0xED 0xBE /* Digital Gamma B */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_REG 0xD9 0x58 0 /* VCOM Setting */
+							TIANMA_SHIFT 0xB0 0
+							TIANMA_LONGW 3 0 0 0xC5 0x04 0xB8 0x8C 0xEB /* Unknown */
+							TIANMA_SHIFT 0x90 0
+							TIANMA_LONGW 5 0 0 0xF5 0x02 0x11 0x02 0x11 0x44 0xF0 /* Unknown */
+							TIANMA_SHIFT 0x90 0
+							TIANMA_REG 0xC5 0x50 0 /* External Power IC Pump DM */
+							TIANMA_SHIFT 0x94 0
+							TIANMA_REG 0xC5 0x66 0 /* Pump clock setting */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_REG 0x51 0x00 0 /* Unknown: Display brightness? */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_REG 0x53 0x24 0 /* Unknown: CTRL Display? */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_REG 0x55 0x01 0 /* Unknown: Power save? */
+							TIANMA_SHIFT 0xB2 0
+							TIANMA_LONGW 3 0 0 0xF5 0x00 0x00 0x3E 0xC4 /* Unknown */
+							TIANMA_SHIFT 0xB4 0
+							TIANMA_LONGW 3 0 0 0xF5 0x00 0x00 0x3E 0xC4 /* Unknown */
+							TIANMA_SHIFT 0xB6 0
+							TIANMA_LONGW 3 0 0 0xF5 0x00 0x00 0x3E 0xC4 /* Unknown */
+							TIANMA_SHIFT 0xB8 0
+							TIANMA_LONGW 3 0 0 0xF5 0x00 0x00 0x3E 0xC4 /* Unknown */
+							TIANMA_SHIFT 0x94 0
+							TIANMA_REG 0xF5 0x02 0  /* Unknown */
+							TIANMA_SHIFT 0xBA 0
+							TIANMA_REG 0xF5 0x03 0 /* Unknown */
+							TIANMA_SHIFT 0xB2 0
+							TIANMA_REG 0xC5 0x00 0 /* Power Control */
+							TIANMA_SHIFT 0xB4 0
+							TIANMA_REG 0xC5 0xC0 0 /* GOA Power Control */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_LONGW 12 0 0 0xCB 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x2F 0xED /* Panel Control 1 */
+							TIANMA_SHIFT 0x90 0
+							TIANMA_LONGW 16 0 0 0xCB 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x9B 0x17 /* Panel Control 2 */
+							TIANMA_SHIFT 0xA0 0
+							TIANMA_LONGW 16 0 0 0xCB 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x9B 0x17 /* Panel Control 3 */
+							TIANMA_SHIFT 0xB0 0
+							TIANMA_LONGW 16 0 0 0xCB 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x9B 0x17 /* Panel Control 4 */
+							TIANMA_SHIFT 0xC0 0
+							TIANMA_LONGW 16 0 0 0xCB 0x05 0x05 0x05 0x05 0x05 0x05 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0xA1 /* Panel Control 5 */
+							TIANMA_SHIFT 0xD0 0
+							TIANMA_LONGW 16 0 0 0xCB 0x00 0x00 0x00 0x00 0x05 0x05 0x05 0x05 0x05 0x05 0x05 0x05 0x05 0x00 0x00 0xD3 0x2D /* Panel Control 6 */
+							TIANMA_SHIFT 0xE0 0
+							TIANMA_LONGW 15 0 0 0xCB 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x05 0x05 0x05 0x18 0xB0 /* Panel Control 7 */
+							TIANMA_SHIFT 0xF0 0
+							TIANMA_LONGW 12 0 0 0xCB 0xFF 0xCF 0x00 0x03 0xC0 0xF0 0xFF 0x0C 0x30 0x00 0x0C 0xD3 0xAA /* Panel Control 8 */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_LONGW 16 0 0 0xCC 0x06 0x2D 0x2E 0x0C 0x0A 0x10 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x81 0x70 /* Panel U2D Setting 1 */
+							TIANMA_SHIFT 0x90 0
+							TIANMA_LONGW 16 0 0 0xCC 0x00 0x00 0x00 0x00 0x0E 0x02 0x04 0x05 0x2D 0x2E 0x0B 0x09 0x0F 0x00 0x00 0x4B 0x24 /* Panel U2D Setting 2 */
+							TIANMA_SHIFT 0xA0 0
+							TIANMA_LONGW 15 0 0 0xCC 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0D 0x01 0x03 0x2C 0xCD /* Panel U2D Setting 3 */
+							TIANMA_SHIFT 0xB0 0
+							TIANMA_LONGW 16 0 0 0xCC 0x05 0x2E 0x2D 0x0D 0x0F 0x09 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x41 0xEA /* Panel D2U Setting 1 */
+							TIANMA_SHIFT 0xC0 0
+							TIANMA_LONGW 16 0 0 0xCC 0x00 0x00 0x00 0x00 0x0B 0x03 0x01 0x06 0x2E 0x2D 0x0E 0x10 0x0A 0x00 0x00 0xAC 0x4B /* Panel D2U Setting 2 */
+							TIANMA_SHIFT 0xD0 0
+							TIANMA_LONGW 15 0 0 0xCC 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0C 0x04 0x02 0xC8 0x15 /* Panel D2U Setting 3 */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_LONGW 13 0 0 0xCE 0x8B 0x03 0x18 0x8A 0x03 0x18 0x89 0x03 0x18 0x88 0x03 0x18 0x90 0xD5 /* GOA VST Setting */
+							TIANMA_SHIFT 0x90 0
+							TIANMA_LONGW 15 0 0 0xCE 0x38 0x10 0x18 0x38 0x0F 0x18 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x90 0x3a /* GOA VEND Setting */
+							TIANMA_SHIFT 0xA0 0
+							TIANMA_LONGW 15 0 0 0xCE 0x38 0x07 0x05 0x00 0x00 0x28 0x00 0x38 0x06 0x05 0x01 0x00 0x28 0x00 0x62 0xA6 /* GOA CLKA1/2 Setting */
+							TIANMA_SHIFT 0xB0 0
+							TIANMA_LONGW 15 0 0 0xCE 0x38 0x05 0x05 0x02 0x00 0x28 0x00 0x38 0x04 0x05 0x03 0x00 0x28 0x00 0x3F 0xEA /* GOA CLKA3/4 Setting */
+							TIANMA_SHIFT 0xC0 0
+							TIANMA_LONGW 15 0 0 0xCE 0x38 0x03 0x05 0x04 0x00 0x28 0x00 0x38 0x02 0x05 0x05 0x00 0x28 0x00 0xD8 0x3E /* GOA CLKB1/2 Setting */
+							TIANMA_SHIFT 0xD0 0
+							TIANMA_LONGW 15 0 0 0xCE 0x38 0x01 0x05 0x06 0x00 0x28 0x00 0x38 0x00 0x05 0x07 0x00 0x28 0x00 0x85 0x72 /* GOA CLKB3/4 Setting */
+							TIANMA_SHIFT 0x80 0
+							TIANMA_LONGW 15 0 0 0xCF 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0A 0x6F /* GOA CLKC1/2 Setting */
+							TIANMA_SHIFT 0x90 0
+							TIANMA_LONGW 15 0 0 0xCF 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0A 0x6F /* GOA CLKC3/4 Setting */
+							TIANMA_SHIFT 0xA0 0
+							TIANMA_LONGW 15 0 0 0xCF 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0A 0x6F /* GOA CLKD1/2 Setting */
+							TIANMA_SHIFT 0xB0 0
+							TIANMA_LONGW 15 0 0 0xCF 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0A 0x6F /* GOA CLKD3/4 Setting */
+							TIANMA_SHIFT 0xC0 0
+							TIANMA_LONGW 12 0 0 0xCF 0x01 0x01 0x20 0x20 0x00 0x00 0x01 0x81 0x00 0x03 0x08 0xE5 0x5E /* GOA ECLK Setting */
+							TIANMA_SHIFT 0xB5 0
+							TIANMA_LONGW 7 0 0 0xC5 0x38 0x00 0x3F 0x38 0x00 0x3F 0x0D 0x8F /* GOA Power Control */
+							TIANMA_SHIFT 0x00 0
+							TIANMA_LONGW 4 0 0 0xFF 0xFF 0xFF 0xFF 0x0F 0x1D /* Probably disable CMD2 */
+							TIANMA_SHIFT 0x00 0
+							TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM DSI_DCS_SET_TEARING_EFFECT_ON 0x0 0
+							TEGRA_DSI_DELAY_MS 10
+							TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM DSI_DCS_EXIT_SLEEP_MODE 0 0
+							TEGRA_DSI_DELAY_MS 120
+							TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM DSI_DCS_SET_DISPLAY_ON 0 0
+							TEGRA_DSI_DELAY_MS 50>;
+				nvidia,dsi-n-init-cmd = <150>;
+				disp-default-out {
+					nvidia,out-type = <TEGRA_DC_OUT_DSI>;
+					nvidia,out-width = <71>;
+					nvidia,out-height = <127>;
+					nvidia,out-flags = <TEGRA_DC_OUT_CONTINUOUS_MODE>;
+					nvidia,out-parent-clk = "pll_d_out0";
+					nvidia,out-xres = <720>;
+					nvidia,out-yres = <1280>;
+				};
+				display-timings {
+					720x1280-32 {
+						clock-frequency = <63610000>;
+						hactive = <720>;
+						vactive = <1280>;
+						hfront-porch = <44>;
+						hback-porch = <42>;
+						hsync-len = <2>;
+						vfront-porch = <16>;
+						vback-porch = <14>;
+						vsync-len = <2>;
+						nvidia,h-ref-to-sync = <0>;
+						nvidia,v-ref-to-sync = <1>;
+					};
+				};
+				smartdimmer {
+					status = "okay";
+					nvidia,use-auto-pwm = <0>;
+					nvidia,hw-update-delay = <0>;
+					nvidia,bin-width = <0xffffffff>;
+					nvidia,aggressiveness = <5>;
+					nvidia,use-vid-luma = <0>;
+					nvidia,phase-in-settings = <0>;
+					nvidia,phase-in-adjustments = <0>;
+					nvidia,k-limit-enable = <1>;
+					nvidia,k-limit = <200>;
+					nvidia,sd-window-enable = <0>;
+					nvidia,soft-clipping-enable= <1>;
+					nvidia,soft-clipping-threshold = <128>;
+					nvidia,smooth-k-enable = <1>;
+					nvidia,smooth-k-incr = <4>;
+					nvidia,coeff = <5 9 2>;
+					nvidia,fc = <0 0>;
+					nvidia,blp = <1024 255>;
+					nvidia,bltf = <57 65 73 82
+						       92 103 114 125
+						       138 150 164 178
+						       193 208 224 241>;
+					nvidia,lut = <255 255 255
+						      199 199 199
+						      153 153 153
+						      116 116 116
+						      85 85 85
+						      59 59 59
+						      36 36 36
+						      17 17 17
+						      0 0 0>;
+					nvidia,use-vpulse2 = <1>;
+					nvidia,bl-device-name = "pwm-backlight";
+				};
+				cmu {
+					nvidia,cmu-csc = < 0x105 0x3D5 0x024
+							   0x3EA 0x121 0x3C1
+							   0x002 0x00A 0x0F4 >;
+					nvidia,cmu-lut2 = < 0 1 2 2 3 4 5 6
+							    6 7 8 9 10 10 11 12
+							    13 13 14 15 15 16 16 17
+							    18 18 19 19 20 20 21 21
+							    22 22 23 23 23 24 24 25
+							    25 25 26 26 27 27 27 28
+							    28 29 29 29 30 30 30 31
+							    31 31 32 32 32 33 33 33
+							    34 34 34 34 35 35 35 36
+							    36 36 37 37 37 37 38 38
+							    38 38 39 39 39 40 40 40
+							    40 41 41 41 41 42 42 42
+							    42 43 43 43 43 43 44 44
+							    44 44 45 45 45 45 46 46
+							    46 46 46 47 47 47 47 48
+							    48 48 48 48 49 49 49 49
+							    49 50 50 50 50 50 51 51
+							    51 51 51 52 52 52 52 52
+							    53 53 53 53 53 54 54 54
+							    54 54 55 55 55 55 55 55
+							    56 56 56 56 56 57 57 57
+							    57 57 57 58 58 58 58 58
+							    58 59 59 59 59 59 59 60
+							    60 60 60 60 60 61 61 61
+							    61 61 61 62 62 62 62 62
+							    62 63 63 63 63 63 63 64
+							    64 64 64 64 64 64 65 65
+							    65 65 65 65 66 66 66 66
+							    66 66 66 67 67 67 67 67
+							    67 67 68 68 68 68 68 68
+							    68 69 69 69 69 69 69 69
+							    70 70 70 70 70 70 70 71
+							    71 71 71 71 71 71 72 72
+							    72 72 72 72 72 72 73 73
+							    73 73 73 73 73 74 74 74
+							    74 74 74 74 74 75 75 75
+							    75 75 75 75 75 76 76 76
+							    76 76 76 76 77 77 77 77
+							    77 77 77 77 78 78 78 78
+							    78 78 78 78 78 79 79 79
+							    79 79 79 79 79 80 80 80
+							    80 80 80 80 80 81 81 81
+							    81 81 81 81 81 81 82 82
+							    82 82 82 82 82 82 83 83
+							    83 83 83 83 83 83 83 84
+							    84 84 84 84 84 84 84 84
+							    85 85 85 85 85 85 85 85
+							    85 86 86 86 86 86 86 86
+							    86 86 87 87 87 87 87 87
+							    87 87 87 88 88 88 88 88
+							    88 88 88 88 88 89 89 89
+							    89 89 89 89 89 89 90 90
+							    90 90 90 90 90 90 90 90
+							    91 91 91 91 91 91 91 91
+							    91 91 92 92 92 92 92 92
+							    92 92 92 92 93 93 93 93
+							    93 93 93 93 93 93 94 94
+							    94 94 94 94 94 94 94 94
+							    95 95 95 95 95 95 95 95
+							    95 95 96 96 96 96 96 96
+							    96 96 96 96 96 97 97 97
+							    97 97 97 97 97 97 97 98
+							    98 98 98 98 98 98 98 98
+							    98 98 99 99 99 99 99 99
+							    99 100 101 101 102 103 103 104
+							    105 105 106 107 107 108 109 109
+							    110 111 111 112 113 113 114 115
+							    115 116 116 117 118 118 119 119
+							    120 120 121 122 122 123 123 124
+							    124 125 126 126 127 127 128 128
+							    129 129 130 130 131 131 132 132
+							    133 133 134 134 135 135 136 136
+							    137 137 138 138 139 139 140 140
+							    141 141 142 142 143 143 144 144
+							    145 145 145 146 146 147 147 148
+							    148 149 149 150 150 150 151 151
+							    152 152 153 153 153 154 154 155
+							    155 156 156 156 157 157 158 158
+							    158 159 159 160 160 160 161 161
+							    162 162 162 163 163 164 164 164
+							    165 165 166 166 166 167 167 167
+							    168 168 169 169 169 170 170 170
+							    171 171 172 172 172 173 173 173
+							    174 174 174 175 175 176 176 176
+							    177 177 177 178 178 178 179 179
+							    179 180 180 180 181 181 182 182
+							    182 183 183 183 184 184 184 185
+							    185 185 186 186 186 187 187 187
+							    188 188 188 189 189 189 189 190
+							    190 190 191 191 191 192 192 192
+							    193 193 193 194 194 194 195 195
+							    195 196 196 196 196 197 197 197
+							    198 198 198 199 199 199 200 200
+							    200 200 201 201 201 202 202 202
+							    202 203 203 203 204 204 204 205
+							    205 205 205 206 206 206 207 207
+							    207 207 208 208 208 209 209 209
+							    209 210 210 210 211 211 211 211
+							    212 212 212 213 213 213 213 214
+							    214 214 214 215 215 215 216 216
+							    216 216 217 217 217 217 218 218
+							    218 219 219 219 219 220 220 220
+							    220 221 221 221 221 222 222 222
+							    223 223 223 223 224 224 224 224
+							    225 225 225 225 226 226 226 226
+							    227 227 227 227 228 228 228 228
+							    229 229 229 229 230 230 230 230
+							    231 231 231 231 232 232 232 232
+							    233 233 233 233 234 234 234 234
+							    235 235 235 235 236 236 236 236
+							    237 237 237 237 238 238 238 238
+							    239 239 239 239 240 240 240 240
+							    240 241 241 241 241 242 242 242
+							    242 243 243 243 243 244 244 244
+							    244 244 245 245 245 245 246 246
+							    246 246 247 247 247 247 247 248
+							    248 248 248 249 249 249 249 249
+							    250 250 250 250 251 251 251 251
+							    251 252 252 252 252 253 253 253
+							    253 253 254 254 254 254 255 255 >;
+				};
+			};
+		};
+	};
+};
