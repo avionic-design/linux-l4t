@@ -57,6 +57,9 @@
 #define IMX290_BLACKLEVEL_MAX		0x1ff
 #define IMX290_INCK_RATE		37125000
 
+#define IMX290_ID_LQR			0
+#define IMX290_ID_LLR			1
+
 static const struct regmap_range imx290_regmap_rw_ranges[] = {
 	regmap_reg_range(0x3000, 0x3022),
 	regmap_reg_range(0x303a, 0x3043),
@@ -366,6 +369,27 @@ static int imx290_set_patterngen(struct imx290_priv *priv, int mode)
 	return ret;
 }
 
+static u32 imx290_get_framefmt_code(struct imx290_priv *priv, int bits)
+{
+	if (bits == 10) {
+		switch (priv->ident) {
+		case V4L2_IDENT_IMX290LLR:
+			return V4L2_MBUS_FMT_Y10_1X10;
+		case V4L2_IDENT_IMX290LQR:
+		default:
+			return V4L2_MBUS_FMT_SRGGB10_1X10;
+		}
+	} else {
+		switch (priv->ident) {
+		case V4L2_IDENT_IMX290LLR:
+			return V4L2_MBUS_FMT_Y12_1X12;
+		case V4L2_IDENT_IMX290LQR:
+		default:
+			return V4L2_MBUS_FMT_SRGGB12_1X12;
+		}
+	}
+}
+
 static void imx290_set_default_fmt(struct imx290_priv *priv)
 {
 	struct v4l2_mbus_framefmt *mf = &priv->mf;
@@ -373,12 +397,13 @@ static void imx290_set_default_fmt(struct imx290_priv *priv)
 	mf->width = imx290_modes[0].width;
 	mf->height = imx290_modes[0].height;
 
+	mf->code = imx290_get_framefmt_code(priv, 12);
 	mf->field = V4L2_FIELD_NONE;
-	mf->code = V4L2_MBUS_FMT_SRGGB12_1X12; /* Hard-code RAW12 for now. */
 	mf->colorspace = V4L2_COLORSPACE_SRGB;
 }
 
 static const struct imx290_mode *imx290_get_framefmt(
+	struct imx290_priv *priv,
 	struct v4l2_mbus_framefmt *mf)
 {
 	static const struct imx290_mode *mode;
@@ -398,7 +423,7 @@ static const struct imx290_mode *imx290_get_framefmt(
 	mf->height = mode->height;
 
 	mf->field = V4L2_FIELD_NONE;
-	mf->code = V4L2_MBUS_FMT_SRGGB12_1X12;
+	mf->code = imx290_get_framefmt_code(priv, 12);
 	mf->colorspace = V4L2_COLORSPACE_SRGB;
 
 	return mode;
@@ -407,7 +432,9 @@ static const struct imx290_mode *imx290_get_framefmt(
 static int imx290_try_fmt(struct v4l2_subdev *sd,
 			  struct v4l2_mbus_framefmt *mf)
 {
-	imx290_get_framefmt(mf);
+	struct imx290_priv *priv = to_imx290(sd);
+
+	imx290_get_framefmt(priv, mf);
 	return 0;
 }
 
@@ -420,7 +447,7 @@ static int imx290_s_fmt(struct v4l2_subdev *sd,
 
 	mutex_lock(&priv->lock);
 
-	mode = imx290_get_framefmt(mf);
+	mode = imx290_get_framefmt(priv, mf);
 
 	/* Apply the incksel registers */
 	ret = regmap_multi_reg_write(
@@ -451,10 +478,12 @@ static int imx290_g_fmt(struct v4l2_subdev *sd,
 static int imx290_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
 			   enum v4l2_mbus_pixelcode *code)
 {
+	struct imx290_priv *priv = to_imx290(sd);
+
 	if (index > 0)
 		return -EINVAL;
 
-	*code = V4L2_MBUS_FMT_SRGGB12_1X12;
+	*code = imx290_get_framefmt_code(priv, 12);
 	return 0;
 }
 
@@ -641,11 +670,21 @@ static struct v4l2_ctrl_ops imx290_ctrl_ops = {
 };
 
 #ifdef CONFIG_OF
+static const struct of_device_id imx290_of_match[];
+
 static int imx290_of_parse(struct i2c_client *client,
 	struct imx290_priv *priv)
 {
+	const struct of_device_id *of_id;
 	const char *clkname;
 	int ret;
+
+	of_id = of_match_node(imx290_of_match, client->dev.of_node);
+	if (!of_id) {
+		dev_err(&client->dev, "Failed to match DT node\n");
+		return -ENODEV;
+	}
+	priv->ident = (int)of_id->data;
 
 	/* inck_name */
 	priv->inck = NULL;
@@ -731,8 +770,6 @@ static int imx290_probe(struct i2c_client *client,
 	}
 	priv->inck_rate = IMX290_INCK_RATE;
 
-	priv->ident = V4L2_IDENT_IMX290;
-
 	imx290_set_default_fmt(priv);
 
 	v4l2_i2c_subdev_init(&priv->subdev, client, &imx290_subdev_ops);
@@ -795,15 +832,16 @@ static int imx290_remove(struct i2c_client *client)
 }
 
 static const struct i2c_device_id imx290_id[] = {
-	{ "imx290", 0 },
-	{ }
+	{ "imx290lqr", IMX290_ID_LQR },
+	{ "imx290llr", IMX290_ID_LLR },
+	{ },
 };
 MODULE_DEVICE_TABLE(i2c, imx290_id);
 
 #ifdef CONFIG_OF
 static const struct of_device_id imx290_of_match[] = {
-	{ .compatible = "sony,imx290lqr" },
-	{ .compatible = "sony,imx290llr" },
+	{ .compatible = "sony,imx290lqr", .data = (void *)IMX290_ID_LQR },
+	{ .compatible = "sony,imx290llr", .data = (void *)IMX290_ID_LLR },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, imx290_of_match);
