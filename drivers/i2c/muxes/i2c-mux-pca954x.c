@@ -122,6 +122,44 @@ static const struct i2c_device_id pca954x_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, pca954x_id);
 
+#ifdef CONFIG_OF
+static const struct of_device_id pca954x_of_match[] = {
+	{ .compatible = "nxp,pca9540", .data = (void *)pca_9540, },
+	{ .compatible = "nxp,pca9542", .data = (void *)pca_9540, },
+	{ .compatible = "nxp,pca9543", .data = (void *)pca_9543, },
+	{ .compatible = "nxp,pca9544", .data = (void *)pca_9544, },
+	{ .compatible = "nxp,pca9545", .data = (void *)pca_9545, },
+	{ .compatible = "nxp,pca9546", .data = (void *)pca_9545, },
+	{ .compatible = "nxp,pca9547", .data = (void *)pca_9547, },
+	{ .compatible = "nxp,pca9548", .data = (void *)pca_9548, },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, pca954x_of_match);
+
+static int pca954x_get_device_type(struct device *dev,
+				const struct i2c_device_id *id)
+{
+	if (dev->of_node) {
+		const struct of_device_id *of_id;
+
+		of_id = of_match_node(pca954x_of_match, dev->of_node);
+		if (!of_id) {
+			dev_err(dev, "could not match dt node\n");
+			return -ENODEV;
+		}
+		return (int)of_id->data;
+	}
+
+	return id->driver_data;
+}
+#else
+static int pca954x_get_device_type(struct device *dev,
+				const struct i2c_device_id *id)
+{
+	return id->driver_data;
+}
+#endif
+
 /* Write to mux register. Don't use i2c_transfer()/i2c_smbus_xfer()
    for this as they will try to lock adapter a second time */
 static int pca954x_reg_write(struct i2c_adapter *adap,
@@ -233,6 +271,10 @@ static int pca954x_probe(struct i2c_client *client,
 
 	i2c_set_clientdata(client, data);
 
+	data->type = pca954x_get_device_type(&client->dev, id);
+	if (data->type < 0)
+		return data->type;
+
 	/* Get regulator pointer for pca954x vcc */
 	data->vcc_reg = devm_regulator_get(&client->dev, "vcc");
 	if (PTR_ERR(data->vcc_reg) == -EPROBE_DEFER)
@@ -290,7 +332,6 @@ static int pca954x_probe(struct i2c_client *client,
 	if (data->pullup_reg)
 		regulator_disable(data->pullup_reg);
 
-	data->type = id->driver_data;
 	data->last_chan = 0;		   /* force the first selection */
 
 	/* Now create an adapter for each channel */
@@ -365,6 +406,7 @@ static struct i2c_driver pca954x_driver = {
 	.driver		= {
 		.name	= "pca954x",
 		.owner	= THIS_MODULE,
+		.of_match_table = of_match_ptr(pca954x_of_match),
 	},
 	.probe		= pca954x_probe,
 	.remove		= pca954x_remove,
