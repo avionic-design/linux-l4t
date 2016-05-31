@@ -935,6 +935,107 @@ static int imx290_s_ctrl(struct v4l2_ctrl *ctrl)
 	return ret;
 }
 
+static int imx290_enum_framesizes(struct v4l2_subdev *sd,
+				struct v4l2_frmsizeenum *fsize)
+{
+	if (fsize->index >= ARRAY_SIZE(imx290_modes))
+		return -EINVAL;
+
+	fsize->type = V4L2_FRMSIZE_TYPE_DISCRETE;
+	fsize->discrete.width = imx290_modes[fsize->index].width;
+	fsize->discrete.height = imx290_modes[fsize->index].height;
+
+	return 0;
+}
+
+static int imx290_enum_frameintervals(struct v4l2_subdev *sd,
+				struct v4l2_frmivalenum *fival)
+{
+	struct imx290_priv *priv = to_imx290(sd);
+	const struct imx290_mode_rate *rate;
+	const struct imx290_mode *mode;
+	struct v4l2_mbus_framefmt mf;
+
+	mf.width = fival->width;
+	mf.height = fival->height;
+	mf.code = fival->pixel_format;
+	mode = imx290_get_framefmt(priv, &mf);
+
+	/* Check that we got a matching mode */
+	if (mf.width != fival->width || mf.height != fival->height ||
+			mf.code != fival->pixel_format)
+		return -EINVAL;
+
+	if (fival->index >= mode->rates_size)
+		return -EINVAL;
+
+	rate = &mode->rates[fival->index];
+	if (!rate->csi_timing[priv->num_data_lanes])
+		return -EINVAL;
+
+	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
+	fival->discrete.numerator = 1;
+	fival->discrete.denominator = rate->framerate;
+
+	return 0;
+}
+
+static int imx290_g_frame_interval(struct v4l2_subdev *sd,
+				struct v4l2_subdev_frame_interval *sdi)
+{
+	struct imx290_priv *priv = to_imx290(sd);
+
+	if (sdi->pad)
+		return -EINVAL;
+
+	sdi->interval.numerator = 1;
+	sdi->interval.denominator = priv->rate->framerate;
+
+	return 0;
+}
+
+static int imx290_s_frame_interval(struct v4l2_subdev *sd,
+				struct v4l2_subdev_frame_interval *sdi)
+{
+	struct imx290_priv *priv = to_imx290(sd);
+	const struct imx290_mode *mode = priv->mode;
+	const struct imx290_mode_rate *rate;
+	int ret, i;
+
+	if (sdi->pad)
+		return -EINVAL;
+
+	if ((sdi->interval.numerator != 1))
+		return -EINVAL;
+
+	mutex_lock(&priv->lock);
+
+	for (i = 0; i < mode->rates_size; i++) {
+		rate = &mode->rates[i];
+		if (rate->framerate >= sdi->interval.denominator)
+			break;
+	}
+	/* If not found, use largest as best effort. */
+	if (i >= mode->rates_size || !rate->csi_timing[priv->num_data_lanes]) {
+		for (i-- ; i >= 0; i--) {
+			rate = &mode->rates[i];
+			if (rate->csi_timing[priv->num_data_lanes])
+				break;
+		}
+		if (i < 0) {
+			mutex_unlock(&priv->lock);
+			return -EINVAL;
+		}
+	}
+	sdi->interval.denominator = rate->framerate;
+
+	ret = imx290_reconfigure(priv, priv->mode, rate);
+
+	mutex_unlock(&priv->lock);
+
+	return ret;
+}
+
 static struct v4l2_subdev_video_ops imx290_video_ops = {
 	.s_stream		= imx290_s_stream,
 	.s_mbus_fmt		= imx290_s_fmt,
@@ -942,6 +1043,10 @@ static struct v4l2_subdev_video_ops imx290_video_ops = {
 	.try_mbus_fmt		= imx290_try_fmt,
 	.enum_mbus_fmt		= imx290_enum_fmt,
 	.g_mbus_config		= imx290_g_mbus_config,
+	.enum_framesizes	= imx290_enum_framesizes,
+	.enum_frameintervals	= imx290_enum_frameintervals,
+	.g_frame_interval	= imx290_g_frame_interval,
+	.s_frame_interval	= imx290_s_frame_interval,
 };
 
 static struct v4l2_subdev_core_ops imx290_core_ops = {
