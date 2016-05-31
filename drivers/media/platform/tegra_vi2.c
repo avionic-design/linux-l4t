@@ -1347,6 +1347,74 @@ static int tegra_vi_channel_cropcap(
 	return err;
 }
 
+static int tegra_vi_channel_s_parm(struct file *file, void *priv,
+	struct v4l2_streamparm *sparm)
+{
+	struct video_device *vdev = video_devdata(file);
+	struct tegra_vi_channel *chan =
+		container_of(vdev, struct tegra_vi_channel, vdev);
+	struct v4l2_captureparm *cparm = &sparm->parm.capture;
+	struct v4l2_subdev_frame_interval interval = {};
+	int err = 0;
+
+	if (sparm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
+
+	err = tegra_vi_channel_input_lock(chan, true);
+	if (err)
+		return err;
+
+	if (cparm->timeperframe.numerator && cparm->timeperframe.denominator) {
+		interval.interval = cparm->timeperframe;
+		err = v4l2_subdev_call(chan->input->sensor, video,
+				s_frame_interval, &interval);
+		if (err == -ENOIOCTLCMD)
+			err = 0;
+	}
+
+	cparm->timeperframe = interval.interval;
+
+	if (cparm->readbuffers > 0)
+		chan->readbuffers = min(cparm->readbuffers, 2u);
+	cparm->readbuffers = chan->readbuffers;
+
+	tegra_vi_channel_input_unlock(chan);
+
+	return err;
+}
+
+static int tegra_vi_channel_g_parm(struct file *file, void *priv,
+	struct v4l2_streamparm *sparm)
+{
+	struct video_device *vdev = video_devdata(file);
+	struct tegra_vi_channel *chan =
+		container_of(vdev, struct tegra_vi_channel, vdev);
+	struct v4l2_captureparm *cparm = &sparm->parm.capture;
+	struct v4l2_subdev_frame_interval interval = {};
+	int err;
+
+	if (sparm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
+
+	err = tegra_vi_channel_input_lock(chan, false);
+	if (err)
+		return err;
+
+	err = v4l2_subdev_call(chan->input->sensor, video,
+			g_frame_interval, &interval);
+	if (!err)
+		cparm->capability |= V4L2_CAP_TIMEPERFRAME;
+	else if (err == -ENOIOCTLCMD)
+		err = 0;
+
+	cparm->timeperframe = interval.interval;
+	cparm->readbuffers = chan->readbuffers;
+
+	tegra_vi_channel_input_unlock(chan);
+
+	return err;
+}
+
 static int tegra_vi_channel_open(struct file *file)
 {
 	struct video_device *vdev = video_devdata(file);
@@ -1407,6 +1475,8 @@ static const struct v4l2_ioctl_ops tegra_vi_channel_ioctl_ops = {
 	.vidioc_g_fmt_vid_cap		= tegra_vi_channel_g_fmt_vid_cap,
 	.vidioc_s_fmt_vid_cap		= tegra_vi_channel_s_fmt_vid_cap,
 	.vidioc_cropcap			= tegra_vi_channel_cropcap,
+	.vidioc_s_parm			= tegra_vi_channel_s_parm,
+	.vidioc_g_parm			= tegra_vi_channel_g_parm,
 	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
@@ -1686,6 +1756,7 @@ static int tegra_vi_channel_init(struct platform_device *pdev, unsigned id)
 	/* Finish setting up the channel */
 	chan->id = id;
 	chan->input_id = INPUT_NONE;
+	chan->readbuffers = 4;
 	chan->vdev.fops = &tegra_vi_channel_fops;
 	chan->vdev.ioctl_ops = &tegra_vi_channel_ioctl_ops;
 	chan->vdev.v4l2_dev = &vi2->v4l2_dev;

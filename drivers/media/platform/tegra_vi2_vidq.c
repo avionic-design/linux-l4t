@@ -109,8 +109,8 @@ static int tegra_vi_videobuf_queue_setup(
 		return planes;
 	}
 
-	if (*num_buffers < 4)
-		*num_buffers = 4;
+	if (*num_buffers < chan->readbuffers)
+		*num_buffers = chan->readbuffers;
 
 	*num_planes = 1; /* We don't support the planar API yet */
 	sizes[0] = (stride[0] + stride[1] + stride[2]) * pf->height;

@@ -259,6 +259,7 @@ struct tegra_vi_channel {
 	/* Video queue */
 	struct vb2_queue vb;
 	void *vb2_alloc_ctx;
+	unsigned readbuffers;
 
 	struct task_struct *work_th;
 	bool should_stop;
