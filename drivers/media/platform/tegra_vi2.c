@@ -1104,12 +1104,17 @@ static int tegra_vi_channel_try_fmt_vid_cap(
 	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
 		return -EINVAL;
 
-	err = tegra_vi_input_get_mbus_flags(chan->input, NULL);
+	err = tegra_vi_channel_input_lock(chan, false);
 	if (err)
 		return err;
 
-	err = tegra_vi_channel_get_mbus_framefmt(
-		chan, &f->fmt.pix, &framefmt, NULL);
+	err = tegra_vi_input_get_mbus_flags(chan->input, NULL);
+
+	if (!err)
+		err = tegra_vi_channel_get_mbus_framefmt(
+			chan, &f->fmt.pix, &framefmt, NULL);
+
+	tegra_vi_channel_input_unlock(chan);
 
 	return err;
 }
