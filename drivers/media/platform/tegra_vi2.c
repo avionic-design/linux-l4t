@@ -302,6 +302,38 @@ static int mbus_format_to_csi_data_type(enum v4l2_mbus_pixelcode mbus)
 	}
 };
 
+static int tegra_vi_channel_input_lock(struct tegra_vi_channel *chan,
+				bool not_streaming)
+{
+	mutex_lock(&chan->lock);
+
+	if (!chan->input) {
+		mutex_unlock(&chan->lock);
+		return -ENODEV;
+	}
+
+	if (not_streaming && vb2_is_streaming(&chan->vb)) {
+		mutex_unlock(&chan->lock);
+		return -EBUSY;
+	}
+
+	mutex_lock(&chan->input->lock);
+
+	if (!chan->input->sensor) {
+		mutex_unlock(&chan->input->lock);
+		mutex_unlock(&chan->lock);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static void tegra_vi_channel_input_unlock(struct tegra_vi_channel *chan)
+{
+	mutex_unlock(&chan->input->lock);
+	mutex_unlock(&chan->lock);
+}
+
 static int tegra_vi_channel_querycap(
 	struct file *file, void *__fh, struct v4l2_capability *cap)
 {
@@ -1246,19 +1278,13 @@ static int tegra_vi_channel_s_fmt_vid_cap(
 	struct v4l2_pix_format *pf = &f->fmt.pix;
 	int err;
 
-	mutex_lock(&chan->lock);
+	err = tegra_vi_channel_input_lock(chan, true);
+	if (err)
+		return err;
 
-	if (!chan->input) {
-		err = -EINVAL;
-	} else if (vb2_is_streaming(&chan->vb)) {
-		err = -EBUSY;
-	} else {
-		mutex_lock(&chan->input->lock);
-		err = tegra_vi_channel_set_format(chan, pf);
-		mutex_unlock(&chan->input->lock);
-	}
+	err = tegra_vi_channel_set_format(chan, pf);
 
-	mutex_unlock(&chan->lock);
+	tegra_vi_channel_input_unlock(chan);
 
 	return err;
 }
@@ -1291,20 +1317,9 @@ static int tegra_vi_channel_cropcap(
 	if (cc->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
 		return -EINVAL;
 
-	mutex_lock(&chan->lock);
-
-	if (!chan->input) {
-		mutex_unlock(&chan->lock);
-		return -ENODEV;
-	}
-
-	mutex_lock(&chan->input->lock);
-
-	if (!chan->input->sensor) {
-		mutex_unlock(&chan->input->lock);
-		mutex_unlock(&chan->lock);
-		return -ENODEV;
-	}
+	err = tegra_vi_channel_input_lock(chan, false);
+	if (err)
+		return err;
 
 	/* Fill with default values */
 	cc->bounds.left = 0;
@@ -1320,8 +1335,7 @@ static int tegra_vi_channel_cropcap(
 	if (err == -ENOIOCTLCMD)
 		err = 0;
 
-	mutex_unlock(&chan->input->lock);
-	mutex_unlock(&chan->lock);
+	tegra_vi_channel_input_unlock(chan);
 
 	return err;
 }
