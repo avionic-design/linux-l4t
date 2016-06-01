@@ -48,11 +48,14 @@
 #define IMX290_VREVERSE_MASK		BIT(0)
 #define IMX290_HREVERSE_MASK		BIT(1)
 #define IMX290_REGLEN_SHS1		18
+#define IMX290_REGLEN_BLKLEVEL		9
 
 #define IMX290_VMAX			0x465
 #define IMX290_EXPOSURE_MAX		(IMX290_VMAX-2)
 #define IMX290_EXPOSURE_DEFAULT		(IMX290_VMAX/4) /* Arbitrary */
 #define IMX290_GAIN_MAX			0x1f
+#define IMX290_BLACKLEVEL_DFT		0xf0
+#define IMX290_BLACKLEVEL_MAX		0x1ff
 #define IMX290_INCK_RATE		37125000
 
 static const struct regmap_range imx290_regmap_rw_ranges[] = {
@@ -552,6 +555,10 @@ static int imx290_s_ctrl(struct v4l2_ctrl *ctrl)
 		ret = imx290_write_regbits(priv->regmap,
 				IMX290_REG_SHS1,
 				ctrl->val, IMX290_REGLEN_SHS1);
+	case V4L2_CID_BLACK_LEVEL:
+		ret = imx290_write_regbits(
+			priv->regmap, IMX290_REG_BLKLEVEL,
+			ctrl->val, IMX290_REGLEN_BLKLEVEL);
 		break;
 	}
 	mutex_unlock(&priv->lock);
@@ -699,6 +706,9 @@ static int imx290_probe(struct i2c_client *client,
 			V4L2_CID_HFLIP, 0, 1, 1, 0);
 	v4l2_ctrl_new_std(&priv->ctrls, &imx290_ctrl_ops,
 			V4L2_CID_VFLIP, 0, 1, 1, 0);
+	v4l2_ctrl_new_std(&priv->ctrls, &imx290_ctrl_ops,
+			V4L2_CID_BLACK_LEVEL, 0, IMX290_BLACKLEVEL_MAX,
+			1, IMX290_BLACKLEVEL_DFT);
 
 	if (priv->ctrls.error) {
 		ret = priv->ctrls.error;
