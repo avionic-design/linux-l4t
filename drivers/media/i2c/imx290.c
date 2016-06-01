@@ -36,6 +36,7 @@
 #define IMX290_REG_FRSEL		0x3009
 #define IMX290_REG_BLKLEVEL		0x300a
 #define IMX290_REG_GAIN			0x3014
+#define IMX290_REG_VMAX			0x3018
 #define IMX290_REG_HMAX			0x301c
 #define IMX290_REG_SHS1			0x3020
 #define IMX290_REG_PGMODE		0x308c
@@ -52,15 +53,14 @@
 #define IMX290_REGLEN_SHS1		18
 #define IMX290_REGLEN_BLKLEVEL		9
 #define IMX290_REGLEN_HMAX		16
+#define IMX290_REGLEN_VMAX		18
 #define IMX290_REGLEN_FRSEL		2
 
-#define IMX290_VMAX			0x465
-#define IMX290_EXPOSURE_MAX		(IMX290_VMAX-2)
-#define IMX290_EXPOSURE_DEFAULT		(IMX290_VMAX/4) /* Arbitrary */
-#define IMX290_GAIN_MAX			0x1f
 #define IMX290_BLACKLEVEL_DFT		0xf0
 #define IMX290_BLACKLEVEL_MAX		0x1ff
+#define IMX290_GAIN_MAX			0xf0
 #define IMX290_INCK_RATE		37125000
+#define IMX290_PIXEL_PERIOD_PS		6734
 
 #define IMX290_ID_LQR			0
 #define IMX290_ID_LLR			1
@@ -147,6 +147,7 @@ struct imx290_mode_rate {
 
 	u16				hmax;
 	u8				frsel;
+	unsigned			default_exposure;
 };
 
 struct imx290_mode {
@@ -156,6 +157,7 @@ struct imx290_mode {
 	unsigned			regs_size;
 	const struct imx290_mode_rate	*rates;
 	unsigned			rates_size;
+	unsigned			vmax;
 };
 
 struct imx290_priv {
@@ -167,6 +169,7 @@ struct imx290_priv {
 	u8				num_data_lanes;
 
 	struct v4l2_ctrl_handler	ctrls;
+	struct v4l2_ctrl		*exposure_ctrl;
 	struct v4l2_ctrl		*black_level_ctrl;
 	struct v4l2_ctrl		*test_pattern_ctrl;
 
@@ -184,10 +187,6 @@ struct imx290_priv {
 static const struct reg_default imx290_720_regs[] = {
 	/* WINMODE */
 	{ 0x3007, 0x01 },
-	/* VMAX */
-	{ 0x3018, 0xee },
-	{ 0x3019, 0x02 },
-	{ 0x301a, 0x00 },
 	/* INCKSEL */
 	{ 0x305c, 0x20 },
 	{ 0x305d, 0x00 },
@@ -201,10 +200,6 @@ static const struct reg_default imx290_720_regs[] = {
 static const struct reg_default imx290_1080_regs[] = {
 	/* WINMODE */
 	{ 0x3007, 0x00 },
-	/* VMAX */
-	{ 0x3018, 0x65 },
-	{ 0x3019, 0x04 },
-	{ 0x301a, 0x00 },
 	/* INCKSEL */
 	{ 0x305c, 0x18 },
 	{ 0x305d, 0x03 },
@@ -373,6 +368,7 @@ static const struct imx290_mode_rate imx290_720_rates[] = {
 		.csi_timing[4] = &imx290_timing_149mbps,
 		.hmax = 0x1ef0,
 		.frsel = 0x02,
+		.default_exposure = 398,
 	},
 	{
 		.framerate = 30,
@@ -380,6 +376,7 @@ static const struct imx290_mode_rate imx290_720_rates[] = {
 		.csi_timing[4] = &imx290_timing_149mbps,
 		.hmax = 0x19c8,
 		.frsel = 0x02,
+		.default_exposure = 332,
 	},
 	{
 		.framerate = 50,
@@ -387,6 +384,7 @@ static const struct imx290_mode_rate imx290_720_rates[] = {
 		.csi_timing[4] = &imx290_timing_297mbps,
 		.hmax = 0x0f78,
 		.frsel = 0x01,
+		.default_exposure = 199,
 	},
 	{
 		.framerate = 60,
@@ -394,18 +392,21 @@ static const struct imx290_mode_rate imx290_720_rates[] = {
 		.csi_timing[4] = &imx290_timing_297mbps,
 		.hmax = 0x0ce4,
 		.frsel = 0x01,
+		.default_exposure = 166,
 	},
 	{
 		.framerate = 100,
 		.csi_timing[4] = &imx290_timing_594mbps,
 		.hmax = 0x07bc,
 		.frsel = 0x00,
+		.default_exposure = 99,
 	},
 	{
 		.framerate = 120,
 		.csi_timing[4] = &imx290_timing_594mbps,
 		.hmax = 0x0672,
 		.frsel = 0x00,
+		.default_exposure = 83,
 	},
 };
 
@@ -416,6 +417,7 @@ static const struct imx290_mode_rate imx290_1080_rates[] = {
 		.csi_timing[4] = &imx290_timing_223mbps,
 		.hmax = 0x14a0,
 		.frsel = 0x02,
+		.default_exposure = 398,
 	},
 	{
 		.framerate = 30,
@@ -423,6 +425,7 @@ static const struct imx290_mode_rate imx290_1080_rates[] = {
 		.csi_timing[4] = &imx290_timing_223mbps,
 		.hmax = 0x1130,
 		.frsel = 0x02,
+		.default_exposure = 332,
 	},
 	{
 		.framerate = 50,
@@ -430,6 +433,7 @@ static const struct imx290_mode_rate imx290_1080_rates[] = {
 		.csi_timing[4] = &imx290_timing_446mbps,
 		.hmax = 0x0a50,
 		.frsel = 0x01,
+		.default_exposure = 199,
 	},
 	{
 		.framerate = 60,
@@ -437,18 +441,21 @@ static const struct imx290_mode_rate imx290_1080_rates[] = {
 		.csi_timing[4] = &imx290_timing_446mbps,
 		.hmax = 0x0898,
 		.frsel = 0x01,
+		.default_exposure = 166,
 	},
 	{
 		.framerate = 100,
 		.csi_timing[4] = &imx290_timing_891mbps,
 		.hmax = 0x0528,
 		.frsel = 0x00,
+		.default_exposure = 99,
 	},
 	{
 		.framerate = 120,
 		.csi_timing[4] = &imx290_timing_891mbps,
 		.hmax = 0x044c,
 		.frsel = 0x00,
+		.default_exposure = 83,
 	},
 };
 
@@ -460,6 +467,7 @@ static const struct imx290_mode imx290_modes[] = {
 		.regs_size = ARRAY_SIZE(imx290_720_regs),
 		.rates = imx290_720_rates,
 		.rates_size = ARRAY_SIZE(imx290_720_rates),
+		.vmax = 0x2ee,
 	},
 	{
 		.width = 1920,
@@ -468,6 +476,7 @@ static const struct imx290_mode imx290_modes[] = {
 		.regs_size = ARRAY_SIZE(imx290_1080_regs),
 		.rates = imx290_1080_rates,
 		.rates_size = ARRAY_SIZE(imx290_1080_rates),
+		.vmax = 0x465,
 	},
 };
 
@@ -589,6 +598,46 @@ static int imx290_set_patterngen(struct imx290_priv *priv, int mode)
 	return ret;
 }
 
+static int imx290_set_exposure(struct imx290_priv *priv,
+			int exposure_100us)
+{
+	int hmax, h_period_100ns, f_period_100ns, i_period_100ns;
+	int shs1, vmax, ret;
+
+	hmax = priv->rate->hmax;
+	vmax = priv->mode->vmax;
+
+	h_period_100ns = (IMX290_PIXEL_PERIOD_PS * hmax) / 100000;
+	f_period_100ns = h_period_100ns * priv->mode->vmax;
+	i_period_100ns = exposure_100us * 1000;
+
+	if (i_period_100ns > (f_period_100ns - 2 * h_period_100ns)) {
+		/* Long Exposure: Exposure time is longer than allowed
+		   setting, increase vmax */
+		shs1 = 1;
+		vmax = i_period_100ns / h_period_100ns + 2;
+	} else {
+		/* Normal Exposure */
+		shs1 = (f_period_100ns - i_period_100ns) / h_period_100ns - 1;
+	}
+
+	/* Sanity, shouldn't happen */
+	if (shs1 < 1)
+		shs1 = 1;
+	if (shs1 > priv->mode->vmax - 2)
+		shs1 = priv->mode->vmax - 2;
+
+	ret = imx290_write_regbits(priv->regmap, IMX290_REG_VMAX,
+				vmax, IMX290_REGLEN_VMAX);
+	if (ret)
+		return ret;
+
+	ret = imx290_write_regbits(priv->regmap, IMX290_REG_SHS1,
+				shs1, IMX290_REGLEN_SHS1);
+
+	return ret;
+}
+
 static int imx290_reconfigure(struct imx290_priv *priv,
 			const struct imx290_mode *mode,
 			const struct imx290_mode_rate *rate)
@@ -629,6 +678,8 @@ static int imx290_reconfigure(struct imx290_priv *priv,
 	/* We need to release the lock to allow the ctrl updates to
 	 * get the lock again */
 	mutex_unlock(&priv->lock);
+	if (rate != old_rate)
+		v4l2_ctrl_s_ctrl(priv->exposure_ctrl, rate->default_exposure);
 	ret = v4l2_ctrl_handler_setup(priv->subdev.ctrl_handler);
 	mutex_lock(&priv->lock);
 	if (ret < 0)
@@ -916,10 +967,9 @@ static int imx290_s_ctrl(struct v4l2_ctrl *ctrl)
 			IMX290_VREVERSE_MASK,
 			ctrl->val ? IMX290_VREVERSE_MASK : 0);
 		break;
-	case V4L2_CID_EXPOSURE:
-		ret = imx290_write_regbits(priv->regmap,
-				IMX290_REG_SHS1,
-				ctrl->val, IMX290_REGLEN_SHS1);
+	case V4L2_CID_EXPOSURE_ABSOLUTE:
+		ret = imx290_set_exposure(priv, ctrl->val);
+		break;
 	case V4L2_CID_BLACK_LEVEL:
 		if (!priv->test_pattern_ctrl->cur.val)
 			ret = imx290_write_regbits(
@@ -1205,9 +1255,10 @@ static int imx290_probe(struct i2c_client *client,
 	priv->subdev.ctrl_handler = &priv->ctrls;
 
 	/* Gain control. Gain dB * 10/3 = GAIN reg value */
-	v4l2_ctrl_new_std(&priv->ctrls, &imx290_ctrl_ops,
-			V4L2_CID_EXPOSURE, 0x01, IMX290_EXPOSURE_MAX, 1,
-			IMX290_EXPOSURE_DEFAULT);
+	priv->exposure_ctrl = v4l2_ctrl_new_std(
+		&priv->ctrls, &imx290_ctrl_ops,
+		V4L2_CID_EXPOSURE_ABSOLUTE, 1, 10000, 1,
+		priv->rate->default_exposure);
 	v4l2_ctrl_new_std(&priv->ctrls, &imx290_ctrl_ops,
 			V4L2_CID_GAIN, 0x00, IMX290_GAIN_MAX, 1, 0);
 	v4l2_ctrl_new_std(&priv->ctrls, &imx290_ctrl_ops,
