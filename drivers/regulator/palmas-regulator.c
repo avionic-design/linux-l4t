@@ -1096,7 +1096,7 @@ static int palmas_ldo_init(struct regulator_dev *rdev,
 			dev_err(palmas->dev,
 				"LDO_PD_CTRL 0x%02x update failed: %d\n",
 					palmas_regs_info[id].pd_ctrl_addr, ret);
-			return;
+			return ret;
 		}
 	}
 	return 0;
