@@ -375,7 +375,7 @@
 				nvidia,function = "sdmmc1";
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
 			sdmmc1_cmd_pz1 {
@@ -383,7 +383,7 @@
 				nvidia,function = "sdmmc1";
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
 			sdmmc1_dat0_py7 {
@@ -391,7 +391,7 @@
 				nvidia,function = "sdmmc1";
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
 			sdmmc1_dat1_py6 {
@@ -399,7 +399,7 @@
 				nvidia,function = "sdmmc1";
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
 			sdmmc1_dat2_py5 {
@@ -407,7 +407,7 @@
 				nvidia,function = "sdmmc1";
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
 			sdmmc1_dat3_py4 {
@@ -415,7 +415,7 @@
 				nvidia,function = "sdmmc1";
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
 			sdmmc3_clk_pa6 {
@@ -2041,6 +2041,16 @@
 
 	efuse@7000f800 {
 		vpp_fuse-supply = <&vpp_fuse>;
+	};
+
+	/* Extra SD card / SDIO */
+	sdhci@700b0000 {
+		wp-gpios = <&gpio TEGRA_GPIO(V, 3) GPIO_ACTIVE_HIGH>;
+		bus-width = <4>;
+		vddio_sdmmc-supply = <&vddio_1v8>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 
 	/* SD card */
