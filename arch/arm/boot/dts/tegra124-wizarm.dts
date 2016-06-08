@@ -266,12 +266,11 @@
 	};
 
 	/* USB1 */
-	usb@7d004000 {
+	xusb@70090000 {
 		status = "okay";
-		nvidia,phy-interface = <TEGRA_USB_PHY_INTF_UTMI>;
-		nvidia,mode = <TEGRA_USB_OPMODE_HOST>;
-
-		usb_vbus-supply = <&vdd_usb1_vbus>;
+		nvidia,portmap = <(XUSB_MUX_USB2_P1 | XUSB_MUX_SS_P0)>;
+		nvidia,ss_portmap = <XUSB_PADCTL_SS_PORTMAP(P1, DISABLE)>;
+		usb_vbus1-supply = <&vdd_usb1_vbus>;
 	};
 
 	/* USB2 */
