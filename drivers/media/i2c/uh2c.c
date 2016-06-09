@@ -1458,8 +1458,10 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	while ((np = v4l2_of_get_next_endpoint(client->dev.of_node, np))) {
 		struct v4l2_of_endpoint ep;
 
-		if (!of_device_is_available(np))
+		if (!of_device_is_available(np)) {
+			of_node_put(np);
 			continue;
+		}
 
 		v4l2_of_parse_endpoint(np, &ep);
 		of_node_put(np);
