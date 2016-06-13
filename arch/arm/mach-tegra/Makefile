@@ -209,6 +209,7 @@ obj-${CONFIG_MACH_P2360}                += board-p2360-sdhci.o
 obj-${CONFIG_MACH_P2360}                += board-p2360-panel.o
 
 obj-${CONFIG_COM_MEERKAT}               += com-meerkat.o
+obj-${CONFIG_COM_MEERKAT}               += com-meerkat-power.o
 obj-${CONFIG_MACH_KEIN_BASEBOARD}       += board-kein-baseboard.o
 
 obj-${CONFIG_TEGRA_BB_XMM_POWER}        += baseband-xmm-power.o

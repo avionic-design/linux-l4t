@@ -21,6 +21,7 @@
 struct of_dev_auxdata;
 
 void tegra_meerkat_init_early(void);
+void tegra_meerkat_init_late(void);
 void tegra_meerkat_dt_init(struct of_dev_auxdata *auxdata);
 void tegra_meerkat_init(void);
 void tegra_meerkat_reserve(void);

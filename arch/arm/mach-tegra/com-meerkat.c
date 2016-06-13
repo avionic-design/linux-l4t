@@ -28,6 +28,7 @@
 #include <mach/dc.h>
 
 #include "com-meerkat.h"
+#include "com-meerkat-power.h"
 #include "board.h"
 #include "board-common.h"
 #include "clock.h"
@@ -137,6 +138,12 @@ void __init tegra_meerkat_init_early(void)
 	tegra12x_init_early();
 }
 
+void __init tegra_meerkat_init_late(void)
+{
+	tegra_init_late();
+	tegra_meerkat_balanced_throttle_init();
+}
+
 static void __init tegra_meerkat_edp_init(void)
 {
 	int cpu_speedo_id = tegra_cpu_speedo_id();
@@ -178,6 +185,7 @@ void __init tegra_meerkat_dt_init(struct of_dev_auxdata *auxdata)
 	tegra12_emc_init();
 	tegra_meerkat_edp_init();
 	isomgr_init();
+	tegra_meerkat_soctherm_init();
 
 	/* put PEX pads into DPD mode to save additional power */
 	//tegra_io_dpd_enable(&pexbias_io);

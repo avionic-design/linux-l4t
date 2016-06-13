@@ -51,5 +51,5 @@ DT_MACHINE_START(MEERKAT_DT, "Avionic Design Meerkat (Device Tree)")
 	.init_machine	= kein_baseboard_init,
 	.restart	= tegra_assert_system_reset,
 	.dt_compat	= kein_baseboard_dt_board_compat,
-	.init_late	= tegra_init_late
+	.init_late	= tegra_meerkat_init_late
 MACHINE_END
