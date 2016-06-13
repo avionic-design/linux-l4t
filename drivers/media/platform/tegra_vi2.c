@@ -1415,6 +1415,26 @@ static int tegra_vi_channel_g_parm(struct file *file, void *priv,
 	return err;
 }
 
+static int tegra_vi_channel_enum_framesizes(struct file *file, void *priv,
+					struct v4l2_frmsizeenum *fsize)
+{
+	struct video_device *vdev = video_devdata(file);
+	struct tegra_vi_channel *chan =
+		container_of(vdev, struct tegra_vi_channel, vdev);
+	int err;
+
+	err = tegra_vi_channel_input_lock(chan, false);
+	if (err)
+		return err;
+
+	err = v4l2_subdev_call(chan->input->sensor, video,
+			enum_framesizes, fsize);
+
+	tegra_vi_channel_input_unlock(chan);
+
+	return err;
+}
+
 static int tegra_vi_channel_enum_frameintervals(struct file *file, void *priv,
 						struct v4l2_frmivalenum *fival)
 {
@@ -1497,6 +1517,7 @@ static const struct v4l2_ioctl_ops tegra_vi_channel_ioctl_ops = {
 	.vidioc_cropcap			= tegra_vi_channel_cropcap,
 	.vidioc_s_parm			= tegra_vi_channel_s_parm,
 	.vidioc_g_parm			= tegra_vi_channel_g_parm,
+	.vidioc_enum_framesizes		= tegra_vi_channel_enum_framesizes,
 	.vidioc_enum_frameintervals	= tegra_vi_channel_enum_frameintervals,
 	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
