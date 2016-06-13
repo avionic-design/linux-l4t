@@ -29,6 +29,25 @@
 		status = "okay";
 	};
 
+	cl_dvfs_cfg_param: cpu_dfll_board_params {
+		sample-rate = <12500>;
+		fixed-output-forcing;
+		cf = <10>;
+		ci = <0>;
+		cg = <2>;
+		droop-cut-value = <0xf>;
+		droop-restore-ramp = <0x0>;
+		scale-out-ramp = <0x0>;
+	};
+
+	cl_dvfs_pmu_i2c: cpu_dfll_pmic_integration {
+		pmic-i2c-address = <0x80>;
+		i2c-fs-rate = <400000>;
+		pmic-i2c-voltage-register = <0x0>;
+
+		sel-conversion-slope = <1>;
+	};
+
 	pinmux {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinmux_default>;
@@ -2168,6 +2187,13 @@
 		avdd_pll_utmip-supply = <&vddio_1v8>;
 		vddio_hsic-supply = <&avdd_dsi_csi>;
 		avddio_usb-supply= <&avdd_1v05_run>;
+	};
+
+	dfll@70110000 {
+		status = "okay";
+
+		board-params = <&cl_dvfs_cfg_param>;
+		i2c-pmic-integration = <&cl_dvfs_pmu_i2c>;
 	};
 
 	regulators {
