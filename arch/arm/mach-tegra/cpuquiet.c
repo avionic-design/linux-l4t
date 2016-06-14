@@ -39,7 +39,7 @@
 #include "cpu-tegra.h"
 #include "clock.h"
 
-#define INITIAL_STATE		TEGRA_CPQ_DISABLED
+#define INITIAL_STATE		TEGRA_CPQ_ENABLED
 #define UP_DELAY_MS		70
 #define DOWN_DELAY_MS		2000
 #define HOTPLUG_DELAY_MS	100
@@ -859,9 +859,12 @@ int __cpuinit tegra_auto_hotplug_init(struct mutex *cpulock)
 	cpumask_clear(&cr_offline_requests);
 
 	cpq_target_cluster_state = is_lp_cluster();
-	cpq_state = INITIAL_STATE;
-	enable = cpq_state == TEGRA_CPQ_DISABLED ? false : true;
 	hp_init_stats();
+
+	cpq_state = TEGRA_CPQ_DISABLED;
+	cpq_target_state = INITIAL_STATE == TEGRA_CPQ_DISABLED ?
+		TEGRA_CPQ_DISABLED : TEGRA_CPQ_ENABLED;
+	enable = cpq_target_state == TEGRA_CPQ_ENABLED;
 
 	pr_info("Tegra cpuquiet initialized: %s\n",
 		(cpq_state == TEGRA_CPQ_DISABLED) ? "disabled" : "enabled");
@@ -890,6 +893,9 @@ int __cpuinit tegra_auto_hotplug_init(struct mutex *cpulock)
 		cpuquiet_unregister_driver(&tegra_cpuquiet_driver);
 		destroy_workqueue(cpuquiet_wq);
 	}
+
+	if (cpq_target_state != cpq_state)
+		queue_work(cpuquiet_wq, &cpuquiet_work);
 
 	return err;
 }
