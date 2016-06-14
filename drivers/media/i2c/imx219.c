@@ -480,8 +480,7 @@ static const struct i2c_device_id imx219_id[] = {
 	{ "imx219", 0 },
 	{ }
 };
-
-MODULE_DEVICE_TABLE(i2c, uh2c_id);
+MODULE_DEVICE_TABLE(i2c, imx219_id);
 
 #ifdef CONFIG_OF
 static const struct of_device_id imx219_of_table[] = {
