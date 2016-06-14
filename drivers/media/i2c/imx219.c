@@ -404,7 +404,7 @@ static int imx219_check_id(struct v4l2_subdev *sd)
 	if (((ident_hi << 8) | ident_lo) != 0x219) {
 		dev_err(&client->dev, "Wrong id 0x%x\n",
 			((ident_hi << 8) | ident_lo));
-		err = -ENOMEM;
+		err = -ENODEV;
 	}
 
 power_off:
