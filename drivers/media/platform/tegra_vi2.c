@@ -264,7 +264,7 @@ static int tegra_vi_fill_pix_format(struct v4l2_pix_format *pf,
 
 static int mbus_format_to_csi_data_type(enum v4l2_mbus_pixelcode mbus)
 {
-	switch(mbus) {
+	switch (mbus) {
 	case V4L2_MBUS_FMT_UYVY8_2X8:
 	case V4L2_MBUS_FMT_UYVY8_1X16:
 		return 30;
@@ -348,7 +348,7 @@ static int tegra_vi_channel_enum_input(
 {
 	i->type = V4L2_INPUT_TYPE_CAMERA;
 
-	switch(i->index) {
+	switch (i->index) {
 	case INPUT_CSI_A:
 		strcpy(i->name, "CSI A");
 		break;
@@ -1055,7 +1055,8 @@ static int tegra_vi_channel_get_mbus_framefmt(const struct tegra_vi_channel *cha
 	/* Get the tegra format from the output pixelformat */
 	fmt = tegra_vi_channel_get_format(chan, pf->pixelformat);
 	if (!fmt) {
-		dev_err(&vdev->dev, "Failed to get the format struct for format %c%c%c%c\n",
+		dev_err(&vdev->dev,
+			"Failed to get the format struct for format %c%c%c%c\n",
 			V4L2_FOURCC_TO_CHARS(pf->pixelformat));
 		return -EINVAL;
 	}
@@ -1075,7 +1076,8 @@ static int tegra_vi_channel_get_mbus_framefmt(const struct tegra_vi_channel *cha
 		}
 
 		if (err) {
-			dev_err(&vdev->dev, "Failed to get a supported bus format\n");
+			dev_err(&vdev->dev,
+				"Failed to get a supported bus format\n");
 			return err;
 		}
 	}
@@ -1137,7 +1139,7 @@ static int tegra_vi_channel_set_format(
 	}
 
 	/* Find the channel source */
-	switch(input->id) {
+	switch (input->id) {
 	case INPUT_CSI_A:
 		src = 0;
 		break;
@@ -1548,7 +1550,7 @@ static const struct v4l2_file_operations tegra_vi_channel_fops = {
 static void tegra_vi_channel_event(struct tegra_vi_channel *chan,
 				struct v4l2_event *ev)
 {
-	switch(ev->type) {
+	switch (ev->type) {
 	/* Handle source change like an EOS for now */
 	case V4L2_EVENT_SOURCE_CHANGE:
 	case V4L2_EVENT_EOS:

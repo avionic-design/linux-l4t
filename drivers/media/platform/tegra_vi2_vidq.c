@@ -81,6 +81,7 @@ int v4l2_pix_format_set_sizeimage(struct v4l2_pix_format *pf)
 
 	pf->sizeimage = (stride[0] + stride[1] + stride[2]) * pf->height;
 	pf->bytesperline = stride[0];
+
 	return 0;
 }
 
@@ -391,7 +392,8 @@ static struct tegra_vi_buffer * tegra_vi_channel_set_next_buffer(struct tegra_vi
 		spin_lock_irqsave(&chan->vq_lock, flags);
 
 		if (!list_empty(&chan->capture)) {
-			buf = list_first_entry(&chan->capture, struct tegra_vi_buffer, queue);
+			buf = list_first_entry(&chan->capture,
+				struct tegra_vi_buffer, queue);
 			list_del_init(&buf->queue);
 		}
 
@@ -561,7 +563,8 @@ stop_vi:
 		do_div(cap_per_us, tdiff);
 		subfps = do_div(cap_per_us, 1000);
 		dev_info(&vdev->dev,
-			"Captured %lu frames in %u ms (%u.%u fps), %lu missed buffers\n",
+			"Captured %lu frames in %u ms (%u.%u fps), "
+			"%lu missed buffers\n",
 			chan->sequence, tdiff, (u32)cap_per_us, subfps,
 			chan->missed_buffer);
 	}
