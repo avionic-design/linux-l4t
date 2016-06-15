@@ -253,4 +253,9 @@
 			vin-supply = <&vdd_5v0_sys>;
 		};
 	};
+
+	pwm-fan {
+		status = "okay";
+		pwms = <&tegra_pwm 1 40000>;
+	};
 };
