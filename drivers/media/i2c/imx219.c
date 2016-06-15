@@ -252,7 +252,7 @@ static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
 	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
 	int ret;
 
-	switch (ctrl->id){
+	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
 		if ((ctrl->val > EXPOSURE_MAX) ||
 			(ctrl->val < EXPOSURE_MIN)) {
@@ -412,6 +412,7 @@ static void imx219_power_off(struct imx219 *priv, struct i2c_client *client)
 {
 	if (priv->reset_gpio)
 		gpiod_set_value_cansleep(priv->reset_gpio, 1);
+
 	/* Ignore errors here as we can't recover */
 	regulator_bulk_disable(ARRAY_SIZE(priv->regulators), priv->regulators);
 }
@@ -428,6 +429,7 @@ static int imx219_s_power(struct v4l2_subdev *sd, int on)
 	err = imx219_power_up(priv, client);
 	if (err)
 		return err;
+
 	/* Set the basic settings */
 	err = regmap_multi_reg_write(priv->regmap, regs_imx219_init,
 				ARRAY_SIZE(regs_imx219_init));
@@ -435,6 +437,7 @@ static int imx219_s_power(struct v4l2_subdev *sd, int on)
 		dev_err(&client->dev, "failed to set init settings\n");
 		goto power_off;
 	}
+
 	/* And the current mode */
 	err = regmap_multi_reg_write(priv->regmap, priv->mode->regs,
 				priv->mode->num_regs);
@@ -442,13 +445,14 @@ static int imx219_s_power(struct v4l2_subdev *sd, int on)
 		dev_err(&client->dev, "failed to set mode settings\n");
 		goto power_off;
 	}
+
 	err = v4l2_ctrl_handler_setup(&priv->ctrl_handler);
 	if (err) {
 		dev_err(&client->dev,"Failed to setup control\n");
 		goto power_off;
 	}
-	return 0;
 
+	return 0;
 
 power_off:
 	imx219_power_off(priv, client);
@@ -496,10 +500,12 @@ static int imx219_check_id(struct v4l2_subdev *sd)
 	err = imx219_power_up(priv, client);
 	if (err)
 		return err;
+
 	/* Read id */
 	err = regmap_read(priv->regmap, 0x0, &ident_hi);
 	if (err)
 		goto power_off;
+
 	err = regmap_read(priv->regmap, 0x1, &ident_lo);
 	if (err)
 		goto power_off;
@@ -554,7 +560,7 @@ static int imx219_probe(struct i2c_client *client, const struct i2c_device_id *i
 	v4l2_i2c_subdev_init(&priv->subdev, client, &imx219_subdev_ops);
 
 	err = imx219_check_id(&priv->subdev);
-	if (err){
+	if (err) {
 		dev_err(&client->dev, "failed to check ID\n");
 		return err;
 	}
