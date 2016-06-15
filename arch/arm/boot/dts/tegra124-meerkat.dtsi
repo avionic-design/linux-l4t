@@ -1791,8 +1791,8 @@
 					output-low;
 				};
 
-				gpio1_2_4 {
-					pins = "gpio1", "gpio2", "gpio4";
+				gpio1_2 {
+					pins = "gpio1", "gpio2";
 					function = "gpio";
 					bias-pull-down;
 					output-high;
@@ -1805,8 +1805,8 @@
 					output-high;
 				};
 
-				gpio3_6 {
-					pins = "gpio3", "gpio6";
+				gpio3 {
+					pins = "gpio3";
 					function = "gpio";
 					bias-high-impedance;
 				};
