@@ -215,28 +215,37 @@ static int imx219_set_exposure(struct imx219 *imx219, int exp_value)
 	int new_exp_value;
 	int err;
 
+	if (exp_value > EXPOSURE_MAX || exp_value < EXPOSURE_MIN) {
+		dev_err(&client->dev, "wrong exposure value\n");
+		return -EINVAL;
+	}
+
 	new_exp_value = (1000 * exp_value) / imx219->mode->line_length_ns;
+
 	err = regmap_write(imx219->regmap, IMX219_COARSE_INT_TIME_HI,
 				(new_exp_value >> 8) & 0xFF);
-	if (err)
+	if (err) {
 		dev_err(&client->dev, "failed to write exposure_hi\n");
-	if (!err) {
-		err = regmap_write(imx219->regmap, IMX219_COARSE_INT_TIME_LO,
-				new_exp_value & 0xFF);
-		if (err)
-			dev_err(&client->dev, "failed to write exposure_lo\n");
+		return err;
 	}
+
+	err = regmap_write(imx219->regmap, IMX219_COARSE_INT_TIME_LO,
+			new_exp_value & 0xFF);
+	if (err)
+		dev_err(&client->dev, "failed to write exposure_lo\n");
 
 	return err;
 }
 
-/*
- * Register value goes from 0 to 224 (analog gain) -> IMX219_ANA_GAIN_GLOBAL
- */
 static int imx219_set_gain(struct imx219 *imx219, int gain_value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
 	int err;
+
+	if (gain_value > GAIN_MAX || gain_value < GAIN_MIN) {
+		dev_err(&client->dev, "wrong gain value\n");
+		return -EINVAL;
+	}
 
 	err = regmap_write(imx219->regmap, IMX219_ANA_GAIN_GLOBAL, gain_value);
 	if (err)
@@ -254,20 +263,10 @@ static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
-		if ((ctrl->val > EXPOSURE_MAX) ||
-			(ctrl->val < EXPOSURE_MIN)) {
-			dev_err(&client->dev, "wrong exposure value\n");
-			return -EINVAL;
-		}
 		ret = imx219_set_exposure(imx219, ctrl->val);
 		break;
 
 	case V4L2_CID_GAIN:
-		if ((ctrl->val > GAIN_MAX) ||
-			(ctrl->val < GAIN_MIN)) {
-			dev_err(&client->dev, "wrong gain value\n");
-			return -EINVAL;
-		}
 		ret = imx219_set_gain(imx219, ctrl->val);
 		break;
 
@@ -494,7 +493,7 @@ static int imx219_check_id(struct v4l2_subdev *sd)
 {
 	struct imx219 *priv = container_of(sd, struct imx219, subdev);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	unsigned int ident_hi, ident_lo;
+	unsigned int ident_hi, ident_lo, ident;
 	int err;
 
 	err = imx219_power_up(priv, client);
@@ -510,9 +509,10 @@ static int imx219_check_id(struct v4l2_subdev *sd)
 	if (err)
 		goto power_off;
 
-	if (((ident_hi << 8) | ident_lo) != 0x219) {
-		dev_err(&client->dev, "Wrong id 0x%x\n",
-			((ident_hi << 8) | ident_lo));
+	ident = (ident_hi << 8) | ident_lo;
+
+	if (ident != 0x219) {
+		dev_err(&client->dev, "Wrong id 0x%x\n", ident);
 		err = -ENODEV;
 	}
 
