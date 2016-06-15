@@ -440,6 +440,12 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 			dev_err(as_pci->dev, "Not able to set direction\n");
 		return ret;
 
+	case PIN_CONFIG_INPUT_ENABLE:
+		ret = as3722_pinctrl_gpio_set_direction(pctldev, NULL, pin, 1);
+		if (ret < 0)
+			dev_err(as_pci->dev, "Not able to set direction\n");
+		return ret;
+
 	default:
 		dev_err(as_pci->dev, "Properties not supported\n");
 		return -ENOTSUPP;
