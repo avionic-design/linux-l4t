@@ -24,6 +24,12 @@
 			dap3_fs_pp0 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+			uart3_rxd_pw7 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+			uart3_txd_pw6 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 		};
 	};
 
@@ -38,6 +44,21 @@
 		hdmi {
 			status = "okay";
 		};
+	};
+
+	serial@70006000 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006040 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006200 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
 	};
 
 	serial@70006300 {
@@ -88,6 +109,12 @@
 		nvidia,lane_owner = <0>;
 		nvidia,ulpicap = <0>;
 		usb_vbus1-supply = <&usb3_vcc>;
+	};
+
+	/* Expansion header USB */
+	usb@7d008000 {
+		status = "okay";
+		usb_vbus-supply = <&usb_ext_vbus>;
 	};
 
 	pcie-controller {
@@ -308,6 +335,18 @@
 			regulator-max-microvolt = <5500000>;
 			gpio = <&gpio TEGRA_GPIO(J, 2) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
+			vin-supply = <&ext_5v0>;
+		};
+
+		usb_ext_vbus: regulator@112 {
+			compatible = "regulator-fixed";
+			reg = <112>;
+			regulator-name = "USB_VBUS_EXT";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio TEGRA_GPIO(FF, 1) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
 			vin-supply = <&ext_5v0>;
 		};
 	};
