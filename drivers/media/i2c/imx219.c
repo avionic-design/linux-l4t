@@ -585,7 +585,6 @@ static int imx219_probe(struct i2c_client *client, const struct i2c_device_id *i
 	err = v4l2_async_register_subdev(&priv->subdev);
 	if (err) {
 		dev_err(&client->dev, "Failed to register async subdev\n");
-		v4l2_device_unregister_subdev(&priv->subdev);
 		return err;
 	}
 
