@@ -209,7 +209,7 @@ const struct reg_default regs_imx219_init[] = {
 	{0x479B, 0x0E},
 };
 
-static void imx219_set_exposure(struct imx219 *imx219, int exp_value)
+static int imx219_set_exposure(struct imx219 *imx219, int exp_value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
 	int new_exp_value;
@@ -219,19 +219,21 @@ static void imx219_set_exposure(struct imx219 *imx219, int exp_value)
 	err = regmap_write(imx219->regmap, IMX219_COARSE_INT_TIME_HI,
 				(new_exp_value >> 8) & 0xFF);
 	if (err)
-		dev_err(&client->dev, "failed to write exposure\n");
+		dev_err(&client->dev, "failed to write exposure_hi\n");
 	if (!err) {
 		err = regmap_write(imx219->regmap, IMX219_COARSE_INT_TIME_LO,
 				new_exp_value & 0xFF);
 		if (err)
 			dev_err(&client->dev, "failed to write exposure_lo\n");
 	}
+
+	return err;
 }
 
 /*
  * Register value goes from 0 to 224 (analog gain) -> IMX219_ANA_GAIN_GLOBAL
  */
-static void imx219_set_gain(struct imx219 *imx219, int gain_value)
+static int imx219_set_gain(struct imx219 *imx219, int gain_value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
 	int err;
@@ -239,6 +241,8 @@ static void imx219_set_gain(struct imx219 *imx219, int gain_value)
 	err = regmap_write(imx219->regmap, IMX219_ANA_GAIN_GLOBAL, gain_value);
 	if (err)
 		dev_err(&client->dev, "failed to write gain\n");
+
+	return err;
 }
 
 static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
@@ -246,6 +250,8 @@ static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
 	struct imx219 *imx219 = container_of(ctrl->handler, struct imx219,
 						ctrl_handler);
 	struct i2c_client *client = v4l2_get_subdevdata(&imx219->subdev);
+	int ret;
+
 	switch (ctrl->id){
 	case V4L2_CID_EXPOSURE:
 		if ((ctrl->val > EXPOSURE_MAX) ||
@@ -253,7 +259,7 @@ static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
 			dev_err(&client->dev, "wrong exposure value\n");
 			return -EINVAL;
 		}
-		imx219_set_exposure(imx219, ctrl->val);
+		ret = imx219_set_exposure(imx219, ctrl->val);
 		break;
 
 	case V4L2_CID_GAIN:
@@ -262,7 +268,7 @@ static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
 			dev_err(&client->dev, "wrong gain value\n");
 			return -EINVAL;
 		}
-		imx219_set_gain(imx219, ctrl->val);
+		ret = imx219_set_gain(imx219, ctrl->val);
 		break;
 
 	default:
@@ -270,7 +276,7 @@ static int imx219_s_ctrl(struct v4l2_ctrl *ctrl)
 		return -EINVAL;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int imx219_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
