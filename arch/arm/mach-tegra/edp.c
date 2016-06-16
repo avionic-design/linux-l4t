@@ -622,7 +622,10 @@ void __init tegra_init_cpu_edp_limits(unsigned int regulator_ma)
 	if (!IS_T1XX)
 		return;
 
-	if (!regulator_ma) {
+	if (regulator_ma) {
+		pr_info("edp: cpu edp limit: %d\n", regulator_ma);
+	} else {
+		pr_info("edp: using default cpu edp limits\n");
 		cpu_edp_limits = cpu_edp_default_limits;
 		cpu_edp_limits_size = ARRAY_SIZE(cpu_edp_default_limits);
 
@@ -946,7 +949,10 @@ void __init tegra_init_gpu_edp_limits(unsigned int regulator_ma)
 	if (!(IS_T12X || IS_T13X))
 		return;
 
-	if (!regulator_ma) {
+	if (regulator_ma) {
+		pr_info("edp: gpu edp limit: %d\n", regulator_ma);
+	} else {
+		pr_info("edp: using default gpu edp limits\n");
 		gpu_edp_limits = gpu_edp_default_limits;
 		gpu_edp_limits_size = ARRAY_SIZE(gpu_edp_default_limits);
 		return;
