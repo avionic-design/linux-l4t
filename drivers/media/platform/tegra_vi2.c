@@ -1417,21 +1417,52 @@ static int tegra_vi_channel_g_parm(struct file *file, void *priv,
 	return err;
 }
 
+static int tegra_vi_channel_get_mbus_code(struct tegra_vi_channel *chan,
+					u32 pixel_format, u32 *code)
+{
+	const struct tegra_formats *fmt;
+
+	if (chan->input->use_count > 1) {
+		*code = chan->input->framefmt.code;
+		return 0;
+	}
+
+	fmt = tegra_vi_channel_get_format(chan, pixel_format);
+	if (!fmt)
+		return -EINVAL;
+
+	/* Assume we get the same enums with all mbus formats */
+	*code = fmt->mbus[0];
+	return 0;
+}
+
 static int tegra_vi_channel_enum_framesizes(struct file *file, void *priv,
 					struct v4l2_frmsizeenum *fsize)
 {
 	struct video_device *vdev = video_devdata(file);
 	struct tegra_vi_channel *chan =
 		container_of(vdev, struct tegra_vi_channel, vdev);
+	struct v4l2_frmsizeenum sd_fsize = *fsize;
 	int err;
 
 	err = tegra_vi_channel_input_lock(chan, false);
 	if (err)
 		return err;
 
-	err = v4l2_subdev_call(chan->input->sensor, video,
-			enum_framesizes, fsize);
+	err = tegra_vi_channel_get_mbus_code(chan, fsize->pixel_format,
+					&sd_fsize.pixel_format);
+	if (err)
+		goto unlock;
 
+	err = v4l2_subdev_call(chan->input->sensor, video,
+			enum_framesizes, &sd_fsize);
+	if (err)
+		goto unlock;
+
+	sd_fsize.pixel_format = fsize->pixel_format;
+	*fsize = sd_fsize;
+
+unlock:
 	tegra_vi_channel_input_unlock(chan);
 
 	return err;
@@ -1443,15 +1474,27 @@ static int tegra_vi_channel_enum_frameintervals(struct file *file, void *priv,
 	struct video_device *vdev = video_devdata(file);
 	struct tegra_vi_channel *chan =
 		container_of(vdev, struct tegra_vi_channel, vdev);
+	struct v4l2_frmivalenum sd_fival = *fival;
 	int err;
 
 	err = tegra_vi_channel_input_lock(chan, false);
 	if (err)
 		return err;
 
-	err = v4l2_subdev_call(chan->input->sensor, video,
-			enum_frameintervals, fival);
+	err = tegra_vi_channel_get_mbus_code(chan, fival->pixel_format,
+					&sd_fival.pixel_format);
+	if (err)
+		goto unlock;
 
+	err = v4l2_subdev_call(chan->input->sensor, video,
+			enum_frameintervals, &sd_fival);
+	if (err)
+		goto unlock;
+
+	sd_fival.pixel_format = fival->pixel_format;
+	*fival = sd_fival;
+
+unlock:
 	tegra_vi_channel_input_unlock(chan);
 
 	return err;
