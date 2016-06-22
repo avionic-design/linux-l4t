@@ -25,6 +25,7 @@
 #include <linux/workqueue.h>
 #include <linux/export.h>
 #include <linux/fb.h>
+#include <linux/lockdep.h>
 #include <video/tegra_dc_ext.h>
 
 #include <mach/dc.h>
@@ -87,6 +88,7 @@ struct tegra_dc_ext_flip_2_32 {
 dev_t tegra_dc_ext_devno;
 struct class *tegra_dc_ext_class;
 static int head_count;
+static struct lock_class_key win_lock_key[DC_N_WINDOWS];
 
 struct tegra_dc_ext_flip_win {
 	struct tegra_dc_ext_flip_windowattr	attr;
@@ -1710,7 +1712,9 @@ static int tegra_dc_ext_setup_windows(struct tegra_dc_ext *ext)
 		}
 
 		mutex_init(&win->lock);
+		lockdep_set_class(&win->lock, &win_lock_key[i]);
 		mutex_init(&win->queue_lock);
+		lockdep_set_class(&win->queue_lock, &win_lock_key[i]);
 		INIT_LIST_HEAD(&win->timestamp_queue);
 	}
 
