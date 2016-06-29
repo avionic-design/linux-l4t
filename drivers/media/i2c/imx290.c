@@ -1070,7 +1070,7 @@ static int imx290_s_frame_interval(struct v4l2_subdev *sd,
 {
 	struct imx290_priv *priv = to_imx290(sd);
 	const struct imx290_mode *mode = priv->mode;
-	const struct imx290_mode_rate *rate;
+	const struct imx290_mode_rate *rate = NULL;
 	int ret, i;
 
 	if (sdi->pad)
@@ -1082,21 +1082,15 @@ static int imx290_s_frame_interval(struct v4l2_subdev *sd,
 	mutex_lock(&priv->lock);
 
 	for (i = 0; i < mode->rates_size; i++) {
+		if (!mode->rates[i].csi_timing[priv->num_data_lanes])
+			continue;
 		rate = &mode->rates[i];
 		if (rate->framerate >= sdi->interval.denominator)
 			break;
 	}
-	/* If not found, use largest as best effort. */
-	if (i >= mode->rates_size || !rate->csi_timing[priv->num_data_lanes]) {
-		for (i-- ; i >= 0; i--) {
-			rate = &mode->rates[i];
-			if (rate->csi_timing[priv->num_data_lanes])
-				break;
-		}
-		if (i < 0) {
-			mutex_unlock(&priv->lock);
-			return -EINVAL;
-		}
+	if (!rate) {
+		mutex_unlock(&priv->lock);
+		return -EINVAL;
 	}
 	sdi->interval.denominator = rate->framerate;
 
