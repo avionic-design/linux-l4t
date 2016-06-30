@@ -1207,7 +1207,7 @@ static int imx290_of_parse(struct i2c_client *client,
 	/* Assume a single port and endpoint child for now. */
 	ep = v4l2_of_get_next_endpoint(client->dev.of_node, NULL);
 	if (!ep) {
-		dev_err(&client->dev, "Couldn't get DT endpoint child node.");
+		dev_err(&client->dev, "Couldn't get DT endpoint child node.\n");
 		return -EINVAL;
 	}
 
