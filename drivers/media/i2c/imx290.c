@@ -149,7 +149,7 @@ struct imx290_csi_timing {
 struct imx290_mode_rate {
 	int				framerate;
 	/* Timing for each possible number of lanes */
-	const struct imx290_csi_timing	*csi_timing[5];
+	const struct imx290_csi_timing	*csi_timing[2];
 
 	u16				hmax;
 	u8				frsel;
@@ -191,6 +191,9 @@ struct imx290_priv {
 	struct gpio_desc		*xclr;
 	struct mutex			lock;
 };
+
+#define csi_timing_for_rate(rate, priv) \
+	((rate)->csi_timing[(priv)->num_data_lanes / 4])
 
 static const struct reg_default imx290_720_regs[] = {
 	/* WINMODE */
@@ -372,46 +375,46 @@ static const struct imx290_csi_timing imx290_timing_891mbps = {
 static const struct imx290_mode_rate imx290_720_rates[] = {
 	{
 		.framerate = 25,
-		.csi_timing[2] = &imx290_timing_297mbps,
-		.csi_timing[4] = &imx290_timing_149mbps,
+		.csi_timing[0] = &imx290_timing_297mbps,
+		.csi_timing[1] = &imx290_timing_149mbps,
 		.hmax = 0x1ef0,
 		.frsel = 0x02,
 		.default_exposure = 398,
 	},
 	{
 		.framerate = 30,
-		.csi_timing[2] = &imx290_timing_297mbps,
-		.csi_timing[4] = &imx290_timing_149mbps,
+		.csi_timing[0] = &imx290_timing_297mbps,
+		.csi_timing[1] = &imx290_timing_149mbps,
 		.hmax = 0x19c8,
 		.frsel = 0x02,
 		.default_exposure = 332,
 	},
 	{
 		.framerate = 50,
-		.csi_timing[2] = &imx290_timing_594mbps,
-		.csi_timing[4] = &imx290_timing_297mbps,
+		.csi_timing[0] = &imx290_timing_594mbps,
+		.csi_timing[1] = &imx290_timing_297mbps,
 		.hmax = 0x0f78,
 		.frsel = 0x01,
 		.default_exposure = 199,
 	},
 	{
 		.framerate = 60,
-		.csi_timing[2] = &imx290_timing_594mbps,
-		.csi_timing[4] = &imx290_timing_297mbps,
+		.csi_timing[0] = &imx290_timing_594mbps,
+		.csi_timing[1] = &imx290_timing_297mbps,
 		.hmax = 0x0ce4,
 		.frsel = 0x01,
 		.default_exposure = 166,
 	},
 	{
 		.framerate = 100,
-		.csi_timing[4] = &imx290_timing_594mbps,
+		.csi_timing[1] = &imx290_timing_594mbps,
 		.hmax = 0x07bc,
 		.frsel = 0x00,
 		.default_exposure = 99,
 	},
 	{
 		.framerate = 120,
-		.csi_timing[4] = &imx290_timing_594mbps,
+		.csi_timing[1] = &imx290_timing_594mbps,
 		.hmax = 0x0672,
 		.frsel = 0x00,
 		.default_exposure = 83,
@@ -421,46 +424,46 @@ static const struct imx290_mode_rate imx290_720_rates[] = {
 static const struct imx290_mode_rate imx290_1080_rates[] = {
 	{
 		.framerate = 25,
-		.csi_timing[2] = &imx290_timing_446mbps,
-		.csi_timing[4] = &imx290_timing_223mbps,
+		.csi_timing[0] = &imx290_timing_446mbps,
+		.csi_timing[1] = &imx290_timing_223mbps,
 		.hmax = 0x14a0,
 		.frsel = 0x02,
 		.default_exposure = 398,
 	},
 	{
 		.framerate = 30,
-		.csi_timing[2] = &imx290_timing_446mbps,
-		.csi_timing[4] = &imx290_timing_223mbps,
+		.csi_timing[0] = &imx290_timing_446mbps,
+		.csi_timing[1] = &imx290_timing_223mbps,
 		.hmax = 0x1130,
 		.frsel = 0x02,
 		.default_exposure = 332,
 	},
 	{
 		.framerate = 50,
-		.csi_timing[2] = &imx290_timing_891mbps,
-		.csi_timing[4] = &imx290_timing_446mbps,
+		.csi_timing[0] = &imx290_timing_891mbps,
+		.csi_timing[1] = &imx290_timing_446mbps,
 		.hmax = 0x0a50,
 		.frsel = 0x01,
 		.default_exposure = 199,
 	},
 	{
 		.framerate = 60,
-		.csi_timing[2] = &imx290_timing_891mbps,
-		.csi_timing[4] = &imx290_timing_446mbps,
+		.csi_timing[0] = &imx290_timing_891mbps,
+		.csi_timing[1] = &imx290_timing_446mbps,
 		.hmax = 0x0898,
 		.frsel = 0x01,
 		.default_exposure = 166,
 	},
 	{
 		.framerate = 100,
-		.csi_timing[4] = &imx290_timing_891mbps,
+		.csi_timing[1] = &imx290_timing_891mbps,
 		.hmax = 0x0528,
 		.frsel = 0x00,
 		.default_exposure = 99,
 	},
 	{
 		.framerate = 120,
-		.csi_timing[4] = &imx290_timing_891mbps,
+		.csi_timing[1] = &imx290_timing_891mbps,
 		.hmax = 0x044c,
 		.frsel = 0x00,
 		.default_exposure = 83,
@@ -655,7 +658,7 @@ static int imx290_reconfigure(struct imx290_priv *priv,
 	const struct imx290_csi_timing* csi_timing;
 	int ret;
 
-	csi_timing = rate->csi_timing[priv->num_data_lanes];
+	csi_timing = csi_timing_for_rate(rate, priv);
 	if (!csi_timing)
 		return -EINVAL;
 
@@ -1041,7 +1044,7 @@ static int imx290_enum_frameintervals(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	rate = &mode->rates[fival->index];
-	if (!rate->csi_timing[priv->num_data_lanes])
+	if (!csi_timing_for_rate(rate, priv))
 		return -EINVAL;
 
 	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
@@ -1082,7 +1085,7 @@ static int imx290_s_frame_interval(struct v4l2_subdev *sd,
 	mutex_lock(&priv->lock);
 
 	for (i = 0; i < mode->rates_size; i++) {
-		if (!mode->rates[i].csi_timing[priv->num_data_lanes])
+		if (!csi_timing_for_rate(&mode->rates[i], priv))
 			continue;
 		rate = &mode->rates[i];
 		if (rate->framerate >= sdi->interval.denominator)
