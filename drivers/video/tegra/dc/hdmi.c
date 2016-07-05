@@ -2060,6 +2060,65 @@ static void tegra_dc_hdmi_enable(struct tegra_dc *dc)
 	tegra_dc_io_end(dc);
 }
 
+#ifdef CONFIG_SWITCH
+static void tegra_dc_hdmi_set_switches(struct tegra_dc_hdmi_data *hdmi)
+{
+	int state;
+
+	state = !!tegra_edid_audio_supported(hdmi->edid);
+	switch_set_state(&hdmi->audio_switch, state);
+	pr_info("%s: audio_switch %d\n", __func__, state);
+
+	switch_set_state(&hdmi->hpd_switch, 1);
+	pr_info("Display connected, hpd_switch 1\n");
+}
+#else
+static void tegra_dc_hdmi_set_switches(struct tegra_dc_hdmi_data *hdmi)
+{ }
+#endif
+
+int tegra_dc_hdmi_apply_monspecs(struct tegra_dc *dc,
+		struct fb_monspecs *specs)
+{
+	struct tegra_dc_hdmi_data *hdmi = tegra_dc_get_outdata(dc);
+	int ret;
+
+	ret = tegra_edid_get_eld(hdmi->edid, &hdmi->eld);
+	if (ret) {
+		pr_err("error populating eld\n");
+		return ret;
+	}
+	hdmi->eld_retrieved = true;
+
+	pr_info("panel size %d by %d\n", specs->max_x, specs->max_y);
+
+	/* monitors like to lie about these but they are still useful for
+	 * detecting aspect ratios
+	 */
+	dc->out->h_size = specs->max_x * 1000;
+	dc->out->v_size = specs->max_y * 1000;
+
+	hdmi->dvi = !(specs->misc & FB_MISC_HDMI);
+
+	tegra_dc_hdmi_set_switches(hdmi);
+	dc->connected = true;
+	tegra_dc_ext_process_hotplug(dc->ndev->id);
+
+	if (unlikely(tegra_is_clk_enabled(hdmi->clk))) {
+		/* the only time this should happen is on boot, where the
+		 * sequence is that hdmi is enabled before EDID is read.
+		 * hdmi_enable() doesn't have EDID information yet so can't
+		 * setup audio and infoframes, so we have to do so here.
+		 */
+		pr_info("%s: setting audio and infoframes\n", __func__);
+		tegra_dc_io_start(dc);
+		tegra_dc_hdmi_setup_audio_and_infoframes(dc);
+		tegra_dc_io_end(dc);
+	}
+
+	return ret;
+}
+
 static void tegra_dc_hdmi_disable(struct tegra_dc *dc)
 {
 	struct tegra_dc_hdmi_data *hdmi = tegra_dc_get_outdata(dc);

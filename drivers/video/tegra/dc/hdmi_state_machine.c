@@ -259,9 +259,6 @@ static void handle_check_plug_state_l(struct tegra_dc_hdmi_data *hdmi)
 static void handle_check_edid_l(struct tegra_dc_hdmi_data *hdmi)
 {
 	struct fb_monspecs specs;
-#ifdef CONFIG_SWITCH
-	int state;
-#endif
 
 	memset(&specs, 0, sizeof(specs));
 #ifdef CONFIG_FRAMEBUFFER_CONSOLE
@@ -293,57 +290,21 @@ static void handle_check_edid_l(struct tegra_dc_hdmi_data *hdmi)
 		return;
 	}
 
-	if (tegra_edid_get_eld(hdmi->edid, &hdmi->eld) < 0) {
-		pr_err("error populating eld\n");
-		goto end_disabled;
-	}
-	hdmi->eld_retrieved = true;
-
-	pr_info("panel size %d by %d\n", specs.max_x, specs.max_y);
-
-	/* monitors like to lie about these but they are still useful for
-	 * detecting aspect ratios
-	 */
-	hdmi->dc->out->h_size = specs.max_x * 1000;
-	hdmi->dc->out->v_size = specs.max_y * 1000;
-
-	hdmi->dvi = !(specs.misc & FB_MISC_HDMI);
-
 #ifdef CONFIG_ADF_TEGRA
 	tegra_adf_process_hotplug_connected(hdmi->dc->adf, &specs);
 #else
 	tegra_fb_update_monspecs(hdmi->dc->fb, &specs,
 		tegra_dc_hdmi_mode_filter);
 #endif
-#ifdef CONFIG_SWITCH
-	state = tegra_edid_audio_supported(hdmi->edid) ? 1 : 0;
-	switch_set_state(&hdmi->audio_switch, state);
-	pr_info("%s: audio_switch %d\n", __func__, state);
-	switch_set_state(&hdmi->hpd_switch, 1);
-	pr_info("Display connected, hpd_switch 1\n");
-#endif
-	hdmi->dc->connected = true;
 
-	tegra_dc_ext_process_hotplug(hdmi->dc->ndev->id);
-
-	if (unlikely(tegra_is_clk_enabled(hdmi->clk))) {
-		/* the only time this should happen is on boot, where the
-		 * sequence is that hdmi is enabled before EDID is read.
-		 * hdmi_enable() doesn't have EDID information yet so can't
-		 * setup audio and infoframes, so we have to do so here.
-		 */
-		pr_info("%s: setting audio and infoframes\n", __func__);
-		tegra_dc_io_start(hdmi->dc);
-		tegra_dc_hdmi_setup_audio_and_infoframes(hdmi->dc);
-		tegra_dc_io_end(hdmi->dc);
-	}
+	if (tegra_dc_hdmi_apply_monspecs(hdmi->dc, &specs))
+		goto end_disabled;
 
 	hdmi_state_machine_set_state_l(HDMI_STATE_DONE_ENABLED, 0);
 
 	return;
 
 end_disabled:
-	hdmi->eld_retrieved = false;
 	hdmi_disable_l(hdmi);
 	hdmi_state_machine_set_state_l(HDMI_STATE_DONE_DISABLED, -1);
 }
