@@ -794,6 +794,10 @@ struct tegra_fb_info *tegra_fb_register(struct platform_device *ndev,
 	tegra_fb->win.flags = TEGRA_WIN_FLAG_ENABLED;
 	tegra_fb->win.global_alpha = 0xFF;
 
+	list_splice_init(&fb_data->modelist, &info->modelist);
+	if (fb_data->monspecs.modedb)
+		info->monspecs = fb_data->monspecs;
+
 	for (mode_idx = 0; mode_idx < dc->out->n_modes; mode_idx++) {
 		struct tegra_dc_mode mode = dc->out->modes[mode_idx];
 		struct fb_videomode vmode;

@@ -75,6 +75,8 @@ struct tegra_dc_blend {
 struct tegra_dc_out_ops {
 	/* initialize output.  dc clocks are not on at this point */
 	int (*init)(struct tegra_dc *dc);
+	/* get monspecs.  dc clocks are off at this point */
+	int (*get_monspecs)(struct tegra_dc *dc, const struct fb_videomode **bestmode);
 	/* destroy output.  dc clocks are not on at this point */
 	void (*destroy)(struct tegra_dc *dc);
 	/* detect connected display.  can sleep.*/

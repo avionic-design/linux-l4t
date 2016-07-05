@@ -70,10 +70,6 @@
 #include "tegra_adf.h"
 #endif
 
-#ifdef CONFIG_FRAMEBUFFER_CONSOLE
-#include "hdmi.h"
-#endif /* CONFIG_FRAMEBUFFER_CONSOLE */
-
 /* HACK! This needs to come from DT */
 #include "../../../../arch/arm/mach-tegra/iomap.h"
 
@@ -2933,6 +2929,40 @@ static ssize_t switch_modeset_print_mode(struct switch_dev *sdev, char *buf)
 }
 #endif
 
+static int tegra_dc_get_monspecs(struct tegra_dc *dc)
+{
+	const struct fb_videomode *bestmode;
+	int ret;
+
+	if (!dc->pdata->fb)
+		return 0;
+
+	INIT_LIST_HEAD(&dc->pdata->fb->modelist);
+
+	if (!dc->out_ops || !dc->out_ops->get_monspecs)
+		return 0;
+
+	ret = dc->out_ops->get_monspecs(dc, &bestmode);
+	if (ret) {
+		dev_err(&dc->ndev->dev, "error reading monspecs\n");
+		return ret;
+	}
+
+	/*
+	 * When the dc is being enabled later, the clocks are setup for
+	 * the currently active mode, so the desired mode need be set
+	 * before the dc is enabled.
+	 */
+	ret = tegra_dc_set_fb_mode(dc, bestmode, false);
+	if (ret)
+		return ret;
+
+	dc->pdata->fb->xres = dc->mode.h_active;
+	dc->pdata->fb->yres = dc->mode.v_active;
+
+	return 0;
+}
+
 static int tegra_dc_probe(struct platform_device *ndev)
 {
 	struct tegra_dc *dc;
@@ -3178,43 +3208,9 @@ static int tegra_dc_probe(struct platform_device *ndev)
 
 	tegra_dc_feature_register(dc);
 
-#ifdef CONFIG_FRAMEBUFFER_CONSOLE
-	if (dc->out && dc->out->n_modes &&
-	    (dc->out->type == TEGRA_DC_OUT_HDMI)) {
-		struct fb_monspecs specs;
-		struct tegra_dc_hdmi_data *hdmi = tegra_dc_get_outdata(dc);
-
-		/* Give display some time before reading edid. */
-		msleep(60);
-
-		if (!tegra_edid_get_monspecs(hdmi->edid, &specs)) {
-			struct tegra_dc_mode *dcmode = &dc->out->modes[0];
-			dcmode->pclk          = specs.modedb->pixclock;
-			dcmode->pclk          = PICOS2KHZ(dcmode->pclk);
-			dcmode->pclk         *= 1000;
-			dcmode->h_ref_to_sync = 1;
-			dcmode->v_ref_to_sync = 1;
-			dcmode->h_sync_width  = specs.modedb->hsync_len;
-			dcmode->v_sync_width  = specs.modedb->vsync_len;
-			dcmode->h_back_porch  = specs.modedb->left_margin;
-			dcmode->v_back_porch  = specs.modedb->upper_margin;
-			dcmode->h_active      = specs.modedb->xres;
-			dcmode->v_active      = specs.modedb->yres;
-			dcmode->h_front_porch = specs.modedb->right_margin;
-			dcmode->v_front_porch = specs.modedb->lower_margin;
-
-			/* Program DC only with supported pclk. If pclk is not
-			 * supported, fall back to default mode.
-			 */
-			if (dcmode->pclk > PICOS2KHZ(tegra_dc_get_out_max_pixclock(dc)) * 1000)
-				tegra_dc_set_fb_mode(dc, &tegra_dc_vga_mode, 0);
-			else
-				tegra_dc_set_mode(dc, dcmode);
-			dc->pdata->fb->xres = dcmode->h_active;
-			dc->pdata->fb->yres = dcmode->v_active;
-		}
-	}
-#endif /* CONFIG_FRAMEBUFFER_CONSOLE */
+	ret = tegra_dc_get_monspecs(dc);
+	if (ret)
+		dev_err(&ndev->dev, "error initializing modes\n");
 
 #ifndef CONFIG_TEGRA_ISOMGR
 		/*
@@ -3374,6 +3370,13 @@ static int tegra_dc_probe(struct platform_device *ndev)
 	}
 	else
 		dc->connected = false;
+
+#ifdef CONFIG_ADF_TEGRA
+	if (dc->connected && dc->adf && dc->pdata->fb &&
+			dc->pdata->fb->monspecs.modedb)
+		tegra_adf_process_hotplug_connected(dc->adf,
+				&dc->pdata->fb->monspecs);
+#endif
 
 	/* Powergate display module when it's unconnected. */
 	/* detect() function, if presetns, responsible for the powergate */

@@ -1924,7 +1924,7 @@ static void tegra_dc_hdmi_enable(struct tegra_dc *dc)
 	hdmi->clk_enabled = true;
 
 	edid_read = hdmi->eld_retrieved;
-	/* on first boot, we haven't read EDID yet so
+	/* on first boot, we may not have read EDID yet so
 	 * we don't know what to setup yet.  we'll
 	 * call audio and infoframes setup in hdmi worker
 	 * after EDID has been read.
@@ -2059,6 +2059,58 @@ static void tegra_dc_hdmi_enable(struct tegra_dc *dc)
 	tegra_nvhdcp_set_plug(hdmi->nvhdcp, tegra_dc_hpd(dc));
 	tegra_dc_io_end(dc);
 }
+
+#ifdef CONFIG_FRAMEBUFFER_CONSOLE
+static int tegra_dc_hdmi_get_modespecs(struct tegra_dc *dc,
+		const struct fb_videomode **bestmode)
+{
+	struct tegra_dc_hdmi_data *hdmi = tegra_dc_get_outdata(dc);
+	const struct fb_videomode *mode;
+	struct list_head *modelist;
+	struct fb_monspecs *specs;
+	int i, ret;
+
+	if (!dc->pdata->fb)
+		return -EINVAL;
+
+	specs = &dc->pdata->fb->monspecs;
+	modelist = &dc->pdata->fb->modelist;
+
+	/* Give display some time before reading edid. */
+	msleep(60);
+
+	ret = tegra_edid_get_monspecs(hdmi->edid, specs);
+	if (ret) {
+		dev_err(&dc->ndev->dev, "error reading edid: %d\n",
+				ret);
+		return ret;
+	}
+
+	for (i = 0; i < specs->modedb_len; i++) {
+		if (tegra_dc_hdmi_mode_filter(dc, &specs->modedb[i]))
+			fb_add_videomode(&specs->modedb[i], modelist);
+	}
+
+	mode = fb_find_best_display(specs, modelist);
+	if (!mode || PICOS2KHZ(mode->pixclock) >
+			PICOS2KHZ(tegra_dc_get_out_max_pixclock(dc))) {
+		mode = &tegra_dc_vga_mode;
+		fb_add_videomode(&tegra_dc_vga_mode, modelist);
+	}
+
+	*bestmode = mode;
+
+	ret = tegra_dc_hdmi_apply_monspecs(dc, specs);
+
+	return ret;
+}
+#else
+static int tegra_dc_hdmi_get_modespecs(struct tegra_dc *dc,
+		const struct fb_videomode **bestmode)
+{
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_SWITCH
 static void tegra_dc_hdmi_set_switches(struct tegra_dc_hdmi_data *hdmi)
@@ -2248,6 +2300,7 @@ static long tegra_dc_hdmi_setup_clk(struct tegra_dc *dc, struct clk *clk)
 
 struct tegra_dc_out_ops tegra_dc_hdmi_ops = {
 	.init = tegra_dc_hdmi_init,
+	.get_monspecs = tegra_dc_hdmi_get_modespecs,
 	.destroy = tegra_dc_hdmi_destroy,
 	.enable = tegra_dc_hdmi_enable,
 	.disable = tegra_dc_hdmi_disable,

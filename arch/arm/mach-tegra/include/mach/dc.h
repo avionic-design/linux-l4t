@@ -781,6 +781,9 @@ struct tegra_fb_data {
 	int		bits_per_pixel; /* -1 means autodetect */
 
 	unsigned long	flags;
+
+	struct list_head   modelist;
+	struct fb_monspecs monspecs;
 };
 
 #define TEGRA_FB_FLIP_ON_PROBE		(1 << 0)

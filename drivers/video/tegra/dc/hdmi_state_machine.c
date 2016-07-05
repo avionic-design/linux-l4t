@@ -377,47 +377,6 @@ static int hdmi_recheck_edid(struct tegra_dc_hdmi_data *hdmi, int *match)
 	return ret;
 }
 
-static int hdmi_recheck_edid_audio(struct tegra_dc_hdmi_data *hdmi)
-{
-	int err;
-#ifdef CONFIG_SWITCH
-	int state;
-#endif
-
-	/* Nothing to do if the ELD is already available */
-	if (hdmi->eld_retrieved)
-		return 0;
-
-	err = tegra_edid_get_eld(hdmi->edid, &hdmi->eld);
-	if (err < 0) {
-		pr_err("error populating eld\n");
-		return err;
-	}
-	hdmi->eld_retrieved = true;
-
-#ifdef CONFIG_SWITCH
-	state = tegra_edid_audio_supported(hdmi->edid) ? 1 : 0;
-	switch_set_state(&hdmi->audio_switch, state);
-	pr_info("%s: audio_switch %d\n", __func__, state);
-	switch_set_state(&hdmi->hpd_switch, 1);
-	pr_info("Display connected, hpd_switch 1\n");
-#endif
-
-	if (tegra_is_clk_enabled(hdmi->clk)) {
-		/* the only time this should happen is on boot, where the
-		 * sequence is that hdmi is enabled before EDID is read.
-		 * hdmi_enable() doesn't have EDID information yet so can't
-		 * setup audio and infoframes, so we have to do so here.
-		 */
-		pr_info("%s: setting audio and infoframes\n", __func__);
-		tegra_dc_io_start(hdmi->dc);
-		tegra_dc_hdmi_setup_audio_and_infoframes(hdmi->dc);
-		tegra_dc_io_end(hdmi->dc);
-	}
-
-	return 0;
-}
-
 static void handle_recheck_edid_l(struct tegra_dc_hdmi_data *hdmi)
 {
 	int match, tgt_state, timeout;
@@ -443,8 +402,6 @@ static void handle_recheck_edid_l(struct tegra_dc_hdmi_data *hdmi)
 		 * just reset the whole system.
 		 */
 		if (match) {
-			/* If needed update the audio setup */
-			hdmi_recheck_edid_audio(hdmi);
 			pr_info("No EDID change after HPD bounce, taking no action.\n");
 			tgt_state = HDMI_STATE_DONE_ENABLED;
 			if (tegra_is_clk_enabled(hdmi->dc->clk)) {
