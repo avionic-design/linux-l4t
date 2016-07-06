@@ -139,18 +139,24 @@ void __init tegra_meerkat_init_early(void)
 
 static void __init tegra_meerkat_edp_init(void)
 {
+	int cpu_speedo_id = tegra_cpu_speedo_id();
 	unsigned int regulator_mA;
 
 	regulator_mA = get_maximum_cpu_current_supported();
-	if (!regulator_mA)
-		regulator_mA = 15000;
+	if (!regulator_mA) {
+		/* The CPU speedo id get patched for the always on use case */
+		if (cpu_speedo_id == 6)
+			regulator_mA = 11800;
+		else
+			regulator_mA = 12500;
+	}
 
 	pr_info("%s: CPU regulator %d mA\n", __func__, regulator_mA);
 
 	tegra_init_cpu_edp_limits(regulator_mA);
 
 	/* gpu maximum current */
-	regulator_mA = 8000;
+	regulator_mA = 11400;
 	pr_info("%s: GPU regulator %d mA\n", __func__, regulator_mA);
 
 	tegra_init_gpu_edp_limits(regulator_mA);
