@@ -44,6 +44,12 @@
 				};
 			};
 
+			port@1 {
+				csi_cd_ep: endpoint@0 {
+					remote-endpoint = <&cam_csi>;
+				};
+			};
+
 			port@2 {
 				csi_e_ep: endpoint@0 {
 					remote-endpoint = <&adv7181m_2_ep>;
@@ -134,6 +140,21 @@
 	/* GEN2 */
 	i2c@7000c400 {
 		status = "okay";
+
+		camera@10 {
+			compatible = "sony,imx219";
+			reg = <0x10>;
+
+			vdd-supply = <&vdd_3v3_ext>;
+
+			reset-gpio = <&gpio TEGRA_GPIO(H, 4) GPIO_ACTIVE_LOW>;
+
+			port {
+				cam_csi: endpoint {
+					remote-endpoint = <&csi_cd_ep>;
+				};
+			};
+		};
 
 		adv7181m_1: camera@20 {
 			compatible = "adi,adv7281-m";
