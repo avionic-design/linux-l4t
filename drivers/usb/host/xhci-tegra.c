@@ -3192,10 +3192,12 @@ tegra_xhci_process_mbox_message(struct work_struct *work)
 	fw_msg = readl(tegra->fpci_base + XUSB_CFG_ARU_MBOX_DATA_OUT);
 
 	data_in = readl(tegra->fpci_base + XUSB_CFG_ARU_MBOX_DATA_IN);
+
+	mutex_unlock(&tegra->mbox_lock);
+
 	if (data_in) {
 		dev_warn(&tegra->pdev->dev, "%s data_in 0x%x\n",
 			__func__, data_in);
-		mutex_unlock(&tegra->mbox_lock);
 		return;
 	}
 
@@ -3292,6 +3294,8 @@ tegra_xhci_process_mbox_message(struct work_struct *work)
 				__func__, tegra->cmd_type);
 	}
 
+	mutex_lock(&tegra->mbox_lock);
+
 	/* clear MBOX_SMI_INT_EN bit */
 	cmd = readl(tegra->fpci_base + XUSB_CFG_ARU_MBOX_CMD);
 	cmd &= ~MBOX_SMI_INT_EN;
@@ -3314,6 +3318,8 @@ send_sw_response:
 	else
 		xhci_err(xhci, "%s respond fw message 0x%x with %d\n",
 		__func__, fw_msg, response);
+
+	mutex_lock(&tegra->mbox_lock);
 
 	writel(sw_resp, tegra->fpci_base + XUSB_CFG_ARU_MBOX_DATA_IN);
 	cmd = readl(tegra->fpci_base + XUSB_CFG_ARU_MBOX_CMD);
