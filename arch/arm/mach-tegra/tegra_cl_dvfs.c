@@ -200,6 +200,7 @@ struct tegra_cl_dvfs {
 	struct clk			*soc_clk;
 	struct clk			*ref_clk;
 	struct clk			*i2c_clk;
+	struct clk			*soc_therm_clk;
 	struct clk			*dfll_clk;
 	unsigned long			ref_rate;
 	unsigned long			i2c_rate;
@@ -1596,6 +1597,17 @@ static int cl_dvfs_init(struct tegra_cl_dvfs *cld)
 {
 	int ret, gpio, flags;
 
+	/* Enable the SoC therm clock, we have to keep it on as the
+	 * implementation of this clock is broken. Despite it beeing
+	 * forbiden by the API it sleep during en/disable.
+	 */
+	ret = clk_enable(cld->soc_therm_clk);
+	if (ret) {
+		pr_err("%s: Failed to enable %s\n",
+		       __func__, cld->soc_therm_clk->name);
+		return ret;
+	}
+
 	/* Enable output inerface clock */
 	if (cld->p_data->pmu_if == TEGRA_CL_DVFS_PMU_I2C) {
 		ret = clk_enable(cld->i2c_clk);
@@ -2416,6 +2428,7 @@ static int __init tegra_cl_dvfs_probe(struct platform_device *pdev)
 	struct voltage_reg_map *p_vdd_map = NULL;
 	struct tegra_cl_dvfs *cld = NULL;
 	struct clk *ref_clk, *soc_clk, *i2c_clk, *safe_dvfs_clk, *dfll_clk;
+	struct clk *soc_therm_clk;
 
 	/* Get resources */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -2467,11 +2480,17 @@ static int __init tegra_cl_dvfs_probe(struct platform_device *pdev)
 	ref_clk = clk_get(&pdev->dev, "ref");
 	soc_clk = clk_get(&pdev->dev, "soc");
 	i2c_clk = clk_get(&pdev->dev, "i2c");
+	soc_therm_clk = clk_get(&pdev->dev, "soc_therm");
 	safe_dvfs_clk = clk_get(&pdev->dev, "safe_dvfs");
 	dfll_clk = clk_get(&pdev->dev, p_data->dfll_clk_name);
 	if (IS_ERR(ref_clk) || IS_ERR(soc_clk) || IS_ERR(i2c_clk)) {
 		dev_err(&pdev->dev, "missing control clock\n");
 		ret = -ENOENT;
+		goto err_out;
+	}
+	if (IS_ERR(soc_therm_clk)) {
+		dev_err(&pdev->dev, "missing soc therm clock\n");
+		ret = PTR_ERR(soc_therm_clk);
 		goto err_out;
 	}
 	if (IS_ERR(safe_dvfs_clk)) {
@@ -2518,6 +2537,7 @@ static int __init tegra_cl_dvfs_probe(struct platform_device *pdev)
 	cld->ref_clk = ref_clk;
 	cld->soc_clk = soc_clk;
 	cld->i2c_clk = i2c_clk;
+	cld->soc_therm_clk = soc_therm_clk;
 	cld->dfll_clk = dfll_clk;
 	cld->safe_dvfs = safe_dvfs_clk->dvfs;
 #ifdef CONFIG_THERMAL

@@ -8672,6 +8672,7 @@ struct clk_duplicate tegra_clk_duplicates[] = {
 	CLK_DUPLICATE("afc4", "tegra30-ahub-apbif", "afc4"),
 	CLK_DUPLICATE("afc5", "tegra30-ahub-apbif", "afc5"),
 	CLK_DUPLICATE("cpu_g", "tegra_simon", "cpu"),
+	CLK_DUPLICATE("soc_therm", "tegra_cl_dvfs", "soc_therm"),
 };
 
 struct clk *tegra_ptr_clks[] = {
