@@ -2554,9 +2554,11 @@ static int __init tegra_cl_dvfs_probe(struct platform_device *pdev)
 	 * registration will update the entire thermal zone, and may trigger
 	 * rate change of the target clock
 	 */
+#ifdef CONFIG_THERMAL
 	if (cld->safe_dvfs->dvfs_rail->vmin_cdev ||
 	    cld->safe_dvfs->dvfs_rail->vmax_cdev)
 		schedule_work(&cld->init_cdev_work);
+#endif
 	return 0;
 
 err_out:
