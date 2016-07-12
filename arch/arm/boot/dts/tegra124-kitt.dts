@@ -119,11 +119,29 @@
 		};
 	};
 
+	/* USB0: Recovery & OTG */
 	usb@7d000000 {
 		status = "okay";
-		nvidia,hotplug;
+		nvidia,port-otg;
+
 		nvidia,remote-wakeup-supported;
 		nvidia,power-off-on-suspend;
+
+		nvidia,vbus-oc-map = <0x5>;
+		usb_vbus-supply = <&vdd_usb0_vbus>;
+	};
+
+	udc@7d000000 {
+		status = "okay";
+		nvidia,port-otg;
+		nvidia,has-host;
+
+		usb_vbus-supply = <&vdd_usb0_vbus>;
+	};
+
+	otg@7d000000 {
+		status = "okay";
+		nvidia,ehci-device = <&tegra_ehci_0>;
 
 		usb_vbus-supply = <&vdd_usb0_vbus>;
 	};
