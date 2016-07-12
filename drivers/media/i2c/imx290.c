@@ -68,9 +68,6 @@
 #define IMX290_INCK_RATE		37125000
 #define IMX290_PIXEL_PERIOD_PS		6734
 
-#define IMX290_ID_LQR			0
-#define IMX290_ID_LLR			1
-
 static const struct regmap_range imx290_regmap_rw_ranges[] = {
 	regmap_reg_range(0x3000, 0x3022),
 	regmap_reg_range(0x303a, 0x3043),
@@ -1362,16 +1359,22 @@ static int imx290_remove(struct i2c_client *client)
 }
 
 static const struct i2c_device_id imx290_id[] = {
-	{ "imx290lqr", IMX290_ID_LQR },
-	{ "imx290llr", IMX290_ID_LLR },
+	{ "imx290lqr", V4L2_IDENT_IMX290LQR },
+	{ "imx290llr", V4L2_IDENT_IMX290LLR },
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, imx290_id);
 
 #ifdef CONFIG_OF
 static const struct of_device_id imx290_of_match[] = {
-	{ .compatible = "sony,imx290lqr", .data = (void *)IMX290_ID_LQR },
-	{ .compatible = "sony,imx290llr", .data = (void *)IMX290_ID_LLR },
+	{
+		.compatible = "sony,imx290lqr",
+		.data = (void *)V4L2_IDENT_IMX290LQR
+	},
+	{
+		.compatible = "sony,imx290llr",
+		.data = (void *)V4L2_IDENT_IMX290LLR
+	},
 	{ },
 };
 MODULE_DEVICE_TABLE(of, imx290_of_match);
