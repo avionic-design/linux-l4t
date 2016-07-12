@@ -609,6 +609,7 @@ static int imx290_set_patterngen(struct imx290_priv *priv, int mode)
 static int imx290_set_exposure(struct imx290_priv *priv,
 			int exposure_100us)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	int hmax, h_period_100ns, f_period_100ns, i_period_100ns;
 	int shs1, vmax, ret;
 
@@ -634,6 +635,11 @@ static int imx290_set_exposure(struct imx290_priv *priv,
 		shs1 = 1;
 	if (shs1 > priv->mode->vmax - 2)
 		shs1 = priv->mode->vmax - 2;
+
+	dev_dbg(&client->dev,
+		"set exposure: exp=%d, fps=%d, shs1=%d, vmax=%d\n",
+		exposure_100us, priv->rate->framerate,
+		shs1, vmax);
 
 	ret = imx290_write_regbits(priv->regmap, IMX290_REG_VMAX,
 				vmax, IMX290_REGLEN_VMAX);
@@ -781,6 +787,7 @@ static int imx290_s_fmt(struct v4l2_subdev *sd,
 			struct v4l2_mbus_framefmt *mf)
 {
 	struct imx290_priv *priv = to_imx290(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	const struct imx290_mode_rate *rate;
 	const struct imx290_mode *mode;
 	unsigned old_framerate;
@@ -803,6 +810,10 @@ static int imx290_s_fmt(struct v4l2_subdev *sd,
 	ret = imx290_reconfigure(priv, mode, rate);
 	if (!ret)
 		priv->mf = *mf;
+
+	dev_dbg(&client->dev,
+		"set fmt: width=%d, height=%d\n",
+		mf->width, mf->height);
 
 	mutex_unlock(&priv->lock);
 
@@ -1335,6 +1346,8 @@ static int imx290_probe(struct i2c_client *client,
 				ret);
 		goto free_ctrls;
 	}
+
+	dev_dbg(&client->dev, "added imx290, identity=%d\n", priv->ident);
 
 	return 0;
 
