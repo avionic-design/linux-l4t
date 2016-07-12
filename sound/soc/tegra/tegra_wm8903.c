@@ -904,11 +904,6 @@ static int tegra_wm8903_driver_remove(struct platform_device *pdev)
 	snd_soc_jack_free_gpios(&tegra_wm8903_hp_jack, 1,
 				&tegra_wm8903_hp_jack_gpio);
 
-	if (machine->spk_reg)
-		regulator_put(machine->spk_reg);
-	if (machine->dmic_reg)
-		regulator_put(machine->dmic_reg);
-
 #ifdef CONFIG_SWITCH
 	tegra_asoc_switch_unregister(&tegra_wm8903_headset_switch);
 #endif
