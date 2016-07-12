@@ -24,6 +24,7 @@
 #include <linux/pm.h>
 #include <linux/i2c.h>
 #include <linux/regmap.h>
+#include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 #include <linux/irq.h>
 #include <sound/core.h>
@@ -116,11 +117,20 @@ static const struct reg_default wm8903_reg_defaults[] = {
 	{ 172, 0x0000 },    /* R172 - Analogue Output Bias 0 */
 };
 
+static const char *wm8903_regulators[] = {
+	"avdd",
+	"dbvdd",
+	"cpvdd",
+	"dcvdd",
+};
+
 struct wm8903_priv {
 	struct wm8903_platform_data *pdata;
 	struct device *dev;
 	struct snd_soc_codec *codec;
 	struct regmap *regmap;
+	struct regulator_bulk_data regulators[ARRAY_SIZE(wm8903_regulators)];
+	unsigned num_regulators;
 
 	int sysclk;
 	int irq;
@@ -1767,6 +1777,18 @@ static struct snd_soc_dai_driver wm8903_dai = {
 	.symmetric_rates = 1,
 };
 
+static int wm8903_poweroff(struct wm8903_priv *wm8903)
+{
+	return regulator_bulk_disable(
+		wm8903->num_regulators, wm8903->regulators);
+}
+
+static int wm8903_poweron(struct wm8903_priv *wm8903)
+{
+	return regulator_bulk_enable(
+		wm8903->num_regulators, wm8903->regulators);
+}
+
 static int wm8903_suspend(struct snd_soc_codec *codec)
 {
 	struct wm8903_priv *wm8903 = snd_soc_codec_get_drvdata(codec);
@@ -1776,12 +1798,21 @@ static int wm8903_suspend(struct snd_soc_codec *codec)
 
 	wm8903_set_bias_level(codec, SND_SOC_BIAS_OFF);
 
+	wm8903_poweroff(wm8903);
+
 	return 0;
 }
 
 static int wm8903_resume(struct snd_soc_codec *codec)
 {
+	int ret;
 	struct wm8903_priv *wm8903 = snd_soc_codec_get_drvdata(codec);
+
+	ret = wm8903_poweron(wm8903);
+	if (ret) {
+		dev_err(wm8903->dev, "Error resuming regulators: %d\n", ret);
+		return ret;
+	}
 
 	regcache_sync(wm8903->regmap);
 
@@ -2055,6 +2086,19 @@ static int wm8903_i2c_probe(struct i2c_client *i2c,
 		return -ENOMEM;
 	wm8903->dev = &i2c->dev;
 
+	for (i = 0; i < ARRAY_SIZE(wm8903_regulators); i++) {
+		struct regulator_bulk_data *bdata =
+			&wm8903->regulators[wm8903->num_regulators];
+		bdata->supply = wm8903_regulators[i];
+		bdata->consumer = devm_regulator_get(&i2c->dev, bdata->supply);
+		if (IS_ERR(bdata->consumer)) {
+			if (PTR_ERR(bdata->consumer) != -ENODEV)
+				return PTR_ERR(bdata->consumer);
+			continue;
+		}
+		wm8903->num_regulators++;
+	}
+
 	wm8903->regmap = devm_regmap_init_i2c(i2c, &wm8903_regmap);
 	if (IS_ERR(wm8903->regmap)) {
 		ret = PTR_ERR(wm8903->regmap);
@@ -2091,6 +2135,12 @@ static int wm8903_i2c_probe(struct i2c_client *i2c,
 	}
 
 	pdata = wm8903->pdata;
+
+	ret = wm8903_poweron(wm8903);
+	if (ret) {
+		dev_err(&i2c->dev, "Error starting regulators: %d\n", ret);
+		return ret;
+	}
 
 	ret = regmap_read(wm8903->regmap, WM8903_SW_RESET_AND_ID, &val);
 	if (ret != 0) {
