@@ -658,7 +658,7 @@ static int imx290_reconfigure(struct imx290_priv *priv,
 {
 	const struct imx290_mode_rate *old_rate = priv->rate;
 	const struct imx290_mode *old_mode = priv->mode;
-	const struct imx290_csi_timing* csi_timing;
+	const struct imx290_csi_timing *csi_timing;
 	int ret;
 
 	csi_timing = csi_timing_for_rate(rate, priv);
