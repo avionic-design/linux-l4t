@@ -314,7 +314,6 @@
 			"IN1L", "Mic Jack";
 
 		nvidia,spkr-en-gpios = <&gpio TEGRA_GPIO(R, 2) GPIO_ACTIVE_HIGH>;
-		nvidia,hp-det-gpios = <&gpio TEGRA_GPIO(R, 7) GPIO_ACTIVE_HIGH>;
 
 		nvidia,memory-clients = <14>;
 		nvidia,i2s-controller = <&tegra_i2s1>;
