@@ -38,6 +38,16 @@
 			dap2_sclk_pa3 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+			ulpi_stp_py3 {
+				nvidia,function = "safe";
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+			};
+			ulpi_nxt_py2 {
+				nvidia,function = "safe";
+			};
+			dap3_dout_pp2 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
 		};
 	};
 
@@ -310,6 +320,33 @@
 		nvidia,i2s-controller = <&tegra_i2s1>;
 		nvidia,i2s-is-master;
 		nvidia,audio-codec = <&wm8903>;
+	};
+
+	gpio: gpio@6000d000 {
+		gpio-init-names = "default";
+		gpio-init-0 = <&gpio_default>;
+		gpio_default: default {
+			/* Enable Wifi antenna */
+			gpio-output-high = <TEGRA_GPIO(X, 7)>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_default>;
+		trigger {
+			label = "Trigger key";
+			linux,code = <KEY_T>;
+			debounce-interval = <5>;
+			gpios = <&gpio TEGRA_GPIO(H, 0) GPIO_ACTIVE_HIGH>;
+		};
+		capture {
+			label = "Capture key";
+			linux,code = <KEY_C>;
+			debounce-interval = <5>;
+			gpios = <&gpio TEGRA_GPIO(P, 2) GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	regulators {
