@@ -756,6 +756,20 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 
 	machine->pdata = pdata;
 
+	machine->spk_reg = devm_regulator_get(&pdev->dev, "spkr");
+	if (IS_ERR(machine->spk_reg)) {
+		if (PTR_ERR(machine->spk_reg) != -ENODEV)
+			return PTR_ERR(machine->spk_reg);
+		machine->spk_reg = NULL;
+	}
+
+	machine->dmic_reg = devm_regulator_get(&pdev->dev, "dmic");
+	if (IS_ERR(machine->dmic_reg)) {
+		if (PTR_ERR(machine->dmic_reg) != -ENODEV)
+			return PTR_ERR(machine->dmic_reg);
+		machine->dmic_reg = NULL;
+	}
+
 	if (np) {
 		card->controls = tegra_wm8903_controls;
 		card->num_controls = ARRAY_SIZE(tegra_wm8903_controls);
