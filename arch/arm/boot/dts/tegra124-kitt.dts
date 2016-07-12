@@ -19,6 +19,13 @@
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+			pi2 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+			pi7 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
 			dap2_din_pa4 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
@@ -149,11 +156,48 @@
 				    0xffffffff
 				    0xffffffff>;
 		};
+
+		l3g4200d: l3g4200d@69 {
+			compatible = "st,l3g4200d-gyro";
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(I, 7) IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0x69>;
+		};
+
+		lsm303d: lsm303d@1d {
+			compatible = "st,lsm303d-accel";
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(I, 2) IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0x1d>;
+		};
+
+		m24512: m24512@50 {
+			compatible = "24c512";
+			reg = <0x50>;
+			pagesize = <128>;
+		};
+
+		m24512_id: m24512@58 {
+			compatible = "24c01";
+			reg = <0x58>;
+			pagesize = <128>;
+		};
 	};
 
 	/* HDMI DDC */
 	i2c@7000c700 {
 		status = "okay";
+	};
+
+	/* Gen1 I2C */
+	i2c@7000c000 {
+		status = "okay";
+
+		ltc2617: ltc2617@10 {
+			compatible = "linear,ltc2617";
+			reg = <0x10>;
+			vref-supply = <&vdd_ltc_vref>;
+		};
 	};
 
 	/* Cam I2C */
