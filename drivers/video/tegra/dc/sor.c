@@ -1326,7 +1326,7 @@ void tegra_dc_sor_enable_lvds(struct tegra_dc_sor_data *sor,
 
 
 	/* re-enable SOR clock */
-	tegra_clk_cfg_ex(sor->sor_clk, TEGRA_CLK_SOR_CLK_SEL, 1);
+	tegra_clk_cfg_ex(sor->sor_clk, TEGRA_CLK_SOR_CLK_SEL, 2);
 
 	if ((tegra_dc_sor_set_power_state(sor, 1))) {
 		dev_err(&sor->dc->ndev->dev,
