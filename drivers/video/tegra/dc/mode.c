@@ -355,8 +355,8 @@ int tegra_dc_program_mode(struct tegra_dc *dc, struct tegra_dc_mode *mode)
 	dev_info(&dc->ndev->dev,
 		"nominal-pclk:%d parent:%lu div:%lu.%lu pclk:%lu %d~%d\n",
 		mode->pclk, rate, (div + 2) / 2, ((div + 2) % 2) * 5, pclk,
-		mode->pclk / 100 * 99, mode->pclk / 100 * 109);
-	if (!pclk || pclk < (mode->pclk / 100 * 99) ||
+		mode->pclk / 100 * 91, mode->pclk / 100 * 109);
+	if (!pclk || pclk < (mode->pclk / 100 * 91) ||
 	    pclk > (mode->pclk / 100 * 109)) {
 		dev_err(&dc->ndev->dev, "pclk out of range!\n");
 		return -EINVAL;
