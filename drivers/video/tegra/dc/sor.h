@@ -18,6 +18,8 @@
 #ifndef __DRIVERS_VIDEO_TEGRA_DC_SOR_H__
 #define __DRIVERS_VIDEO_TEGRA_DC_SOR_H__
 
+#include <linux/clk.h>
+
 enum {
 	TRAINING_PATTERN_DISABLE = 0,
 	TRAINING_PATTERN_1 = 1,
