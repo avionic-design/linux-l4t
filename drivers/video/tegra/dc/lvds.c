@@ -36,7 +36,7 @@ static int tegra_dc_lvds_init(struct tegra_dc *dc)
 	lvds->sor = tegra_dc_sor_init(dc, NULL);
 
 	if (IS_ERR_OR_NULL(lvds->sor)) {
-		err = PTR_ERR(lvds->sor);
+		err = lvds->sor ? PTR_ERR(lvds->sor) : -ENODEV;
 		lvds->sor = NULL;
 		goto err_init;
 	}
