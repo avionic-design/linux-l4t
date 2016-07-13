@@ -68,6 +68,7 @@ static void tegra_dc_lvds_enable(struct tegra_dc *dc)
 	tegra_dc_io_start(dc);
 
 	/* Power on panel */
+	tegra_sor_clk_enable(lvds->sor);
 	tegra_sor_pad_cal_power(lvds->sor, true);
 	tegra_dc_sor_set_internal_panel(lvds->sor, true);
 	tegra_dc_sor_set_power_state(lvds->sor, 1);
