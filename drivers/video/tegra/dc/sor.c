@@ -14,6 +14,7 @@
  *
  */
 
+#include <linux/module.h>
 #include <linux/clk.h>
 #include <linux/err.h>
 #include <linux/nvhost.h>
@@ -51,6 +52,9 @@
 #define APBDEV_PMC_IO_DPD2_STATUS_LVDS_SHIFT		(25)
 #define APBDEV_PMC_IO_DPD2_STATUS_LVDS_OFF		(0 << 25)
 #define APBDEV_PMC_IO_DPD2_STATUS_LVDS_ON		(1 << 25)
+
+/* Global pointer to link back the private API to the driver model */
+static struct tegra_dc_sor_data *sor_instance;
 
 static unsigned long
 tegra_dc_sor_poll_register(struct tegra_dc_sor_data *sor,
@@ -242,9 +246,7 @@ static inline void tegra_dc_sor_debug_create(struct tegra_dc_sor_data *sor)
 { }
 #endif
 
-
-struct tegra_dc_sor_data *tegra_dc_sor_init(struct tegra_dc *dc,
-	const struct tegra_dc_dp_link_config *cfg)
+int tegra_dc_sor_probe(struct platform_device *pdev)
 {
 	struct tegra_dc_sor_data	*sor;
 	struct resource			*res;
@@ -253,51 +255,56 @@ struct tegra_dc_sor_data *tegra_dc_sor_init(struct tegra_dc *dc,
 	struct clk			*clk;
 	int				 err;
 
+	if (sor_instance != NULL) {
+		dev_err(&pdev->dev, "Only one SOR instance allowed\n");
+		return -EBUSY;
+	}
+
 	sor = kzalloc(sizeof(*sor), GFP_KERNEL);
 	if (!sor) {
 		err = -ENOMEM;
 		goto err_allocate;
 	}
 
-	res = platform_get_resource_byname(dc->ndev, IORESOURCE_MEM, "sor");
+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "sor");
 	if (!res) {
-		dev_err(&dc->ndev->dev, "sor: no mem resource\n");
+		dev_err(&pdev->dev, "sor: no mem resource\n");
 		err = -ENOENT;
 		goto err_free_sor;
 	}
 
 	base_res = request_mem_region(res->start, resource_size(res),
-		dc->ndev->name);
+		pdev->name);
 	if (!base_res) {
-		dev_err(&dc->ndev->dev, "sor: request_mem_region failed\n");
+		dev_err(&pdev->dev, "sor: request_mem_region failed\n");
 		err = -EBUSY;
 		goto err_free_sor;
 	}
 
 	base = ioremap(res->start, resource_size(res));
 	if (!base) {
-		dev_err(&dc->ndev->dev, "sor: registers can't be mapped\n");
+		dev_err(&pdev->dev, "sor: registers can't be mapped\n");
 		err = -ENOENT;
 		goto err_release_resource_reg;
 	}
 
 	clk = clk_get_sys("sor0", NULL);
 	if (IS_ERR_OR_NULL(clk)) {
-		dev_err(&dc->ndev->dev, "sor: can't get clock\n");
+		dev_err(&pdev->dev, "sor: can't get clock\n");
 		err = -ENOENT;
 		goto err_iounmap_reg;
 	}
 
-	sor->dc	      = dc;
 	sor->base     = base;
 	sor->base_res = base_res;
 	sor->sor_clk  = clk;
-	sor->link_cfg = cfg;
 	sor->portnum  = 0;
 
 	tegra_dc_sor_debug_create(sor);
 
-	return sor;
+	sor_instance  = sor;
+
+	return 0;
 
 
 err_iounmap_reg:
@@ -307,7 +314,42 @@ err_release_resource_reg:
 err_free_sor:
 	kfree(sor);
 err_allocate:
-	return ERR_PTR(err);
+	return err;
+}
+
+#ifdef CONFIG_OF
+static bool tegra_dc_sor_from_of(struct tegra_dc *dc)
+{
+	return of_device_is_available(
+		of_find_compatible_node(NULL, NULL, "nvidia,tegra124-sor"));
+}
+#else
+static bool tegra_dc_sor_from_of(struct tegra_dc *dc)
+{
+	return false;
+}
+#endif
+
+struct tegra_dc_sor_data *tegra_dc_sor_init(struct tegra_dc *dc,
+	const struct tegra_dc_dp_link_config *cfg)
+{
+	int err;
+
+	if (!sor_instance) {
+		if (tegra_dc_sor_from_of(dc))
+			return ERR_PTR(-EPROBE_DEFER);
+		/* No OF, fallback on creating the device here */
+		err = tegra_dc_sor_probe(dc->ndev);
+		if (err)
+			return ERR_PTR(err);
+	} else if (sor_instance->dc && sor_instance->dc != dc) {
+		return ERR_PTR(-EBUSY);
+	}
+
+	sor_instance->dc = dc;
+	sor_instance->link_cfg = cfg;
+
+	return sor_instance;
 }
 
 int tegra_dc_sor_set_power_state(struct tegra_dc_sor_data *sor, int pu_pd)
@@ -1450,3 +1492,20 @@ void tegra_dc_sor_modeset_notifier(struct tegra_dc_sor_data *sor, bool is_lvds)
 	tegra_sor_clk_disable(sor);
 }
 
+#ifdef CONFIG_OF
+static struct of_device_id tegra_dc_sor_of_match[] = {
+	{.compatible = "nvidia,tegra124-sor", },
+	{ },
+};
+#endif
+
+struct platform_driver tegra_dc_sor_driver = {
+	.driver = {
+		.name = "tegra-sor",
+		.owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(tegra_dc_sor_of_match),
+	},
+	.probe = tegra_dc_sor_probe,
+};
+
+module_platform_driver(tegra_dc_sor_driver);

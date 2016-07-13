@@ -567,6 +567,14 @@
 			nvidia,memory-clients = <SWGID_ISP SWGID_ISP2B>;
 		};
 
+		sor@54540000 {
+			compatible = "nvidia,tegra124-sor";
+			reg = <0x54540000 0x00040000>;
+			reg-names = "sor";
+			interrupts = <0 76 0x04>;
+			status = "disabled";
+		};
+
 		dc@54200000 {
 			compatible = "nvidia,tegra124-dc";
 			reg = <0x54200000 0x00040000>;
