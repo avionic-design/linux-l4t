@@ -20,6 +20,8 @@
 
 #include <linux/clk.h>
 
+struct regulator;
+
 enum {
 	TRAINING_PATTERN_DISABLE = 0,
 	TRAINING_PATTERN_1 = 1,
@@ -92,6 +94,7 @@ struct tegra_dc_sor_data {
 	void __iomem	*base;
 	struct resource	*base_res;
 	struct clk	*sor_clk;
+	struct regulator*avdd;
 
 	u8					 portnum;	/* 0 or 1 */
 	const struct tegra_dc_dp_link_config	*link_cfg;

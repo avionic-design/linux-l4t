@@ -24,6 +24,7 @@
 #include <linux/seq_file.h>
 #include <linux/debugfs.h>
 #include <linux/clk/tegra.h>
+#include <linux/regulator/consumer.h>
 
 #include <mach/dc.h>
 
@@ -253,11 +254,19 @@ int tegra_dc_sor_probe(struct platform_device *pdev)
 	struct resource			*base_res;
 	void __iomem			*base;
 	struct clk			*clk;
+	struct regulator		*avdd;
 	int				 err;
 
 	if (sor_instance != NULL) {
 		dev_err(&pdev->dev, "Only one SOR instance allowed\n");
 		return -EBUSY;
+	}
+
+	avdd = devm_regulator_get(&pdev->dev, "sor_avdd");
+	if (IS_ERR(avdd)) {
+		if (PTR_ERR(avdd) != -ENODEV)
+			return PTR_ERR(avdd);
+		avdd = NULL;
 	}
 
 	sor = kzalloc(sizeof(*sor), GFP_KERNEL);
@@ -298,6 +307,7 @@ int tegra_dc_sor_probe(struct platform_device *pdev)
 	sor->base     = base;
 	sor->base_res = base_res;
 	sor->sor_clk  = clk;
+	sor->avdd     = avdd;
 	sor->portnum  = 0;
 
 	tegra_dc_sor_debug_create(sor);
@@ -698,6 +708,12 @@ static void tegra_sor_pad_power_up(struct tegra_dc_sor_data *sor,
 	if (sor->power_is_up)
 		return;
 
+	if (sor->avdd) {
+		int uV = is_lvds ? 1800000 : 3300000;
+		WARN_ON(regulator_set_voltage(sor->avdd, uV, uV));
+		WARN_ON(regulator_enable(sor->avdd));
+	}
+
 	/* step 1 */
 	tegra_sor_write_field(sor, NV_SOR_PLL2,
 		NV_SOR_PLL2_AUX7_PORT_POWERDOWN_MASK | /* PDPORT */
@@ -781,6 +797,9 @@ static void tegra_dc_sor_power_down(struct tegra_dc_sor_data *sor)
 
 	/* step 5 */
 	tegra_dc_sor_io_set_dpd(sor, false);
+
+	if (sor->avdd)
+		regulator_disable(sor->avdd);
 
 	sor->power_is_up = false;
 }
