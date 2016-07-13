@@ -1688,6 +1688,11 @@
 
 			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
 		};
+
+		sor@54540000 {
+			sor_avdd-supply = <&avdd_lvds>;
+		};
+
 		hdmi {
 			status = "disabled";
 
@@ -1969,6 +1974,12 @@
 					regulator-boot-on;
 					ams,enable-tracking;
 					ams,disable-tracking-suspend;
+				};
+
+				avdd_lvds: ldo4 {
+					regulator-name = "AVDD_LVDS_PLL";
+					regulator-min-microvolt = <1800000>;
+					regulator-max-microvolt = <3300000>;
 				};
 
 				vddio_sdmmc3: ldo6 {
