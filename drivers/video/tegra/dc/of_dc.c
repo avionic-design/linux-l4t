@@ -71,6 +71,7 @@
 
 #define DSI_NODE		"/host1x/dsi"
 #define HDMI_NODE		"/host1x/hdmi"
+#define LVDS_NODE		"/host1x/lvds"
 
 static struct regulator *of_hdmi_vddio;
 static struct regulator *of_hdmi_reg;
@@ -1514,6 +1515,7 @@ struct tegra_dc_platform_data
 	struct device_node *np = ndev->dev.of_node;
 	struct device_node *np_dsi = NULL;
 	struct device_node *np_dsi_panel = NULL;
+	struct device_node *np_lvds = NULL;
 	struct device_node *timings_np = NULL;
 	struct device_node *np_target_disp = NULL;
 	struct device_node *sd_np = NULL;
@@ -1609,6 +1611,15 @@ struct tegra_dc_platform_data
 			else
 				np_target_disp = np_dsi_panel;
 		}
+	} else if (pdata->default_out->type == TEGRA_DC_OUT_LVDS) {
+		np_lvds = of_find_node_by_path(LVDS_NODE);
+
+		if (!np_lvds) {
+			pr_err("%s: could not find lvds node\n", __func__);
+			goto fail_parse;
+		} else if (of_device_is_available(np_lvds)) {
+			np_target_disp = tegra_panel_get_dt_node(pdata);
+		}
 	} else if (pdata->default_out->type == TEGRA_DC_OUT_HDMI) {
 		bool hotplug_report = false;
 		struct device_node *np_hdmi =
@@ -1637,11 +1648,11 @@ struct tegra_dc_platform_data
 #endif
 		np_target_disp =
 			of_get_child_by_name(np_hdmi, "hdmi-display");
-		if (!np_target_disp ||
-			!of_device_is_available(np_target_disp)) {
-			pr_err("/hdmi/hdmi-display node is NOT valid\n");
-			goto fail_parse;
-		}
+	}
+
+	if (!np_target_disp || !of_device_is_available(np_target_disp)) {
+		pr_err("display node is missing or disabled\n");
+		goto fail_parse;
 	}
 
 	default_out_np = of_get_child_by_name(np_target_disp,
