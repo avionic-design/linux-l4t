@@ -106,15 +106,22 @@ static void tegra_dc_lvds_resume(struct tegra_dc *dc)
 static long tegra_dc_lvds_setup_clk(struct tegra_dc *dc, struct clk *clk)
 {
 	struct tegra_dc_lvds_data *lvds = tegra_dc_get_outdata(dc);
-	struct clk	*parent_clk;
+	struct clk	*parent_clk =
+		clk_get_sys(NULL, dc->out->parent_clk ? : "pll_p");
 
-	tegra_sor_setup_clk(lvds->sor, clk, true);
+	/* The parent must run at the pixel clock rate because
+	 * the SOR, unlike the DC, doesn't have any divider itself */
+	clk_set_rate(parent_clk, dc->mode.pclk);
 
-	parent_clk = clk_get_parent(clk);
+	if (clk_get_parent(clk) != parent_clk)
+		clk_set_parent(clk, parent_clk);
+
 	if (clk_get_parent(lvds->sor->sor_clk) != parent_clk)
 		clk_set_parent(lvds->sor->sor_clk, parent_clk);
 
-	return tegra_dc_pclk_round_rate(dc, lvds->sor->dc->mode.pclk);
+	tegra_sor_setup_clk(lvds->sor, clk, true);
+
+	return tegra_dc_pclk_round_rate(dc, dc->mode.pclk);
 }
 
 struct tegra_dc_out_ops tegra_dc_lvds_ops = {
