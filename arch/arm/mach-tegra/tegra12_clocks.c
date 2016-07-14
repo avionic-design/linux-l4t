@@ -311,7 +311,7 @@
 /* PLLXC has 4-bit PDIV, but entry 15 is not allowed in h/w,
    and s/w usage is limited to 5 */
 #define PLLXC_PDIV_MAX			14
-#define PLLXC_SW_PDIV_MAX		5
+#define PLLXC_SW_PDIV_MAX		PLLXC_PDIV_MAX
 
 /* PLLX */
 #define PLLX_MISC2_DYNRAMP_STEPB_SHIFT	24
@@ -359,7 +359,7 @@
 /* PLLM has 4-bit PDIV, but entry 15 is not allowed in h/w,
    and s/w usage is limited to 5 */
 #define PLLM_PDIV_MAX			14
-#define PLLM_SW_PDIV_MAX		5
+#define PLLM_SW_PDIV_MAX		PLLM_PDIV_MAX
 
 #define PLLM_MISC_FSM_SW_OVERRIDE	(0x1 << 10)
 #define PLLM_MISC_IDDQ			(0x1 << 5)
@@ -391,7 +391,7 @@
 /* PLLSS has 4-bit PDIV, but entry 15 is not allowed in h/w,
    and s/w usage is limited to 5 */
 #define PLLSS_PDIV_MAX			14
-#define PLLSS_SW_PDIV_MAX		5
+#define PLLSS_SW_PDIV_MAX		PLLSS_PDIV_MAX
 
 #define PLLSS_MISC_LOCK_ENABLE		(0x1 << 30)
 #define PLLSS_MISC_KCP_SHIFT		25
@@ -448,7 +448,7 @@
 /* PLLRE has 4-bit PDIV, but entry 15 is not allowed in h/w,
    and s/w usage is limited to 5 */
 #define PLLRE_PDIV_MAX			14
-#define PLLRE_SW_PDIV_MAX		5
+#define PLLRE_SW_PDIV_MAX		PLLRE_PDIV_MAX
 
 #define PLLRE_MISC_LOCK_ENABLE		(0x1 << 30)
 #define PLLRE_MISC_LOCK_OVERRIDE	(0x1 << 29)
@@ -2831,6 +2831,24 @@ static inline void pll_do_iddq(struct clk *c, u32 offs, u32 iddq_bit, bool set)
 		clk_writel_delay(val, c->reg + offs);
 }
 
+static u32 pll_round_p_to_pdiv(u32 p, u32 *pdiv, u8 *pll_p,
+			unsigned pll_p_count)
+{
+	int i;
+
+	if (!p || p > pll_p_count)
+		return -EINVAL;
+
+	for (i = 0; i < pll_p_count; i++) {
+		if (p <= pll_p[i]) {
+			if (pdiv)
+				*pdiv = i;
+			return pll_p[i];
+		}
+	}
+
+	return -EINVAL;
+}
 
 static u8 pllcx_p[PLLCX_PDIV_MAX + 1] = {
 /* PDIV: 0, 1, 2, 3, 4, 5,  6,  7 */
@@ -3118,12 +3136,7 @@ static u8 pllxc_p[PLLXC_PDIV_MAX + 1] = {
 
 static u32 pllxc_round_p_to_pdiv(u32 p, u32 *pdiv)
 {
-	if (!p || (p > PLLXC_SW_PDIV_MAX + 1))
-		return -EINVAL;
-
-	if (pdiv)
-		*pdiv = p - 1;
-	return p;
+	return pll_round_p_to_pdiv(p, pdiv, pllxc_p, PLLXC_PDIV_MAX);
 }
 
 static void pllxc_get_dyn_steps(struct clk *c, unsigned long input_rate,
@@ -3461,12 +3474,7 @@ static u8 pllm_p[PLLM_PDIV_MAX + 1] = {
 
 static u32 pllm_round_p_to_pdiv(u32 p, u32 *pdiv)
 {
-	if (!p || (p > PLLM_SW_PDIV_MAX + 1))
-		return -EINVAL;
-
-	if (pdiv)
-		*pdiv = p - 1;
-	return p;
+	return pll_round_p_to_pdiv(p, pdiv, pllm_p, PLLM_PDIV_MAX);
 }
 
 static void pllm_set_defaults(struct clk *c, unsigned long input_rate)
@@ -3644,12 +3652,7 @@ static u8 pllss_p[PLLSS_PDIV_MAX + 1] = {
 
 static u32 pllss_round_p_to_pdiv(u32 p, u32 *pdiv)
 {
-	if (!p || (p > PLLSS_SW_PDIV_MAX + 1))
-		return -EINVAL;
-
-	if (pdiv)
-		*pdiv = p - 1;
-	return p;
+	return pll_round_p_to_pdiv(p, pdiv, pllss_p, PLLSS_PDIV_MAX);
 }
 
 static void pllss_set_defaults(struct clk *c, unsigned long input_rate)
@@ -3861,12 +3864,7 @@ static u8 pllre_p[PLLRE_PDIV_MAX + 1] = {
 
 static u32 pllre_round_p_to_pdiv(u32 p, u32 *pdiv)
 {
-	if (!p || (p > PLLRE_SW_PDIV_MAX + 1))
-		return -EINVAL;
-
-	if (pdiv)
-		*pdiv = p - 1;
-	return p;
+	return pll_round_p_to_pdiv(p, pdiv, pllre_p, PLLRE_PDIV_MAX);
 }
 
 static void pllre_set_defaults(struct clk *c, unsigned long input_rate)
