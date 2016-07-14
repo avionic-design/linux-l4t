@@ -1,17 +1,6 @@
 /*
  * linux/drivers/video/backlight/pwm_bl.c
  *
- * Copyright (c) 2013, NVIDIA CORPORATION, All rights reserved.
- *
- * This software is licensed under the terms of the GNU General Public
- * License version 2, as published by the Free Software Foundation, and
- * may be copied, distributed, and modified under those terms.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
  * simple PWM based backlight control, board code has to setup
  * 1) pin configuration so PWM waveforms can output
  * 2) platform_data being correctly configured
@@ -28,7 +17,6 @@
 #include <linux/fb.h>
 #include <linux/backlight.h>
 #include <linux/err.h>
-#include <linux/gpio.h>
 #include <linux/pwm.h>
 #include <linux/pwm_backlight.h>
 #include <linux/slab.h>
@@ -39,7 +27,6 @@ struct pwm_bl_data {
 	unsigned int		period;
 	unsigned int		lth_brightness;
 	unsigned int		*levels;
-	unsigned int		pwm_gpio;
 	int			(*notify)(struct device *,
 					  int brightness);
 	void			(*notify_after)(struct device *,
@@ -48,9 +35,10 @@ struct pwm_bl_data {
 	void			(*exit)(struct device *);
 };
 
-static int pwm_backlight_set(struct backlight_device *bl, int brightness)
+static int pwm_backlight_update_status(struct backlight_device *bl)
 {
 	struct pwm_bl_data *pb = bl_get_data(bl);
+	int brightness = bl->props.brightness;
 	int max = bl->props.max_brightness;
 
 	if (bl->props.power != FB_BLANK_UNBLANK ||
@@ -84,12 +72,6 @@ static int pwm_backlight_set(struct backlight_device *bl, int brightness)
 		pb->notify_after(pb->dev, brightness);
 
 	return 0;
-}
-
-static int pwm_backlight_update_status(struct backlight_device *bl)
-{
-	int brightness = bl->props.brightness;
-	return pwm_backlight_set(bl, brightness);
 }
 
 static int pwm_backlight_get_brightness(struct backlight_device *bl)
@@ -151,12 +133,6 @@ static int pwm_backlight_parse_dt(struct device *dev,
 					   &value);
 		if (ret < 0)
 			return ret;
-
-		if (value >= data->max_brightness) {
-			dev_warn(dev, "invalid default brightness level: %u, using %u\n",
-				 value, data->max_brightness - 1);
-			value = data->max_brightness - 1;
-		}
 
 		data->dft_brightness = value;
 		data->max_brightness--;
@@ -229,7 +205,6 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 	pb->check_fb = data->check_fb;
 	pb->exit = data->exit;
 	pb->dev = &pdev->dev;
-	pb->pwm_gpio = data->pwm_gpio;
 
 	pb->pwm = devm_pwm_get(&pdev->dev, NULL);
 	if (IS_ERR(pb->pwm)) {
@@ -259,13 +234,6 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 	memset(&props, 0, sizeof(struct backlight_properties));
 	props.type = BACKLIGHT_RAW;
 	props.max_brightness = data->max_brightness;
-
-	if (gpio_is_valid(pb->pwm_gpio)) {
-		ret = gpio_request(pb->pwm_gpio, "disp_bl");
-		if (ret)
-			dev_err(&pdev->dev, "backlight gpio request failed\n");
-	}
-
 	bl = backlight_device_register(dev_name(&pdev->dev), &pdev->dev, pb,
 				       &pwm_backlight_ops, &props);
 	if (IS_ERR(bl)) {
@@ -283,9 +251,6 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 
 	bl->props.brightness = data->dft_brightness;
 	backlight_update_status(bl);
-
-	if (gpio_is_valid(pb->pwm_gpio))
-		gpio_free(pb->pwm_gpio);
 
 	platform_set_drvdata(pdev, bl);
 	return 0;
@@ -313,8 +278,15 @@ static int pwm_backlight_remove(struct platform_device *pdev)
 static int pwm_backlight_suspend(struct device *dev)
 {
 	struct backlight_device *bl = dev_get_drvdata(dev);
+	struct pwm_bl_data *pb = bl_get_data(bl);
 
-	return pwm_backlight_set(bl, 0);
+	if (pb->notify)
+		pb->notify(pb->dev, 0);
+	pwm_config(pb->pwm, 0, pb->period);
+	pwm_disable(pb->pwm);
+	if (pb->notify_after)
+		pb->notify_after(pb->dev, 0);
+	return 0;
 }
 
 static int pwm_backlight_resume(struct device *dev)
@@ -324,19 +296,16 @@ static int pwm_backlight_resume(struct device *dev)
 	backlight_update_status(bl);
 	return 0;
 }
+#endif
 
 static SIMPLE_DEV_PM_OPS(pwm_backlight_pm_ops, pwm_backlight_suspend,
 			 pwm_backlight_resume);
-
-#endif
 
 static struct platform_driver pwm_backlight_driver = {
 	.driver		= {
 		.name		= "pwm-backlight",
 		.owner		= THIS_MODULE,
-#ifdef CONFIG_PM_SLEEP
 		.pm		= &pwm_backlight_pm_ops,
-#endif
 		.of_match_table	= of_match_ptr(pwm_backlight_of_match),
 	},
 	.probe		= pwm_backlight_probe,
