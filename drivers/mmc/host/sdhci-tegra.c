@@ -1290,6 +1290,9 @@ static unsigned long get_nearest_clock_freq(unsigned long pll_rate,
 	int index = 1;
 
 	div = pll_rate / desired_rate;
+	if (div == 0)
+		return 0;
+
 	if (div > MAX_DIVISOR_VALUE) {
 		div = MAX_DIVISOR_VALUE;
 		result = pll_rate / div;
