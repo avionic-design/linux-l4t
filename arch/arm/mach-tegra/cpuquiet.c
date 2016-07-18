@@ -40,6 +40,7 @@
 #include "clock.h"
 
 #define INITIAL_STATE		TEGRA_CPQ_ENABLED
+#define INITIAL_DELAY_MS	10000
 #define UP_DELAY_MS		70
 #define DOWN_DELAY_MS		2000
 #define HOTPLUG_DELAY_MS	100
@@ -49,6 +50,7 @@ static DEFINE_MUTEX(tegra_cpq_lock_stats);
 
 static struct workqueue_struct *cpuquiet_wq;
 static struct work_struct cpuquiet_work;
+static struct delayed_work cpuquiet_init_work;
 #ifdef CONFIG_TEGRA_CLUSTER_CONTROL
 static struct timer_list updown_timer;
 #endif
@@ -894,8 +896,11 @@ int __cpuinit tegra_auto_hotplug_init(struct mutex *cpulock)
 		destroy_workqueue(cpuquiet_wq);
 	}
 
-	if (cpq_target_state != cpq_state)
-		queue_work(cpuquiet_wq, &cpuquiet_work);
+	if (cpq_target_state != cpq_state) {
+		INIT_DELAYED_WORK(&cpuquiet_init_work, tegra_cpuquiet_work_func);
+		queue_delayed_work(cpuquiet_wq, &cpuquiet_init_work,
+				msecs_to_jiffies(INITIAL_DELAY_MS));
+	}
 
 	return err;
 }
