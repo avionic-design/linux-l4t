@@ -24,6 +24,9 @@ struct tegra_dc_lvds_data {
 	struct tegra_dc			*dc;
 	struct tegra_dc_sor_data	*sor;
 
+	struct i2c_client		*ddc_client;
+	struct tegra_edid		*edid;
+
 	bool   suspended;
 };
 
