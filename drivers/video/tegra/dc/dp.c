@@ -2137,6 +2137,7 @@ static void tegra_dc_dp_destroy(struct tegra_dc *dc)
 	clk_put(dp->parent_clk);
 	iounmap(dp->aux_base);
 	release_resource(dp->aux_base_res);
+	free_irq(dp->irq, dp);
 
 	kfree(dp);
 }
