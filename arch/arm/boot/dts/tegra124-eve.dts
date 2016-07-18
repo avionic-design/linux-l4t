@@ -69,6 +69,15 @@
 			usb_vbus_en1_pn5 {
 				nvidia,open-drain = <TEGRA_PIN_DISABLE>;
 			};
+			/* uC ISP enable */
+			dap1_dout_pn2 {
+				nvidia,function = "safe";
+			};
+			/* uC reset */
+			dap_mclk1_req_pee2 {
+				nvidia,function = "safe";
+			};
+
 		};
 	};
 
@@ -418,6 +427,8 @@
 		gpio-init-names = "default";
 		gpio-init-0 = <&gpio_default>;
 		gpio_default: default {
+			gpio-output-low = <TEGRA_GPIO(N, 2)>,
+					  <TEGRA_GPIO(EE, 2)>;
 		};
 	};
 
