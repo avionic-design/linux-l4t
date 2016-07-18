@@ -70,6 +70,7 @@
 #endif
 
 #define DSI_NODE		"/host1x/dsi"
+#define EDP_NODE		"/host1x/edp"
 #define HDMI_NODE		"/host1x/hdmi"
 #define LVDS_NODE		"/host1x/lvds"
 
@@ -1306,6 +1307,98 @@ struct device_node *parse_dsi_settings(struct platform_device *ndev,
 	return np_dsi_panel;
 }
 
+int parse_edp_lt_settings(struct platform_device *ndev,
+	struct device_node *np_edp_panel, unsigned idx,
+	struct tegra_dc_dp_lt_settings *lts)
+{
+	int err;
+	int l;
+
+	for (l = 0; l < 4; l++) {
+		err = of_property_read_u32_index(
+				np_edp_panel, "nvidia,edp-drive-current",
+				idx * 4 + l, &lts->drive_current[l]);
+		if (err) {
+			dev_err(&ndev->dev, "Failed to read "
+				"nvidia,edp-drive-current: %d\n", err);
+			return err;
+		}
+
+		err = of_property_read_u32_index(
+				np_edp_panel, "nvidia,edp-lane-preemphasis",
+				idx * 4 + l, &lts->lane_preemphasis[l]);
+		if (err) {
+			dev_err(&ndev->dev, "Failed to read "
+				"nvidia,edp-lane-preemphasis: %d\n", err);
+			return err;
+		}
+
+		err = of_property_read_u32_index(
+				np_edp_panel, "nvidia,edp-post-cursor",
+				idx * 4 + l, &lts->post_cursor[l]);
+		if (err) {
+			dev_err(&ndev->dev, "Failed to read "
+				"nvidia,edp-post-cursor: %d\n", err);
+			return err;
+		}
+	}
+
+	err = of_property_read_u32_index(np_edp_panel, "nvidia,edp-tx-pu",
+					idx, &lts->tx_pu);
+	if (err) {
+		dev_err(&ndev->dev,
+			"Failed to read nvidia,edp-tx-pu: %d\n", err);
+		return err;
+	}
+
+	err = of_property_read_u32_index(np_edp_panel, "nvidia,edp-load-adj",
+					idx, &lts->load_adj);
+	if (err) {
+		dev_err(&ndev->dev,
+			"Failed to read nvidia,edp-load-adj: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
+struct device_node *parse_edp_settings(struct platform_device *ndev,
+	struct device_node *np_edp,
+	struct tegra_dc_platform_data *pdata)
+{
+	struct tegra_dp_out *edp = pdata->default_out->dp_out;
+	struct device_node *np_edp_panel = NULL;
+	int i;
+
+	np_edp_panel = tegra_panel_get_dt_node(pdata);
+
+	if (!np_edp_panel) {
+		dev_err(&ndev->dev, "There is no valid panel node\n");
+		return NULL;
+	}
+
+	edp->tx_pu_disable = of_property_read_bool(
+		np_edp_panel, "nvidia,edp-tx-pu-disable");
+	if (of_property_read_u32(np_edp_panel, "nvidia,edp-n-lt-settings",
+					&edp->n_lt_settings)) {
+		dev_err(&ndev->dev, "edp: n_lt_settings unspecified\n");
+		return NULL;
+	}
+
+	edp->lt_settings = devm_kzalloc(&ndev->dev,
+		sizeof(*edp->lt_settings) * edp->n_lt_settings, GFP_KERNEL);
+	if (!edp->lt_settings)
+		return NULL;
+
+	for (i = 0; i < edp->n_lt_settings; i++) {
+		if (parse_edp_lt_settings(ndev, np_edp_panel,
+					i, &edp->lt_settings[i]))
+			return NULL;
+	}
+
+	return np_edp_panel;
+}
+
 static int dc_hdmi_out_init(struct device *dev)
 {
 	int ret;
@@ -1592,6 +1685,29 @@ struct tegra_dc_platform_data
 			goto fail_parse;
 		} else if (of_device_is_available(np_out)) {
 			np_target_disp = tegra_panel_get_dt_node(pdata);
+		}
+	} else if (pdata->default_out->type == TEGRA_DC_OUT_DP) {
+		np_out = of_find_node_by_path(EDP_NODE);
+
+		if (!np_out) {
+			dev_err(&ndev->dev, "%s: could not find edp node\n",
+				__func__);
+			goto fail_parse;
+		} else if (of_device_is_available(np_out)) {
+			pdata->default_out->dp_out = devm_kzalloc(&ndev->dev,
+				sizeof(struct tegra_dp_out), GFP_KERNEL);
+			if (!pdata->default_out->dp_out) {
+				dev_err(&ndev->dev, "not enough memory\n");
+				goto fail_parse;
+			}
+
+			np_target_disp = parse_edp_settings(ndev, np_out, pdata);
+			if (!np_target_disp) {
+				dev_err(&ndev->dev,
+					"%s: Failed to parse edp settings\n",
+					__func__);
+				goto fail_parse;
+			}
 		}
 	} else if (pdata->default_out->type == TEGRA_DC_OUT_HDMI) {
 		bool hotplug_report = false;
