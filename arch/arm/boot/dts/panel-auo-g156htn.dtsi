@@ -1,0 +1,75 @@
+/*
+ * arch/arm/boot/dts/panel-auo-g156htn.dtsi
+ *
+ * Copyright (c) 2016, Avionic Design GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+#include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/display/tegra-panel.h>
+
+/ {
+	host1x {
+		edp {
+			panel-auo-g156htn {
+				status = "okay";
+				compatible = "auo,g156htn", "none,panel-generic";
+
+				nvidia,edp-n-lt-settings = <3>;
+				nvidia,edp-drive-current =
+					<0 0 0 0>,
+					<0 0 0 0>,
+					<0 0 0 0>;
+				nvidia,edp-lane-preemphasis =
+					<0 0 0 0>,
+					<0 0 0 0>,
+					<1 1 1 1>;
+				nvidia,edp-post-cursor =
+					<0 0 0 0>,
+					<0 0 0 0>,
+					<0 0 0 0>;
+				nvidia,edp-tx-pu = <0 0 0>;
+				nvidia,edp-load-adj = <0x3 0x4 0x6>;
+				nvidia,edp-pu-disable;
+
+				disp-default-out {
+					nvidia,out-type = <TEGRA_DC_OUT_DP>;
+					nvidia,out-width = <344>;
+					nvidia,out-height = <194>;
+					nvidia,out-flags = <TEGRA_DC_OUT_CONTINUOUS_MODE>;
+					nvidia,out-parent-clk = "pll_d2";
+					nvidia,out-xres = <1920>;
+					nvidia,out-yres = <1080>;
+					nvidia,out-depth = <24>;
+				};
+				display-timings {
+					1920x1080-32 {
+						clock-frequency = <148350000>;
+						hactive = <1920>;
+						vactive = <1080>;
+						hfront-porch = <25>;
+						hback-porch = <45>;
+						hsync-len = <20>;
+						vfront-porch = <23>;
+						vback-porch = <25>;
+						vsync-len = <2>;
+						nvidia,h-ref-to-sync = <0>;
+						nvidia,v-ref-to-sync = <1>;
+					};
+				};
+			};
+		};
+	};
+};
