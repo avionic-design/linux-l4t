@@ -297,11 +297,6 @@ static int parse_disp_default_out(struct platform_device *ndev,
 		struct tegra_fb_data *fb)
 {
 	u32 temp;
-	int hotplug_gpio = 0;
-	enum of_gpio_flags flags;
-	struct device_node *ddc;
-	struct device_node *np_hdmi =
-		of_find_node_by_path(HDMI_NODE);
 	struct property *prop;
 	const __be32 *p;
 	u32 u;
@@ -317,30 +312,6 @@ static int parse_disp_default_out(struct platform_device *ndev,
 	if (!of_property_read_u32(np, "nvidia,out-height", &temp)) {
 		default_out->height = (unsigned) temp;
 		OF_DC_LOG("out_height %d\n", default_out->height);
-	}
-	if (np_hdmi && of_device_is_available(np_hdmi) &&
-		(default_out->type == TEGRA_DC_OUT_HDMI)) {
-		int id;
-		ddc = of_parse_phandle(np_hdmi, "nvidia,ddc-i2c-bus", 0);
-
-		if (!ddc) {
-			pr_err("No ddc device node\n");
-			return -EINVAL;
-		} else
-			id = of_alias_get_id(ddc, "i2c");
-
-		if (id >= 0) {
-			default_out->dcc_bus = id;
-			OF_DC_LOG("out_dcc bus %d\n", id);
-		} else {
-			pr_err("Invalid i2c id\n");
-			return -EINVAL;
-		}
-
-		hotplug_gpio = of_get_named_gpio_flags(np_hdmi,
-				"nvidia,hpd-gpio", 0, &flags);
-		if (hotplug_gpio != 0)
-			default_out->hotplug_gpio = hotplug_gpio;
 	}
 
 	if (!of_property_read_u32(np, "nvidia,out-max-pixclk", &temp)) {
@@ -1513,9 +1484,8 @@ struct tegra_dc_platform_data
 {
 	struct tegra_dc_platform_data *pdata;
 	struct device_node *np = ndev->dev.of_node;
-	struct device_node *np_dsi = NULL;
+	struct device_node *np_out = NULL;
 	struct device_node *np_dsi_panel = NULL;
-	struct device_node *np_lvds = NULL;
 	struct device_node *timings_np = NULL;
 	struct device_node *np_target_disp = NULL;
 	struct device_node *sd_np = NULL;
@@ -1524,6 +1494,9 @@ struct tegra_dc_platform_data
 #ifdef CONFIG_TEGRA_DC_CMU
 	struct device_node *cmu_np = NULL;
 #endif
+	struct device_node *np_ddc;
+	enum of_gpio_flags flags;
+	bool ddc_needed = false;
 	int err;
 	u32 temp;
 
@@ -1592,19 +1565,19 @@ struct tegra_dc_platform_data
 	}
 
 	if (pdata->default_out->type == TEGRA_DC_OUT_DSI) {
-		np_dsi = of_find_node_by_path(DSI_NODE);
+		np_out = of_find_node_by_path(DSI_NODE);
 
-		if (!np_dsi) {
+		if (!np_out) {
 			pr_err("%s: could not find dsi node\n", __func__);
 			goto fail_parse;
-		} else if (of_device_is_available(np_dsi)) {
+		} else if (of_device_is_available(np_out)) {
 			pdata->default_out->dsi = devm_kzalloc(&ndev->dev,
 				sizeof(struct tegra_dsi_out), GFP_KERNEL);
 			if (!pdata->default_out->dsi) {
 				dev_err(&ndev->dev, "not enough memory\n");
 				goto fail_parse;
 			}
-			np_dsi_panel = parse_dsi_settings(ndev, np_dsi,
+			np_dsi_panel = parse_dsi_settings(ndev, np_out,
 				pdata);
 			if (!np_dsi_panel)
 				goto fail_parse;
@@ -1612,21 +1585,21 @@ struct tegra_dc_platform_data
 				np_target_disp = np_dsi_panel;
 		}
 	} else if (pdata->default_out->type == TEGRA_DC_OUT_LVDS) {
-		np_lvds = of_find_node_by_path(LVDS_NODE);
+		np_out = of_find_node_by_path(LVDS_NODE);
 
-		if (!np_lvds) {
+		if (!np_out) {
 			pr_err("%s: could not find lvds node\n", __func__);
 			goto fail_parse;
-		} else if (of_device_is_available(np_lvds)) {
+		} else if (of_device_is_available(np_out)) {
 			np_target_disp = tegra_panel_get_dt_node(pdata);
 		}
 	} else if (pdata->default_out->type == TEGRA_DC_OUT_HDMI) {
 		bool hotplug_report = false;
-		struct device_node *np_hdmi =
-			of_find_node_by_path(HDMI_NODE);
 
-		if (np_hdmi && of_device_is_available(np_hdmi)) {
-				if (!of_property_read_u32(np_hdmi,
+		ddc_needed = true;
+		np_out = of_find_node_by_path(HDMI_NODE);
+		if (np_out && of_device_is_available(np_out)) {
+				if (!of_property_read_u32(np_out,
 					"nvidia,hotplug-report", &temp)) {
 					hotplug_report = (bool)temp;
 				}
@@ -1647,7 +1620,7 @@ struct tegra_dc_platform_data
 				dc_hdmi_hotplug_report;
 #endif
 		np_target_disp =
-			of_get_child_by_name(np_hdmi, "hdmi-display");
+			of_get_child_by_name(np_out, "hdmi-display");
 	}
 
 	if (!np_target_disp || !of_device_is_available(np_target_disp)) {
@@ -1668,7 +1641,35 @@ struct tegra_dc_platform_data
 			goto fail_parse;
 	}
 
+	np_ddc = of_parse_phandle(np_out, "nvidia,ddc-i2c-bus", 0);
+	if (!np_ddc) {
+		if (ddc_needed) {
+			dev_err(&ndev->dev, "No ddc device node\n");
+			err = -ENODEV;
+			goto fail_parse;
+		} else {
+			dev_warn(&ndev->dev, "No ddc device node in %s\n",
+				np_out->full_name);
+		}
+	} else {
+		int id = of_alias_get_id(np_ddc, "i2c");
+
+		if (id >= 0) {
+			pdata->default_out->dcc_bus = id;
+			OF_DC_LOG("out_dcc bus %d\n", id);
+		} else {
+			dev_err(&ndev->dev, "Invalid i2c id\n");
+			err = -EINVAL;
+			goto fail_parse;
+		}
+	}
+
 	if (pdata->default_out->type == TEGRA_DC_OUT_HDMI) {
+		int hotplug_gpio = of_get_named_gpio_flags(
+			np_out, "nvidia,hpd-gpio", 0, &flags);
+		if (gpio_is_valid(hotplug_gpio))
+			pdata->default_out->hotplug_gpio = hotplug_gpio;
+
 		err = parse_tmds_config(ndev, np_target_disp,
 				pdata->default_out);
 			if (err)
