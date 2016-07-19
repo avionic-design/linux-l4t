@@ -712,16 +712,8 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 			       GFP_KERNEL);
 	if (!machine) {
 		dev_err(&pdev->dev, "Can't allocate tegra_wm8903 struct\n");
-		ret = -ENOMEM;
-		goto err;
+		return -ENOMEM;
 	}
-
-#ifdef CONFIG_SWITCH
-	/* Addd h2w swith class support */
-	ret = tegra_asoc_switch_register(&tegra_wm8903_headset_switch);
-	if (ret < 0)
-		goto err_fini_utils;
-#endif
 
 	card->dev = &pdev->dev;
 	platform_set_drvdata(pdev, card);
@@ -733,8 +725,7 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 		if (!pdata) {
 			dev_err(&pdev->dev,
 				"no memory for tegra_asoc_platform_data\n");
-			ret = -ENOMEM;
-			goto err;
+			return -ENOMEM;
 		}
 
 		pdata->gpio_spkr_en = of_get_named_gpio(np,
@@ -774,12 +765,12 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 
 		ret = snd_soc_of_parse_card_name(card, "nvidia,model");
 		if (ret)
-			goto err;
+			return ret;
 
 		ret = snd_soc_of_parse_audio_routing(card,
 						     "nvidia,audio-routing");
 		if (ret)
-			goto err;
+			return ret;
 
 		tegra_wm8903_dai[0].codec_name = NULL;
 		tegra_wm8903_dai[0].codec_of_node = of_parse_phandle(np,
@@ -787,8 +778,7 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 		if (!tegra_wm8903_dai[0].codec_of_node) {
 			dev_err(&pdev->dev,
 				"Property 'nvidia,audio-codec' missing or invalid\n");
-			ret = -EINVAL;
-			goto err;
+			return -EINVAL;
 		}
 
 		tegra_wm8903_dai[0].cpu_dai_name = NULL;
@@ -797,8 +787,7 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 		if (!tegra_wm8903_dai[0].cpu_of_node) {
 			dev_err(&pdev->dev,
 				"Property 'nvidia,i2s-controller' missing or invalid\n");
-			ret = -EINVAL;
-			goto err;
+			return -EINVAL;
 		}
 
 		tegra_wm8903_dai[0].platform_name = NULL;
@@ -865,13 +854,13 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 
 	ret = tegra_asoc_utils_init(&machine->util_data, &pdev->dev, card);
 	if (ret)
-		goto err;
+		return ret;
 
 	ret = snd_soc_register_card(card);
 	if (ret) {
 		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n",
 			ret);
-		goto err_unregister_switch;
+		goto err_unregister_utils;
 	}
 
 	if (!card->instantiated) {
@@ -891,17 +880,19 @@ static int tegra_wm8903_driver_probe(struct platform_device *pdev)
 	}
 #endif
 
+#ifdef CONFIG_SWITCH
+	/* Addd h2w swith class support */
+	ret = tegra_asoc_switch_register(&tegra_wm8903_headset_switch);
+	if (ret < 0)
+		goto err_unregister_card;
+#endif
+
 	return 0;
 
 err_unregister_card:
 	snd_soc_unregister_card(card);
-err_unregister_switch:
-#ifdef CONFIG_SWITCH
-	tegra_asoc_switch_unregister(&tegra_wm8903_headset_switch);
-err_fini_utils:
-#endif
+err_unregister_utils:
 	tegra_asoc_utils_fini(&machine->util_data);
-err:
 	return ret;
 }
 
@@ -918,12 +909,11 @@ static int tegra_wm8903_driver_remove(struct platform_device *pdev)
 	if (machine->dmic_reg)
 		regulator_put(machine->dmic_reg);
 
-	snd_soc_unregister_card(card);
-
-	tegra_asoc_utils_fini(&machine->util_data);
 #ifdef CONFIG_SWITCH
 	tegra_asoc_switch_unregister(&tegra_wm8903_headset_switch);
 #endif
+	snd_soc_unregister_card(card);
+	tegra_asoc_utils_fini(&machine->util_data);
 
 	return 0;
 }
