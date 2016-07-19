@@ -145,9 +145,9 @@
 	i2c@7000c400 {
 		status = "okay";
 
-		eeprom@50 {
+		eeprom@51 {
 			compatible = "microchip,24c02";
-			reg = <0x50>;
+			reg = <0x51>;
 			pagesize = <16>;
 		};
 	};
