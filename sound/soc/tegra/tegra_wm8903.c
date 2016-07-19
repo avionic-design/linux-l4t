@@ -900,9 +900,11 @@ static int tegra_wm8903_driver_remove(struct platform_device *pdev)
 {
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
 	struct tegra_wm8903 *machine = snd_soc_card_get_drvdata(card);
+	struct tegra_asoc_platform_data *pdata = machine->pdata;
 
-	snd_soc_jack_free_gpios(&tegra_wm8903_hp_jack, 1,
-				&tegra_wm8903_hp_jack_gpio);
+	if (gpio_is_valid(pdata->gpio_hp_det))
+		snd_soc_jack_free_gpios(&tegra_wm8903_hp_jack, 1,
+					&tegra_wm8903_hp_jack_gpio);
 
 #ifdef CONFIG_SWITCH
 	tegra_asoc_switch_unregister(&tegra_wm8903_headset_switch);
