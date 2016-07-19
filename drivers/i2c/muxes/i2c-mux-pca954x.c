@@ -360,8 +360,8 @@ static int pca954x_probe(struct i2c_client *client,
 				(deselect_on_exit)
 					? pca954x_deselect_mux : NULL);
 
-		if (data->virt_adaps[num] == NULL) {
-			ret = -ENODEV;
+		if (IS_ERR(data->virt_adaps[num])) {
+			ret = PTR_ERR(data->virt_adaps[num]);
 			dev_err(&client->dev,
 				"failed to register multiplexed adapter"
 				" %d as bus %d\n", num, force);
