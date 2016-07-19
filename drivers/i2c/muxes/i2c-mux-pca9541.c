@@ -358,8 +358,9 @@ static int pca9541_probe(struct i2c_client *client,
 					     pca9541_select_chan,
 					     pca9541_release_chan);
 
-	if (data->mux_adap == NULL) {
+	if (IS_ERR(data->mux_adap)) {
 		dev_err(&client->dev, "failed to register master selector\n");
+		ret = PTR_ERR(data->mux_adap);
 		goto exit_free;
 	}
 

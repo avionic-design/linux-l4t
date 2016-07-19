@@ -225,8 +225,8 @@ static int i2c_mux_gpio_probe(struct platform_device *pdev)
 		mux->adap[i] = i2c_add_mux_adapter(parent, &pdev->dev, mux, nr,
 						   mux->data.values[i], class,
 						   i2c_mux_gpio_select, deselect);
-		if (!mux->adap[i]) {
-			ret = -ENODEV;
+		if (IS_ERR(mux->adap[i])) {
+			ret = PTR_ERR(mux->adap[i]);
 			dev_err(&pdev->dev, "Failed to add adapter %d\n", i);
 			goto add_adapter_failed;
 		}
