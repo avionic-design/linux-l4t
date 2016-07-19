@@ -68,9 +68,6 @@
 #define IMX290_INCK_RATE		37125000
 #define IMX290_PIXEL_PERIOD_PS		6734
 
-#define IMX290_ID_LQR			0
-#define IMX290_ID_LLR			1
-
 static const struct regmap_range imx290_regmap_rw_ranges[] = {
 	regmap_reg_range(0x3000, 0x3022),
 	regmap_reg_range(0x303a, 0x3043),
@@ -612,6 +609,7 @@ static int imx290_set_patterngen(struct imx290_priv *priv, int mode)
 static int imx290_set_exposure(struct imx290_priv *priv,
 			int exposure_100us)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	int hmax, h_period_100ns, f_period_100ns, i_period_100ns;
 	int shs1, vmax, ret;
 
@@ -638,6 +636,11 @@ static int imx290_set_exposure(struct imx290_priv *priv,
 	if (shs1 > priv->mode->vmax - 2)
 		shs1 = priv->mode->vmax - 2;
 
+	dev_dbg(&client->dev,
+		"set exposure: exp=%d, fps=%d, shs1=%d, vmax=%d\n",
+		exposure_100us, priv->rate->framerate,
+		shs1, vmax);
+
 	ret = imx290_write_regbits(priv->regmap, IMX290_REG_VMAX,
 				vmax, IMX290_REGLEN_VMAX);
 	if (ret)
@@ -655,7 +658,7 @@ static int imx290_reconfigure(struct imx290_priv *priv,
 {
 	const struct imx290_mode_rate *old_rate = priv->rate;
 	const struct imx290_mode *old_mode = priv->mode;
-	const struct imx290_csi_timing* csi_timing;
+	const struct imx290_csi_timing *csi_timing;
 	int ret;
 
 	csi_timing = csi_timing_for_rate(rate, priv);
@@ -784,6 +787,7 @@ static int imx290_s_fmt(struct v4l2_subdev *sd,
 			struct v4l2_mbus_framefmt *mf)
 {
 	struct imx290_priv *priv = to_imx290(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	const struct imx290_mode_rate *rate;
 	const struct imx290_mode *mode;
 	unsigned old_framerate;
@@ -806,6 +810,10 @@ static int imx290_s_fmt(struct v4l2_subdev *sd,
 	ret = imx290_reconfigure(priv, mode, rate);
 	if (!ret)
 		priv->mf = *mf;
+
+	dev_dbg(&client->dev,
+		"set fmt: width=%d, height=%d\n",
+		mf->width, mf->height);
 
 	mutex_unlock(&priv->lock);
 
@@ -1339,6 +1347,8 @@ static int imx290_probe(struct i2c_client *client,
 		goto free_ctrls;
 	}
 
+	dev_dbg(&client->dev, "added imx290, identity=%d\n", priv->ident);
+
 	return 0;
 
 free_ctrls:
@@ -1362,16 +1372,22 @@ static int imx290_remove(struct i2c_client *client)
 }
 
 static const struct i2c_device_id imx290_id[] = {
-	{ "imx290lqr", IMX290_ID_LQR },
-	{ "imx290llr", IMX290_ID_LLR },
+	{ "imx290lqr", V4L2_IDENT_IMX290LQR },
+	{ "imx290llr", V4L2_IDENT_IMX290LLR },
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, imx290_id);
 
 #ifdef CONFIG_OF
 static const struct of_device_id imx290_of_match[] = {
-	{ .compatible = "sony,imx290lqr", .data = (void *)IMX290_ID_LQR },
-	{ .compatible = "sony,imx290llr", .data = (void *)IMX290_ID_LLR },
+	{
+		.compatible = "sony,imx290lqr",
+		.data = (void *)V4L2_IDENT_IMX290LQR
+	},
+	{
+		.compatible = "sony,imx290llr",
+		.data = (void *)V4L2_IDENT_IMX290LLR
+	},
 	{ },
 };
 MODULE_DEVICE_TABLE(of, imx290_of_match);

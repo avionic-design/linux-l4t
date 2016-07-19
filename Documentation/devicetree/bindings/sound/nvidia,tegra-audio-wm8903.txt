@@ -47,6 +47,8 @@ Optional properties:
 - nvidia,hp-det-gpios : The GPIO that detect headphones are plugged in
 - nvidia,int-mic-en-gpios : The GPIO that enables the internal microphone
 - nvidia,ext-mic-en-gpios : The GPIO that enables the external microphone
+- spkr-supply : Regulator for speaker/amplifier
+- dmic-supply: Regulator for dmic
 
 Example:
 

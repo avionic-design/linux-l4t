@@ -28,6 +28,14 @@ Optional properties:
     performed. If any entry has the value 0xffffffff, that GPIO's
     configuration will not be modified.
 
+  - dcvdd-supply: DCVDD regulator supply
+
+  - dbvdd-supply: DBVDD regulator supply
+
+  - avdd-supply: AVDD regulator supply
+
+  - cpvdd-supply: CPVDD regulator supply
+
 Example:
 
 codec: wm8903@1a {

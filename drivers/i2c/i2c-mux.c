@@ -115,7 +115,7 @@ struct i2c_adapter *i2c_add_mux_adapter(struct i2c_adapter *parent,
 
 	priv = kzalloc(sizeof(struct i2c_mux_priv), GFP_KERNEL);
 	if (!priv)
-		return NULL;
+		return ERR_PTR(-ENOMEM);
 
 	/* Set up private adapter data */
 	priv->parent = parent;
@@ -185,7 +185,7 @@ struct i2c_adapter *i2c_add_mux_adapter(struct i2c_adapter *parent,
 			"failed to add mux-adapter (error=%d)\n",
 			ret);
 		kfree(priv);
-		return NULL;
+		return ERR_PTR(ret);
 	}
 
 	dev_info(&parent->dev, "Added multiplexed i2c bus %d\n",
