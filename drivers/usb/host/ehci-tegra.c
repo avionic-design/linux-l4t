@@ -87,7 +87,7 @@ static struct usb_phy *get_usb_phy(struct tegra_usb_phy *x)
 
 static int tegra_ehci_port_speed(struct ehci_hcd *ehci)
 {
-	u32 hostpc = ehci_readl(ehci, &ehci->regs->hostpc);
+	u32 hostpc = ehci_readl(ehci, &ehci->regs->hostpc[0]);
 	enum usb_device_speed port_speed;
 
 	switch ((hostpc >> (ehci->has_hostpc ? 25 : 26)) & 3) {
