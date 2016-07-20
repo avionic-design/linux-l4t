@@ -2295,6 +2295,14 @@
 			polling-delay = <1000>;
 
 			thermal-sensors = <&com_temperature_sensor 0>;
+
+			trips {
+				com-crit {
+					temperature = <120000>;
+					hysteresis = <1000>;
+					type = "critical";
+				};
+			};
 		};
 
 		cpu_thermal: cpu-thermal {
