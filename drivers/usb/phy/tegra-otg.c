@@ -681,6 +681,12 @@ void tegra_otg_set_id_detection_type(struct tegra_otg *tegra)
 #ifdef CONFIG_OF
 #include "../tegra_dt.c"
 
+static void tegra_usb_clear_pdata(void *data)
+{
+	struct platform_device *pdev = data;
+	pdev->dev.platform_data = NULL;
+}
+
 static int tegra_otg_parse_dt(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;

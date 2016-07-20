@@ -153,12 +153,6 @@ static int tegra_usb_parse_utmi_dt(struct platform_device *pdev,
 	return 0;
 }
 
-static void tegra_usb_clear_pdata(void *data)
-{
-	struct platform_device *pdev = data;
-	pdev->dev.platform_data = NULL;
-}
-
 static int tegra_usb_parse_dt(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
@@ -172,7 +166,7 @@ static int tegra_usb_parse_dt(struct platform_device *pdev)
 	if (!np)
 		return -EINVAL;
 
-	pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+	pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
 	if (!pdata)
 		return -ENOMEM;
 
@@ -188,14 +182,14 @@ static int tegra_usb_parse_dt(struct platform_device *pdev)
 	err = of_property_read_u32(np, "nvidia,phy-interface", &val);
 	if (err) {
 		dev_err(&pdev->dev, "Failed to get phy-interface\n");
-		return err;
+		goto free_pdata;
 	}
 	pdata->phy_intf = val;
 
 	err = of_property_read_u32(np, "nvidia,mode", &val);
 	if (err) {
 		dev_err(&pdev->dev, "Failed to get mode\n");
-		return err;
+		goto free_pdata;
 	}
 	pdata->op_mode = val;
 
@@ -226,12 +220,13 @@ static int tegra_usb_parse_dt(struct platform_device *pdev)
 	default:
 		dev_err(&pdev->dev, "Invalid device mode: %d\n",
 			pdata->op_mode);
-		return -EINVAL;
+		err = -EINVAL;
+		goto free_pdata;
 	}
 
 	if (err) {
 		dev_err(&pdev->dev, "Failed to get mode config\n");
-		return err;
+		goto free_pdata;
 	}
 
 	switch (pdata->phy_intf) {
@@ -241,19 +236,20 @@ static int tegra_usb_parse_dt(struct platform_device *pdev)
 	default:
 		dev_err(&pdev->dev, "Unsupported PHY type: %d\n",
 			pdata->phy_intf);
-		return -EINVAL;
+		err = -EINVAL;
+		goto free_pdata;
 	}
 
 	if (err) {
 		dev_err(&pdev->dev, "Failed to get phy config\n");
-		return err;
+		goto free_pdata;
 	}
 
-	/* Add the handler to clear platform data */
-	err = devm_add_action(&pdev->dev, tegra_usb_clear_pdata, pdev);
-	if (err)
-		return err;
 	pdev->dev.platform_data = pdata;
 
 	return 0;
+
+free_pdata:
+	kfree(pdata);
+	return err;
 }
