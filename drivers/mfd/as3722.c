@@ -108,6 +108,7 @@ static struct mfd_cell as3722_devs[] = {
 	{
 		.name = "as3722-adc",
 		.id = AS3722_ADC_ID,
+		.of_compatible = "ams,as3722-adc",
 	},
 };
 
