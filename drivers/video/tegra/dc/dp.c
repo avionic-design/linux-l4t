@@ -53,6 +53,9 @@ static void tegra_dp_set_tx_pu(struct tegra_dc_dp_data *dp,
 				u32 pe[4], u32 vs[4], u32 pc[4]);
 static int tegra_dp_full_lt(struct tegra_dc_dp_data *dp);
 
+/* Global pointer to link back the private API to the driver model */
+static struct tegra_dc_dp_data *dp_instance;
+
 static inline u32 tegra_dpaux_readl(struct tegra_dc_dp_data *dp, u32 reg)
 {
 	return readl(dp->aux_base + reg * 4);
@@ -1387,7 +1390,7 @@ static irqreturn_t tegra_dp_irq(int irq, void *ptr)
 	return IRQ_HANDLED;
 }
 
-static int tegra_dc_dp_init(struct tegra_dc *dc)
+int tegra_dc_dp_probe(struct platform_device *pdev)
 {
 	struct tegra_dc_dp_data *dp;
 	struct resource *res;
@@ -1398,51 +1401,54 @@ static int tegra_dc_dp_init(struct tegra_dc *dc)
 	int err;
 	u32 irq;
 
+	if (dp_instance != NULL) {
+		dev_err(&pdev->dev, "Only one DPAUX instance allowed\n");
+		return -EBUSY;
+	}
 
 	dp = kzalloc(sizeof(*dp), GFP_KERNEL);
 	if (!dp)
 		return -ENOMEM;
 
-	irq = platform_get_irq_byname(dc->ndev, "irq_dp");
+	irq = platform_get_irq_byname(pdev, "irq_dp");
 	if (irq <= 0) {
-		dev_err(&dc->ndev->dev, "dp: no irq\n");
+		dev_err(&pdev->dev, "dp: no irq\n");
 		err = -ENOENT;
 		goto err_free_dp;
 	}
 
-	res = platform_get_resource_byname(dc->ndev, IORESOURCE_MEM, "dpaux");
+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "dpaux");
 	if (!res) {
-		dev_err(&dc->ndev->dev, "dp: no mem resources for dpaux\n");
+		dev_err(&pdev->dev, "dp: no mem resources for dpaux\n");
 		err = -EFAULT;
 		goto err_free_dp;
 	}
 
 	base_res = request_mem_region(res->start, resource_size(res),
-		dc->ndev->name);
+		pdev->name);
 	if (!base_res) {
-		dev_err(&dc->ndev->dev, "dp: request_mem_region failed\n");
+		dev_err(&pdev->dev, "dp: request_mem_region failed\n");
 		err = -EFAULT;
 		goto err_free_dp;
 	}
 
 	base = ioremap(res->start, resource_size(res));
 	if (!base) {
-		dev_err(&dc->ndev->dev, "dp: registers can't be mapped\n");
+		dev_err(&pdev->dev, "dp: registers can't be mapped\n");
 		err = -EFAULT;
 		goto err_release_resource_reg;
 	}
 
 	clk = clk_get_sys("dpaux", NULL);
 	if (IS_ERR_OR_NULL(clk)) {
-		dev_err(&dc->ndev->dev, "dp: dc clock %s.edp unavailable\n",
-			dev_name(&dc->ndev->dev));
+		dev_err(&pdev->dev, "dp: dc clock dpaux unavailable\n");
 		err = -EFAULT;
 		goto err_iounmap_reg;
 	}
 
 	parent_clk = tegra_get_clock_by_name("pll_dp");
 	if (IS_ERR_OR_NULL(parent_clk)) {
-		dev_err(&dc->ndev->dev, "dp: clock pll_dp unavailable\n");
+		dev_err(&pdev->dev, "dp: clock pll_dp unavailable\n");
 		err = -EFAULT;
 		goto err_iounmap_reg;
 	}
@@ -1450,7 +1456,7 @@ static int tegra_dc_dp_init(struct tegra_dc *dc)
 	if (!tegra_platform_is_fpga()) {
 		if (request_threaded_irq(irq, NULL, tegra_dp_irq,
 					IRQF_ONESHOT, "tegra_dp", dp)) {
-			dev_err(&dc->ndev->dev,
+			dev_err(&pdev->dev,
 				"dp: request_irq %u failed\n", irq);
 			err = -EBUSY;
 			goto err_get_clk;
@@ -1458,29 +1464,11 @@ static int tegra_dc_dp_init(struct tegra_dc *dc)
 	}
 	tegra_dp_disable_irq(irq);
 
-	dp->dc = dc;
 	dp->aux_base = base;
 	dp->aux_base_res = base_res;
 	dp->dpaux_clk = clk;
 	dp->parent_clk = parent_clk;
-	dp->mode = &dc->mode;
-	dp->sor = tegra_dc_sor_init(dc, &dp->link_cfg);
 	dp->irq = irq;
-	dp->pdata = dc->pdata->default_out->dp_out;
-
-	if (IS_ERR_OR_NULL(dp->sor)) {
-		err = PTR_ERR(dp->sor);
-		dp->sor = NULL;
-		goto err_get_clk;
-	}
-
-	dp->dp_edid = tegra_edid_create(dc, tegra_dc_dp_i2c_xfer);
-	if (IS_ERR_OR_NULL(dp->dp_edid)) {
-		dev_err(&dc->ndev->dev, "dp: failed to create edid obj\n");
-		err = PTR_ERR(dp->dp_edid);
-		goto err_edid_destroy;
-	}
-	tegra_dc_set_edid(dc, dp->dp_edid);
 
 	INIT_WORK(&dp->lt_work, tegra_dp_lt_worker);
 	init_completion(&dp->hpd_plug);
@@ -1489,13 +1477,12 @@ static int tegra_dc_dp_init(struct tegra_dc *dc)
 	mutex_init(&dp->dpaux_lock);
 	mutex_init(&dp->lt_lock);
 
-	tegra_dc_set_outdata(dc, dp);
 	tegra_dc_dp_debug_create(dp);
+
+	dp_instance = dp;
 
 	return 0;
 
-err_edid_destroy:
-	tegra_edid_destroy(dp->dp_edid);
 err_get_clk:
 	clk_put(clk);
 err_iounmap_reg:
@@ -1506,6 +1493,57 @@ err_free_dp:
 	kfree(dp);
 
 	return err;
+}
+
+#ifdef CONFIG_OF
+static bool tegra_dc_dp_from_of(struct tegra_dc *dc)
+{
+	return of_device_is_available(
+		of_find_compatible_node(NULL, NULL, "nvidia,tegra124-dpaux"));
+}
+#else
+static bool tegra_dc_dp_from_of(struct tegra_dc *dc)
+{
+	return false;
+}
+#endif
+
+static int tegra_dc_dp_init(struct tegra_dc *dc)
+{
+	int err;
+
+	if (!dp_instance) {
+		if (tegra_dc_dp_from_of(dc))
+			return -EPROBE_DEFER;
+		/* No OF, fallback on creating the device here */
+		err = tegra_dc_dp_probe(dc->ndev);
+		if (err)
+			return err;
+	} else if (dp_instance->dc && dp_instance->dc != dc) {
+		return -EBUSY;
+	}
+
+	dp_instance->sor = tegra_dc_sor_init(dc, &dp_instance->link_cfg);
+	if (IS_ERR(dp_instance->sor)) {
+		dev_err(&dc->ndev->dev, "dp: failed to create SOR obj\n");
+		return PTR_ERR(dp_instance->sor);
+	}
+
+	dp_instance->dp_edid = tegra_edid_create(dc, tegra_dc_dp_i2c_xfer);
+	if (IS_ERR(dp_instance->dp_edid)) {
+		dev_err(&dc->ndev->dev, "dp: failed to create EDID obj\n");
+		tegra_dc_sor_destroy(dp_instance->sor);
+		return PTR_ERR(dp_instance->dp_edid);
+	}
+
+	dp_instance->dc = dc;
+	dp_instance->mode = &dc->mode;
+	dp_instance->pdata = dc->pdata->default_out->dp_out;
+
+	tegra_dc_set_edid(dc, dp_instance->dp_edid);
+	tegra_dc_set_outdata(dc, dp_instance);
+
+	return 0;
 }
 
 static void tegra_dp_hpd_config(struct tegra_dc_dp_data *dp)
@@ -2133,6 +2171,16 @@ static void tegra_dc_dp_destroy(struct tegra_dc *dc)
 		tegra_dc_sor_destroy(dp->sor);
 	if (dp->dp_edid)
 		tegra_edid_destroy(dp->dp_edid);
+
+	if (tegra_dc_dp_from_of(dc) && dp == dp_instance) {
+		dp->dc = NULL;
+		dp->mode = NULL;
+		dp->pdata = NULL;
+		dp->sor = NULL;
+		dp->dp_edid = NULL;
+		return;
+	}
+
 	clk_put(dp->dpaux_clk);
 	clk_put(dp->parent_clk);
 	iounmap(dp->aux_base);
@@ -2229,4 +2277,20 @@ struct tegra_dc_out_ops tegra_dc_dp_ops = {
 	.modeset_notifier = tegra_dc_dp_modeset_notifier,
 };
 
+#ifdef CONFIG_OF
+static struct of_device_id tegra_dc_dpaux_of_match[] = {
+	{.compatible = "nvidia,tegra124-dpaux", },
+	{ },
+};
+#endif
 
+struct platform_driver tegra_dc_dpaux_driver = {
+	.driver = {
+		.name = "tegra-dpaux",
+		.owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(tegra_dc_dpaux_of_match),
+	},
+	.probe = tegra_dc_dp_probe,
+};
+
+module_platform_driver(tegra_dc_dpaux_driver);
