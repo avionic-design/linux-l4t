@@ -1808,6 +1808,15 @@
 				reg = <0>;
 			};
 
+			as3722_adc: adc@1 {
+				status = "okay";
+
+				compatible = "ams,as3722-adc";
+				reg = <1>;
+
+				#io-channel-cells = <1>;
+			};
+
 			as3722_default: pinmux@0 {
 				gpio0 {
 					pins = "gpio0";
@@ -2298,6 +2307,19 @@
 
 		#cooling-cells = <2>;
 		cooling-levels = <0>, <128>, <192>, <255>;
+	};
+
+	iio_hwmon {
+		compatible = "iio-hwmon";
+
+		io-channels = <&as3722_adc AS3722_ADC_CHANNEL_TEMP_SENSOR>,
+			<&as3722_adc AS3722_ADC_CHANNEL_VSUP>,
+			<&as3722_adc AS3722_ADC_CHANNEL_VBAT>,
+			<&as3722_adc AS3722_ADC_CHANNEL_TEMP1_SD0>,
+			<&as3722_adc AS3722_ADC_CHANNEL_TEMP2_SD0>,
+			<&as3722_adc AS3722_ADC_CHANNEL_TEMP_SD1>,
+			<&as3722_adc AS3722_ADC_CHANNEL_TEMP1_SD6>,
+			<&as3722_adc AS3722_ADC_CHANNEL_TEMP2_SD6>;
 	};
 
 	thermal-zones {
