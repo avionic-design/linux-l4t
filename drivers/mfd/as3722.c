@@ -74,6 +74,7 @@ static struct mfd_cell as3722_devs[] = {
 	{
 		.name = "as3722-regulator",
 		.id = AS3722_REGULATOR_ID,
+		.of_compatible = "ams,as3722-regulator",
 	},
 	{
 		.name = "as3722-clk",
@@ -102,6 +103,7 @@ static struct mfd_cell as3722_devs[] = {
 	{
 		.name = "as3722-input",
 		.id = AS3722_INPUT_ID,
+		.of_compatible = "ams,as3722-input",
 	},
 	{
 		.name = "as3722-adc",
