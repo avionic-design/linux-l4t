@@ -55,6 +55,7 @@
 #define AS3722_GPIO_CONFIG_PULL_DOWN    BIT(1)
 #define AS3722_GPIO_CONFIG_HIGH_IMPED   BIT(2)
 #define AS3722_GPIO_CONFIG_OPEN_DRAIN   BIT(3)
+#define AS3722_GPIO_CONFIG_VDDL		BIT(4)
 
 struct as3722_pin_function {
 	const char *name;
@@ -295,7 +296,7 @@ static int as3722_pinctrl_gpio_get_mode(unsigned gpio_config_prop, bool input)
 			return AS3722_GPIO_MODE_INPUT_PULL_DOWN;
 		return AS3722_GPIO_MODE_INPUT;
 	}
-	if (gpio_config_prop & AS3722_GPIO_CONFIG_PULL_DOWN)
+	if (gpio_config_prop & AS3722_GPIO_CONFIG_VDDL)
 		return AS3722_GPIO_MODE_OUTPUT_VDDL;
 	return AS3722_GPIO_MODE_OUTPUT_VDDH;
 }
@@ -406,6 +407,10 @@ static int as3722_pinconf_get(struct pinctrl_dev *pctldev,
 		prop = AS3722_GPIO_CONFIG_HIGH_IMPED;
 		break;
 
+	case PIN_CONFIG_POWER_SOURCE:
+		prop = AS3722_GPIO_CONFIG_VDDL;
+		break;
+
 	default:
 		dev_err(as_pci->dev, "Properties not supported\n");
 		return -ENOTSUPP;
@@ -470,6 +475,19 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 
 	case PIN_CONFIG_DRIVE_PUSH_PULL:
 		config_prop &= ~AS3722_GPIO_CONFIG_OPEN_DRAIN;
+		break;
+
+	case PIN_CONFIG_POWER_SOURCE:
+		switch (param_val) {
+		case 0:
+			config_prop &= AS3722_GPIO_CONFIG_VDDL;
+			break;
+		case 1:
+			config_prop |= AS3722_GPIO_CONFIG_VDDL;
+			break;
+		default:
+			return -EINVAL;
+		}
 		break;
 
 	case PIN_CONFIG_INPUT_ENABLE:
