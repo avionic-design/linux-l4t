@@ -65,6 +65,7 @@ struct as3722_pin_function {
 
 struct as3722_gpio_pin_control {
 	bool enable_gpio_invert;
+	bool input;
 	unsigned config_prop;
 	int io_function;
 };
@@ -312,6 +313,7 @@ static int as3722_pinctrl_gpio_set_direction(struct pinctrl_dev *pctldev,
 	struct as3722_pctrl_info *as_pci = pinctrl_dev_get_drvdata(pctldev);
 	struct as3722 *as3722 = as_pci->as3722;
 	int mode;
+	int ret;
 
 	mode = as3722_pinctrl_gpio_get_mode(
 			as_pci->gpio_control[offset].config_prop, input);
@@ -321,8 +323,13 @@ static int as3722_pinctrl_gpio_set_direction(struct pinctrl_dev *pctldev,
 		return mode;
 	}
 
-	return as3722_update_bits(as3722, AS3722_GPIOn_CONTROL_REG(offset),
+	ret = as3722_update_bits(as3722, AS3722_GPIOn_CONTROL_REG(offset),
 				AS3722_GPIO_MODE_MASK, mode);
+	if (ret < 0)
+		return ret;
+
+	as_pci->gpio_control[offset].input = input;
+	return 0;
 }
 
 static void as3722_gpio_set_value(struct as3722_pctrl_info *as_pci,
@@ -411,6 +418,8 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 	enum pin_config_param param = pinconf_to_config_param(config);
 	unsigned config_prop = as_pci->gpio_control[pin].config_prop;
 	u16 param_val = pinconf_to_config_argument(config);
+	bool input = as_pci->gpio_control[pin].input;
+	int saved_config_prop = config_prop;
 	int ret;
 
 	switch (param) {
@@ -458,16 +467,12 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 
 	case PIN_CONFIG_OUTPUT:
 		as3722_gpio_set_value(as_pci, pin, param_val);
-		ret = as3722_pinctrl_gpio_set_direction(pctldev, NULL, pin, 0);
-		if (ret < 0)
-			dev_err(as_pci->dev, "Not able to set direction\n");
-		return ret;
+		input = false;
+		break;
 
 	case PIN_CONFIG_INPUT_ENABLE:
-		ret = as3722_pinctrl_gpio_set_direction(pctldev, NULL, pin, 1);
-		if (ret < 0)
-			dev_err(as_pci->dev, "Not able to set direction\n");
-		return ret;
+		input = true;
+		break;
 
 	default:
 		dev_err(as_pci->dev, "Properties not supported\n");
@@ -475,7 +480,12 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 	}
 
 	as_pci->gpio_control[pin].config_prop = config_prop;
-	return 0;
+	ret = as3722_pinctrl_gpio_set_direction(pctldev, NULL, pin, input);
+	if (ret < 0) {
+		dev_err(as_pci->dev, "Not able to set direction\n");
+		as_pci->gpio_control[pin].config_prop = saved_config_prop;
+	}
+	return ret;
 }
 
 static const struct pinconf_ops as3722_pinconf_ops = {
