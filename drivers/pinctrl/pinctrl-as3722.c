@@ -176,6 +176,8 @@ static const struct as3722_pingroup as3722_pingroups[] = {
 
 static void as3722_gpio_set_value(struct as3722_pctrl_info *as_pci,
 			unsigned offset, int value);
+static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
+			unsigned pin, unsigned long config);
 
 static int as3722_pinctrl_get_groups_count(struct pinctrl_dev *pctldev)
 {
@@ -242,6 +244,7 @@ static int as3722_pinctrl_enable(struct pinctrl_dev *pctldev, unsigned function,
 	struct as3722_pctrl_info *as_pci = pinctrl_dev_get_drvdata(pctldev);
 	int gpio_cntr_reg = AS3722_GPIOn_CONTROL_REG(group);
 	u8 val = AS3722_GPIO_IOSF_VAL(as_pci->functions[function].mux_option);
+	bool input;
 	int ret;
 
 	dev_dbg(as_pci->dev, "%s(): GPIO %u pin to function %u and val %u\n",
@@ -258,22 +261,27 @@ static int as3722_pinctrl_enable(struct pinctrl_dev *pctldev, unsigned function,
 	val = val & AS3722_GPIO_IOSF_MASK;
 
 	switch (val) {
+	case AS3722_GPIO_IOSF_NORMAL:
+		/* For GPIO we just leave things as-is */
+		return ret;
+	case AS3722_GPIO_IOSF_INTERRUPT_OUT:
+	case AS3722_GPIO_IOSF_VSUP_LOW_OUT:
 	case AS3722_GPIO_IOSF_SD0_OUT:
 	case AS3722_GPIO_IOSF_PWR_GOOD_OUT:
 	case AS3722_GPIO_IOSF_Q32K_OUT:
 	case AS3722_GPIO_IOSF_PWM_OUT:
 	case AS3722_GPIO_IOSF_SD6_LOW_VOLT_LOW:
-		ret = as3722_update_bits(as_pci->as3722, gpio_cntr_reg,
-				AS3722_GPIO_MODE_MASK,
-				AS3722_GPIO_MODE_OUTPUT_VDDH);
-		if (ret < 0) {
-			dev_err(as_pci->dev,
-				"GPIO%d_CTRL_REG update failed %d\n",
-				group, ret);
+		input = false;
+		break;
+	default:
+		input = true;
+	}
 
-			return ret;
-		}
-		as_pci->gpio_control[group].config_prop = 0;
+	ret = as3722_pinconf_set(pctldev, group, pinconf_to_config_packed(
+					PIN_CONFIG_INPUT_ENABLE, input));
+	if (ret) {
+		dev_err(as_pci->dev, "failed to update direction\n");
+		return ret;
 	}
 
 	return ret;
