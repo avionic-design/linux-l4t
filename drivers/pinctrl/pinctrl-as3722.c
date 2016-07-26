@@ -360,6 +360,7 @@ static int as3722_pinconf_get(struct pinctrl_dev *pctldev,
 	struct as3722_pctrl_info *as_pci = pinctrl_dev_get_drvdata(pctldev);
 	enum pin_config_param param = pinconf_to_config_param(*config);
 	unsigned prop;
+	int val = -1;
 	int arg = 0;
 
 	switch (param) {
@@ -367,9 +368,7 @@ static int as3722_pinconf_get(struct pinctrl_dev *pctldev,
 		prop = AS3722_GPIO_CONFIG_PULL_UP |
 			AS3722_GPIO_CONFIG_PULL_DOWN |
 			AS3722_GPIO_CONFIG_HIGH_IMPED;
-		if (!(as_pci->gpio_control[pin].config_prop & prop))
-			arg = 1;
-		prop = 0;
+		val = 0;
 		break;
 
 	case PIN_CONFIG_BIAS_PULL_UP:
@@ -384,6 +383,11 @@ static int as3722_pinconf_get(struct pinctrl_dev *pctldev,
 		prop = AS3722_GPIO_CONFIG_OPEN_DRAIN;
 		break;
 
+	case PIN_CONFIG_DRIVE_PUSH_PULL:
+		prop = AS3722_GPIO_CONFIG_OPEN_DRAIN;
+		val = 0;
+		break;
+
 	case PIN_CONFIG_BIAS_HIGH_IMPEDANCE:
 		prop = AS3722_GPIO_CONFIG_HIGH_IMPED;
 		break;
@@ -393,7 +397,7 @@ static int as3722_pinconf_get(struct pinctrl_dev *pctldev,
 		return -ENOTSUPP;
 	}
 
-	if (as_pci->gpio_control[pin].config_prop & prop)
+	if ((as_pci->gpio_control[pin].config_prop & prop) == (val & prop))
 		arg = 1;
 
 	*config = pinconf_to_config_packed(param, (u16)arg);
@@ -446,6 +450,10 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 
 	case PIN_CONFIG_DRIVE_OPEN_DRAIN:
 		config_prop |= AS3722_GPIO_CONFIG_OPEN_DRAIN;
+		break;
+
+	case PIN_CONFIG_DRIVE_PUSH_PULL:
+		config_prop &= ~AS3722_GPIO_CONFIG_OPEN_DRAIN;
 		break;
 
 	case PIN_CONFIG_OUTPUT:
