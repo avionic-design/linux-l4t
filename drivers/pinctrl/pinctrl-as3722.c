@@ -278,7 +278,7 @@ static int as3722_pinctrl_enable(struct pinctrl_dev *pctldev, unsigned function,
 static int as3722_pinctrl_gpio_get_mode(unsigned gpio_config_prop, bool input)
 {
 	if (gpio_config_prop & AS3722_GPIO_CONFIG_HIGH_IMPED)
-		return -EINVAL;
+		return AS3722_GPIO_MODE_ADC_IN;
 
 	if (gpio_config_prop & AS3722_GPIO_CONFIG_OPEN_DRAIN) {
 		if (gpio_config_prop & AS3722_GPIO_CONFIG_PULL_UP)
