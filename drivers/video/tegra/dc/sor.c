@@ -393,6 +393,12 @@ int tegra_dc_sor_set_power_state(struct tegra_dc_sor_data *sor, int pu_pd)
 
 void tegra_dc_sor_destroy(struct tegra_dc_sor_data *sor)
 {
+	if (tegra_dc_sor_from_of(sor->dc) && sor == sor_instance) {
+		sor->dc = NULL;
+		sor->link_cfg = NULL;
+		return;
+	}
+
 	clk_put(sor->sor_clk);
 	iounmap(sor->base);
 	release_resource(sor->base_res);
