@@ -707,14 +707,17 @@ static int as3722_get_regulator_dt_data(struct platform_device *pdev,
 	int id;
 	int ret;
 
-	np = of_get_child_by_name(pdev->dev.parent->of_node, "regulators");
-	if (!np) {
-		dev_err(&pdev->dev, "Device is not having regulators node\n");
-		return -ENODEV;
+	if (!pdev->dev.of_node) {
+		np = of_get_child_by_name(pdev->dev.parent->of_node, "regulators");
+		if (!np) {
+			dev_err(&pdev->dev, "Device is not having regulators node\n");
+			return -ENODEV;
+		}
+		pdev->dev.of_node = np;
 	}
-	pdev->dev.of_node = np;
 
-	ret = of_regulator_match(&pdev->dev, np, as3722_regulator_matches,
+	ret = of_regulator_match(&pdev->dev, pdev->dev.of_node,
+			as3722_regulator_matches,
 			ARRAY_SIZE(as3722_regulator_matches));
 	if (ret < 0) {
 		dev_err(&pdev->dev, "Parsing of regulator node failed: %d\n",
