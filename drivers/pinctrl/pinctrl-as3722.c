@@ -465,13 +465,15 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 		config_prop &= ~AS3722_GPIO_CONFIG_OPEN_DRAIN;
 		break;
 
-	case PIN_CONFIG_OUTPUT:
-		as3722_gpio_set_value(as_pci, pin, param_val);
-		input = false;
-		break;
-
 	case PIN_CONFIG_INPUT_ENABLE:
-		input = true;
+		input = param_val;
+		if (input)
+			break;
+		/* fall thru to setting output mode */
+	case PIN_CONFIG_OUTPUT:
+		if (param == PIN_CONFIG_OUTPUT)
+			as3722_gpio_set_value(as_pci, pin, param_val);
+		input = false;
 		break;
 
 	default:
