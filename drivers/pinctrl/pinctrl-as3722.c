@@ -254,7 +254,7 @@ static int as3722_pinctrl_enable(struct pinctrl_dev *pctldev, unsigned function,
 			group, ret);
 		return ret;
 	}
-	as_pci->gpio_control[group].io_function = function;
+	as_pci->gpio_control[group].io_function = val;
 	val = val & AS3722_GPIO_IOSF_MASK;
 
 	switch (val) {
@@ -796,12 +796,46 @@ static int as3722_pinctrl_probe(struct platform_device *pdev)
 
 	for (i = 0; i < ARRAY_SIZE(as3722_pingroups); ++i) {
 		int gpio_cntr_reg = AS3722_GPIOn_CONTROL_REG(i);
+		unsigned config_prop = 0;
+		bool input = true;
 		u32 val;
 
 		ret = as3722_read(as3722, gpio_cntr_reg, &val);
-		if (!ret)
+		if (!ret) {
+			switch (AS3722_GPIO_MODE_VAL(val)) {
+			case AS3722_GPIO_MODE_INPUT:
+				break;
+			case AS3722_GPIO_MODE_OUTPUT_VDDH:
+				input = false;
+				break;
+			case AS3722_GPIO_MODE_IO_OPEN_DRAIN:
+				config_prop |= AS3722_GPIO_CONFIG_OPEN_DRAIN;
+				break;
+			case AS3722_GPIO_MODE_ADC_IN:
+				config_prop |= AS3722_GPIO_CONFIG_HIGH_IMPED;
+				break;
+			case AS3722_GPIO_MODE_INPUT_PULL_UP:
+				config_prop |= AS3722_GPIO_CONFIG_PULL_UP;
+				break;
+			case AS3722_GPIO_MODE_INPUT_PULL_DOWN:
+				config_prop |= AS3722_GPIO_CONFIG_PULL_DOWN;
+				break;
+			case AS3722_GPIO_MODE_IO_OPEN_DRAIN_PULL_UP:
+				config_prop |= AS3722_GPIO_CONFIG_OPEN_DRAIN;
+				config_prop |= AS3722_GPIO_CONFIG_PULL_UP;
+				break;
+			case AS3722_GPIO_MODE_OUTPUT_VDDL:
+				input = false;
+				config_prop |= AS3722_GPIO_CONFIG_VDDL;
+				break;
+			}
 			as_pci->gpio_control[i].enable_gpio_invert =
 					!!(val & AS3722_GPIO_INV);
+			as_pci->gpio_control[i].input = input;
+			as_pci->gpio_control[i].config_prop = config_prop;
+			as_pci->gpio_control[i].io_function =
+				AS3722_GPIO_IOSF_VAL(val);
+		}
 	}
 
 	as_pci->pins = as3722_pins_desc;
