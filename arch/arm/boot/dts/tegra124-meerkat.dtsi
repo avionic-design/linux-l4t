@@ -1846,6 +1846,8 @@
 			};
 
 			regulators {
+				compatible = "ams,as3722-regulator";
+
 				vsup-sd2-supply = <&vdd_5v0_sys>;
 				vsup-sd3-supply = <&vdd_5v0_sys>;
 				vsup-sd4-supply = <&vdd_5v0_sys>;
