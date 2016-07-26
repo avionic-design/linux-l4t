@@ -365,7 +365,8 @@ static int as3722_pinconf_get(struct pinctrl_dev *pctldev,
 	switch (param) {
 	case PIN_CONFIG_BIAS_DISABLE:
 		prop = AS3722_GPIO_CONFIG_PULL_UP |
-				AS3722_GPIO_CONFIG_PULL_DOWN;
+			AS3722_GPIO_CONFIG_PULL_DOWN |
+			AS3722_GPIO_CONFIG_HIGH_IMPED;
 		if (!(as_pci->gpio_control[pin].config_prop & prop))
 			arg = 1;
 		prop = 0;
@@ -414,18 +415,33 @@ static int as3722_pinconf_set(struct pinctrl_dev *pctldev,
 
 	case PIN_CONFIG_BIAS_DISABLE:
 		config_prop &= ~(AS3722_GPIO_CONFIG_PULL_UP |
-				AS3722_GPIO_CONFIG_PULL_DOWN);
+				AS3722_GPIO_CONFIG_PULL_DOWN |
+				AS3722_GPIO_CONFIG_HIGH_IMPED);
 		break;
 	case PIN_CONFIG_BIAS_PULL_UP:
-		config_prop |= AS3722_GPIO_CONFIG_PULL_UP;
+		if (param_val) {
+			config_prop |= AS3722_GPIO_CONFIG_PULL_UP;
+			config_prop &= ~(AS3722_GPIO_CONFIG_PULL_DOWN |
+					AS3722_GPIO_CONFIG_HIGH_IMPED);
+		} else {
+			config_prop &= ~AS3722_GPIO_CONFIG_PULL_UP;
+		}
 		break;
 
 	case PIN_CONFIG_BIAS_PULL_DOWN:
-		config_prop |= AS3722_GPIO_CONFIG_PULL_DOWN;
+		if (param_val) {
+			config_prop |= AS3722_GPIO_CONFIG_PULL_DOWN;
+			config_prop &= ~(AS3722_GPIO_CONFIG_PULL_UP |
+					AS3722_GPIO_CONFIG_HIGH_IMPED);
+		} else {
+			config_prop &= ~AS3722_GPIO_CONFIG_PULL_DOWN;
+		}
 		break;
 
 	case PIN_CONFIG_BIAS_HIGH_IMPEDANCE:
 		config_prop |= AS3722_GPIO_CONFIG_HIGH_IMPED;
+		config_prop &= ~(AS3722_GPIO_CONFIG_PULL_UP |
+				AS3722_GPIO_CONFIG_PULL_DOWN);
 		break;
 
 	case PIN_CONFIG_DRIVE_OPEN_DRAIN:
