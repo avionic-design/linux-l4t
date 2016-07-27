@@ -161,6 +161,19 @@
 		status = "okay";
 	};
 
+	i2c@7000d000 {
+		pmic@40 {
+			test_btn_pinmux: pinmux@1 {
+				gpio4 {
+					pins = "gpio4";
+					function = "gpio";
+					bias-disable;
+					input-enable;
+				};
+			};
+		};
+	};
+
 	hda@70030000 {
 		status = "okay";
 	};
@@ -387,6 +400,9 @@
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&test_btn_pinmux>;
 
 		poll-interval = <100>;
 
