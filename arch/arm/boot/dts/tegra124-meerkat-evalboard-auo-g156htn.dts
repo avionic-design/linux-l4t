@@ -1,0 +1,30 @@
+#include "tegra124-meerkat-evalboard.dts"
+#include "panel-auo-g156htn.dtsi"
+
+/ {
+	nvidia,dtsfilename = __FILE__;
+
+	host1x {
+		dc@54240000 {
+			status = "okay";
+
+			nvidia,dc-connection = "internal-lcd";
+			panel = <&edp_panel>;
+		};
+
+		sor@54540000 {
+			status = "okay";
+		};
+
+		edp {
+			status = "okay";
+			edp_panel: panel-auo-g156htn {
+				enable-gpios = <&gpio TEGRA_GPIO(X, 3) GPIO_ACTIVE_HIGH>;
+				backlight = <&lvds_edp_bl>;
+				disp-default-out {
+					nvidia,out-parent-clk = "pll_c";
+				};
+			};
+		};
+	};
+};
