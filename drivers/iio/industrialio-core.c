@@ -399,14 +399,14 @@ static ssize_t iio_read_channel_info(struct device *dev,
 		else
 			return sprintf(buf, "%d.%09u\n", val, val2);
 	case IIO_VAL_FRACTIONAL:
-		tmp = div_s64((s64)val * 1000000000LL, val2);
+		tmp = abs64(div_s64(val * 1000000000LL, val2));
 		val2 = do_div(tmp, 1000000000LL);
-		val = tmp;
+		val = (val >= 0) == (val2 >= 0) ? tmp : -tmp;
 		return sprintf(buf, "%d.%09u\n", val, val2);
 	case IIO_VAL_FRACTIONAL_LOG2:
-		tmp = (s64)val * 1000000000LL >> val2;
+		tmp = abs(val) * 1000000000LL >> val2;
 		val2 = do_div(tmp, 1000000000LL);
-		val = tmp;
+		val = (val >= 0) == (val2 >= 0) ? tmp : -tmp;
 		return sprintf(buf, "%d.%09u\n", val, val2);
 	default:
 		return 0;
