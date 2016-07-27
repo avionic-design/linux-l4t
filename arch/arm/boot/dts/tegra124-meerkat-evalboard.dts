@@ -30,6 +30,10 @@
 			uart3_txd_pw6 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+			ph3 {
+				nvidia,function = "pwm3";
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 		};
 	};
 
@@ -393,5 +397,13 @@
 
 			gpios = <&pmic 4 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	lvds_edp_bl: backlight {
+		compatible = "pwm-backlight";
+		enable-gpios = <&gpio TEGRA_GPIO(R, 2) GPIO_ACTIVE_HIGH>;
+		pwms = <&tegra_pwm 3 1000000>;
+		brightness-levels = <0 4 8 16 32 64 128 255>;
+		default-brightness-level = <7>;
 	};
 };
