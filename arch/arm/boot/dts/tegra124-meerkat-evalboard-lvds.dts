@@ -1,0 +1,46 @@
+#include "tegra124-meerkat-evalboard.dts"
+
+/ {
+	nvidia,dtsfilename = __FILE__;
+
+	host1x {
+		dc@54240000 {
+			status = "okay";
+			nvidia,dc-connection = "internal-lcd";
+
+			panel = <&lvds_panel>;
+		};
+
+		sor@54540000 {
+			status = "okay";
+		};
+
+		lvds {
+			status = "okay";
+
+			/* I2C bused for DDC */
+			nvidia,ddc-i2c-bus = <&i2c2>;
+
+			lvds_panel: panel {
+				status = "okay";
+				compatible = "none,panel-generic";
+
+				enable-gpios = <&gpio TEGRA_GPIO(X, 3) GPIO_ACTIVE_HIGH>;
+				backlight = <&lvds_edp_bl>;
+
+				disp-default-out {
+					nvidia,out-type = <TEGRA_DC_OUT_LVDS>;
+					nvidia,out-parent-clk = "pll_c";
+					 /* 165MHz in pico seconds (max rate supported) */
+					nvidia,out-max-pixclk = <6061>;
+					nvidia,out-align = <TEGRA_DC_ALIGN_MSB>;
+					nvidia,out-order = <TEGRA_DC_ORDER_RED_BLUE>;
+					nvidia,out-depth = <18>;
+					/* This will be overriden by the EDID data */
+					nvidia,out-xres = <640>;
+					nvidia,out-yres = <480>;
+				};
+			};
+		};
+	};
+};

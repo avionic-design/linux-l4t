@@ -264,7 +264,8 @@ dtb-$(CONFIG_ARCH_TEGRA) += tegra20-harmony.dtb \
 	tegra124-plink.dtb \
 	tegra124-clearview.dtb \
 	tegra124-meerkat-evalboard.dtb \
-	tegra124-meerkat-evalboard-picam.dtb
+	tegra124-meerkat-evalboard-picam.dtb \
+	tegra124-meerkat-evalboard-lvds.dtb
 dtb-$(CONFIG_ARCH_VERSATILE) += versatile-ab.dtb \
 	versatile-pb.dtb
 dtb-$(CONFIG_ARCH_VEXPRESS) += vexpress-v2p-ca5s.dtb \
