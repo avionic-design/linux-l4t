@@ -16,6 +16,7 @@
 #include <linux/of.h>
 #include <linux/hwmon-sysfs.h>
 #include <linux/iio/consumer.h>
+#include <linux/iio/iio.h>
 #include <linux/iio/types.h>
 
 /**
@@ -57,17 +58,49 @@ static ssize_t iio_hwmon_read_val(struct device *dev,
 	return sprintf(buf, "%d\n", result);
 }
 
+static ssize_t iio_hwmon_read_label(struct device *dev,
+				  struct device_attribute *attr,
+				  char *buf)
+{
+	struct sensor_device_attribute *sattr = to_sensor_dev_attr(attr);
+	struct iio_hwmon_state *state = dev_get_drvdata(dev);
+	const char *label = NULL;
+	int ret;
+
+	/* Look if a label is defined in DT */
+	ret = of_property_read_string_index(
+		dev->of_node, "linux,hwmon-label", sattr->index, &label);
+
+	/* Otherwise fallback on the datasheet name of the channel */
+	if (ret < 0 || label[0] == 0)
+		label = state->channels[sattr->index].channel->datasheet_name;
+
+	/* Then on the attribute name as a last resort */
+	if (label == NULL || label[0] == 0) {
+		int len = strlen(attr->attr.name);
+		/* Strip the _input suffix */
+		if (len > 6)
+			len -= 6;
+		return sprintf(buf, "%.*s\n", len, attr->attr.name);
+	}
+
+	return sprintf(buf, "%s\n", label);
+}
+
 static int iio_hwmon_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct iio_hwmon_state *st;
+	struct sensor_device_attribute *label;
 	struct sensor_device_attribute *a;
 	int ret, i;
 	int in_i = 1, temp_i = 1, curr_i = 1;
 	enum iio_chan_type type;
 	struct iio_channel *channels;
 	const char *name = "iio_hwmon";
+	const char *prefix;
 	char *sname;
+	int *index;
 
 	if (dev->of_node && dev->of_node->name)
 		name = dev->of_node->name;
@@ -89,7 +122,8 @@ static int iio_hwmon_probe(struct platform_device *pdev)
 		st->num_channels++;
 
 	st->attrs = devm_kzalloc(dev,
-				 sizeof(*st->attrs) * (st->num_channels + 1),
+				 sizeof(*st->attrs) *
+				 (2 * st->num_channels + 1),
 				 GFP_KERNEL);
 	if (st->attrs == NULL) {
 		ret = -ENOMEM;
@@ -97,37 +131,39 @@ static int iio_hwmon_probe(struct platform_device *pdev)
 	}
 
 	for (i = 0; i < st->num_channels; i++) {
-		a = devm_kzalloc(dev, sizeof(*a), GFP_KERNEL);
+		a = devm_kzalloc(dev, 2 * sizeof(*a), GFP_KERNEL);
 		if (a == NULL) {
 			ret = -ENOMEM;
 			goto error_release_channels;
 		}
+		label = a + 1;
 
 		sysfs_attr_init(&a->dev_attr.attr);
+		sysfs_attr_init(&label->dev_attr.attr);
 		ret = iio_get_channel_type(&st->channels[i], &type);
 		if (ret < 0)
 			goto error_release_channels;
 
 		switch (type) {
 		case IIO_VOLTAGE:
-			a->dev_attr.attr.name = kasprintf(GFP_KERNEL,
-							  "in%d_input",
-							  in_i++);
+			prefix = "in";
+			index = &in_i;
 			break;
 		case IIO_TEMP:
-			a->dev_attr.attr.name = kasprintf(GFP_KERNEL,
-							  "temp%d_input",
-							  temp_i++);
+			prefix = "temp";
+			index = &temp_i;
 			break;
 		case IIO_CURRENT:
-			a->dev_attr.attr.name = kasprintf(GFP_KERNEL,
-							  "curr%d_input",
-							  curr_i++);
+			prefix = "curr";
+			index = &curr_i;
 			break;
 		default:
 			ret = -EINVAL;
 			goto error_release_channels;
 		}
+
+		a->dev_attr.attr.name = kasprintf(
+			GFP_KERNEL, "%s%d_input", prefix, *index);
 		if (a->dev_attr.attr.name == NULL) {
 			ret = -ENOMEM;
 			goto error_release_channels;
@@ -135,7 +171,20 @@ static int iio_hwmon_probe(struct platform_device *pdev)
 		a->dev_attr.show = iio_hwmon_read_val;
 		a->dev_attr.attr.mode = S_IRUGO;
 		a->index = i;
-		st->attrs[i] = &a->dev_attr.attr;
+
+		label->dev_attr.attr.name = kasprintf(
+			GFP_KERNEL, "%s%d_label", prefix, *index);
+		if (label->dev_attr.attr.name == NULL) {
+			ret = -ENOMEM;
+			goto error_release_channels;
+		}
+		label->dev_attr.show = iio_hwmon_read_label;
+		label->dev_attr.attr.mode = S_IRUGO;
+		label->index = i;
+
+		(*index)++;
+		st->attrs[2 * i] = &a->dev_attr.attr;
+		st->attrs[2 * i + 1] = &label->dev_attr.attr;
 	}
 
 	st->attr_group.attrs = st->attrs;
