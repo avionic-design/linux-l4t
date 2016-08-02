@@ -1,0 +1,75 @@
+#include "tegra124-meerkat-evalboard.dts"
+
+/ {
+	nvidia,dtsfilename = __FILE__;
+
+	host1x {
+		vi {
+			port@0 {
+				csi_ab_ep: endpoint@0 {
+					remote-endpoint = <&cam_csi_a>;
+				};
+			};
+
+			port@1 {
+				csi_cd_ep: endpoint@0 {
+					remote-endpoint = <&cam_csi_b>;
+				};
+			};
+		};
+	};
+
+	i2c@7000c400 {
+		status = "okay";
+
+		i2c-mux@70 {
+			compatible = "nxp,pca9543";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x70>;
+			vcc-supply = <&ext_3v3>;
+
+			i2c@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+
+				camera@10 {
+					compatible = "sony,imx219";
+					reg = <0x10>;
+
+					vdd-supply = <&ext_3v3>;
+
+					reset-gpio = <&gpio TEGRA_GPIO(H, 5) GPIO_ACTIVE_LOW>;
+
+					port {
+						cam_csi_b: endpoint {
+							remote-endpoint = <&csi_cd_ep>;
+						};
+					};
+				};
+			};
+
+			i2c@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <1>;
+
+				camera@10 {
+					compatible = "sony,imx219";
+					reg = <0x10>;
+
+					vdd-supply = <&ext_3v3>;
+
+					reset-gpio = <&gpio TEGRA_GPIO(H, 4) GPIO_ACTIVE_LOW>;
+
+					port {
+						cam_csi_a: endpoint {
+							remote-endpoint = <&csi_ab_ep>;
+						};
+					};
+				};
+			};
+		};
+	};
+};
