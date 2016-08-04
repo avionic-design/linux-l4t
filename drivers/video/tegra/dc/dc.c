@@ -2931,7 +2931,7 @@ static ssize_t switch_modeset_print_mode(struct switch_dev *sdev, char *buf)
 
 static int tegra_dc_get_monspecs(struct tegra_dc *dc)
 {
-	const struct fb_videomode *bestmode;
+	const struct fb_videomode *bestmode = NULL;
 	int ret;
 
 	if (!dc->pdata->fb)
@@ -2947,6 +2947,13 @@ static int tegra_dc_get_monspecs(struct tegra_dc *dc)
 		dev_err(&dc->ndev->dev, "error reading monspecs\n");
 		return ret;
 	}
+
+	/*
+	 * It is valid for .get_monspecs to do nothing and report
+	 * success.
+	 */
+	if (!bestmode)
+		return 0;
 
 	/*
 	 * When the dc is being enabled later, the clocks are setup for
