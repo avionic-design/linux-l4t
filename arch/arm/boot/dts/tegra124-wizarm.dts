@@ -223,7 +223,7 @@
 			"Headphone Jack", "HPOUTR",
 			"Headphone Jack", "HPOUTL",
 			"Mic Jack", "MICBIAS",
-			"IN1R", "Mic Jack";
+			"IN1L", "Mic Jack";
 
 		nvidia,hp-det-gpios = <&wm8903 0 GPIO_ACTIVE_LOW>;
 
