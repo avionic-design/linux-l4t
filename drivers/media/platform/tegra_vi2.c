@@ -731,18 +731,22 @@ static int tegra_vi_channel_enum_fmt_vid_cap(
 	struct video_device *vdev = video_devdata(file);
 	struct tegra_vi_channel *chan =
 		container_of(vdev, struct tegra_vi_channel, vdev);
-	int err = 0;
+	int err;
 
-	mutex_lock(&chan->lock);
+	if (fd->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
+
+	err = tegra_vi_channel_input_lock(chan, false);
+	if (err)
+		return err;
 
 	if (fd->index >= chan->formats_count) {
 		err = -EINVAL;
 	} else {
-		fd->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		fd->pixelformat = chan->formats[fd->index].v4l2;
 	}
 
-	mutex_unlock(&chan->lock);
+	tegra_vi_channel_input_unlock(chan);
 
 	return err;
 }
@@ -1304,13 +1308,18 @@ static int tegra_vi_channel_g_fmt_vid_cap(
 	struct video_device *vdev = video_devdata(file);
 	struct tegra_vi_channel *chan =
 		container_of(vdev, struct tegra_vi_channel, vdev);
+	int err;
 
-	mutex_lock(&chan->lock);
+	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
 
-	f->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	err = tegra_vi_channel_input_lock(chan, false);
+	if (err)
+		return err;
+
 	f->fmt.pix = chan->pixfmt;
 
-	mutex_unlock(&chan->lock);
+	tegra_vi_channel_input_unlock(chan);
 
 	return 0;
 }
