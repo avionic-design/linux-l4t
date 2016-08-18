@@ -79,7 +79,6 @@ static __initdata struct tegra_clk_init_table meerkat_clk_init_table[] = {
 	{ "uartb",	"pll_p",	408000000,	false},
 	{ "uartc",	"pll_p",	408000000,	false},
 	{ "uartd",	"pll_p",	408000000,	false},
-	{ "pll_c",	NULL,		200000000,	false},
 	{ NULL,		NULL,		0,		0},
 };
 

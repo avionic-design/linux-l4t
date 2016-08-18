@@ -30,7 +30,7 @@
 
 				disp-default-out {
 					nvidia,out-type = <TEGRA_DC_OUT_LVDS>;
-					nvidia,out-parent-clk = "pll_c";
+					nvidia,out-parent-clk = "pll_d2";
 					 /* 165MHz in pico seconds (max rate supported) */
 					nvidia,out-max-pixclk = <6061>;
 					nvidia,out-align = <TEGRA_DC_ALIGN_MSB>;

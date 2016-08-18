@@ -21,9 +21,6 @@
 			edp_panel: panel-auo-g156htn {
 				enable-gpios = <&gpio TEGRA_GPIO(X, 3) GPIO_ACTIVE_HIGH>;
 				backlight = <&lvds_edp_bl>;
-				disp-default-out {
-					nvidia,out-parent-clk = "pll_c";
-				};
 			};
 		};
 	};

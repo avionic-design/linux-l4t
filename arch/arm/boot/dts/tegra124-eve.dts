@@ -116,6 +116,11 @@
 
 		hdmi {
 			status = "okay";
+			hdmi-display {
+				disp-default-out {
+					nvidia,out-parent-clk = "pll_d2";
+				};
+			};
 		};
 	};
 
