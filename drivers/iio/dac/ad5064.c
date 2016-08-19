@@ -91,6 +91,7 @@ struct ad5064_state {
 	struct device			*dev;
 	const struct ad5064_chip_info	*chip_info;
 	struct regulator_bulk_data	vref_reg[AD5064_MAX_VREFS];
+	struct regulator		*vcc_reg;
 	bool				pwr_down[AD5064_MAX_DAC_CHANNELS];
 	u8				pwr_down_mode[AD5064_MAX_DAC_CHANNELS];
 	unsigned int			dac_cache[AD5064_MAX_DAC_CHANNELS];
@@ -599,6 +600,13 @@ static int ad5064_probe(struct device *dev, enum ad5064_type type,
 	st->dev = dev;
 	st->write = write;
 
+	st->vcc_reg = devm_regulator_get(dev, "vcc");
+	if (IS_ERR(st->vcc_reg)) {
+		if (PTR_ERR(st->vcc_reg) != -ENODEV)
+			return PTR_ERR(st->vcc_reg);
+		st->vcc_reg = NULL;
+	}
+
 	for (i = 0; i < ad5064_num_vref(st); ++i)
 		st->vref_reg[i].supply = ad5064_vref_name(st, i);
 
@@ -615,10 +623,20 @@ static int ad5064_probe(struct device *dev, enum ad5064_type type,
 				ret);
 			return ret;
 		}
-	} else {
+	}
+
+	if (st->vcc_reg) {
+		ret = regulator_enable(st->vcc_reg);
+		if (ret) {
+			dev_err(dev, "Failed to enable vcc: %d\n", ret);
+			return ret;
+		}
+	}
+
+	if (!st->use_internal_vref) {
 		ret = regulator_bulk_enable(ad5064_num_vref(st), st->vref_reg);
 		if (ret)
-			return ret;
+			goto error_disable_vcc;
 	}
 
 	indio_dev->dev.parent = dev;
@@ -637,13 +655,16 @@ static int ad5064_probe(struct device *dev, enum ad5064_type type,
 
 	ret = iio_device_register(indio_dev);
 	if (ret)
-		goto error_disable_reg;
+		goto error_disable_vref;
 
 	return 0;
 
-error_disable_reg:
+error_disable_vref:
 	if (!st->use_internal_vref)
 		regulator_bulk_disable(ad5064_num_vref(st), st->vref_reg);
+error_disable_vcc:
+	if (st->vcc_reg)
+		regulator_disable(st->vcc_reg);
 
 	return ret;
 }
@@ -657,6 +678,8 @@ static int ad5064_remove(struct device *dev)
 
 	if (!st->use_internal_vref)
 		regulator_bulk_disable(ad5064_num_vref(st), st->vref_reg);
+	if (st->vcc_reg)
+		regulator_disable(st->vcc_reg);
 
 	return 0;
 }
