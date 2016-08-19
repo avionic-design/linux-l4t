@@ -17,7 +17,9 @@ Optional properties:
 			    0x20 = 2.3A
 			    0x40 = 3.0A
 			    0x60 = 3.6A
-
+- in-supply		  : Regulator for in vcc supply
+- sw-supply		  : Regulator for sw supply. This is switched
+			    on when LED is in FLASH or TORCH mode.
 
 The device must be referenced by a v4l2 host driver. Because the
 driver instantiates two v4l2 subdev, it can be referenced twice
@@ -40,5 +42,7 @@ i2c@7000c500 {
 		led0-max-flash-microamp = <600000>;
 		led1-max-flash-microamp = <600000>;
 		peak-current = <0x00>;
+		in-supply = <&vdd_3v3_led>;
+		sw-supply = <&vdd_3v9_led>;
 	};
 [...]

@@ -23,6 +23,7 @@
 #include <linux/slab.h>
 #include <linux/mutex.h>
 #include <linux/regmap.h>
+#include <linux/regulator/consumer.h>
 #include <linux/videodev2.h>
 #include <media/lm3560.h>
 #include <media/v4l2-ctrls.h>
@@ -66,6 +67,8 @@ struct lm3560_flash {
 	enum v4l2_flash_led_mode led_mode;
 	struct v4l2_ctrl_handler ctrls_led[LM3560_LED_MAX];
 	struct v4l2_subdev subdev_led[LM3560_LED_MAX];
+	struct regulator *in_reg;
+	struct regulator *sw_reg;
 };
 
 #define to_lm3560_flash(_ctrl, _no)	\
@@ -201,11 +204,21 @@ static int lm3560_set_ctrl(struct v4l2_ctrl *ctrl, enum lm3560_led_id led_no)
 
 	switch (ctrl->id) {
 	case V4L2_CID_FLASH_LED_MODE:
+		rval = 0;
+		if (flash->sw_reg) {
+			if ((flash->led_mode != V4L2_FLASH_LED_MODE_NONE) &&
+				(ctrl->val == V4L2_FLASH_LED_MODE_NONE))
+				rval = regulator_disable(flash->sw_reg);
+			if ((flash->led_mode == V4L2_FLASH_LED_MODE_NONE) &&
+				(ctrl->val != V4L2_FLASH_LED_MODE_NONE))
+				rval = regulator_enable(flash->sw_reg);
+			if (rval < 0)
+				goto err_out;
+		}
 		flash->led_mode = ctrl->val;
 		if (flash->led_mode != V4L2_FLASH_LED_MODE_FLASH)
 			rval = lm3560_mode_ctrl(flash);
-		else
-			rval = 0;
+
 		break;
 
 	case V4L2_CID_FLASH_STROBE_SOURCE:
@@ -435,17 +448,44 @@ static int lm3560_probe(struct i2c_client *client,
 	if (flash == NULL)
 		return -ENOMEM;
 
+	/* Regulators */
+	flash->in_reg = devm_regulator_get(&client->dev, "in");
+	if (IS_ERR(flash->in_reg)) {
+		if (PTR_ERR(flash->in_reg) != -ENODEV)
+			return PTR_ERR(flash->in_reg);
+
+		flash->in_reg = NULL;
+	}
+	flash->sw_reg = devm_regulator_get(&client->dev, "sw");
+	if (IS_ERR(flash->sw_reg)) {
+		if (PTR_ERR(flash->sw_reg) != -ENODEV)
+			return PTR_ERR(flash->sw_reg);
+
+		flash->sw_reg = NULL;
+	}
+
+	if (flash->in_reg) {
+		rval = regulator_enable(flash->in_reg);
+		if (rval) {
+			dev_err(&client->dev,
+				"Failed to enable in vcc: %d\n", rval);
+			return rval;
+		}
+	}
+
 	flash->regmap = devm_regmap_init_i2c(client, &lm3560_regmap);
 	if (IS_ERR(flash->regmap)) {
 		rval = PTR_ERR(flash->regmap);
-		return rval;
+		goto error_disable_reg;
 	}
 
 	/* if there is no platform data, use chip default value */
 	if (pdata == NULL) {
 		pdata = devm_kzalloc(&client->dev, sizeof(*pdata), GFP_KERNEL);
-		if (pdata == NULL)
-			return -ENODEV;
+		if (pdata == NULL) {
+			rval = -ENODEV;
+			goto error_disable_reg;
+		}
 		pdata->peak = LM3560_PEAK_3600mA;
 		pdata->max_flash_timeout = LM3560_FLASH_TOUT_MAX;
 		/* led 1 */
@@ -504,19 +544,24 @@ static int lm3560_probe(struct i2c_client *client,
 
 	rval = lm3560_subdev_init(flash, LM3560_LED0, "lm3560-led0");
 	if (rval < 0)
-		return rval;
+		goto error_disable_reg;
 
 	rval = lm3560_subdev_init(flash, LM3560_LED1, "lm3560-led1");
 	if (rval < 0)
-		return rval;
+		goto error_disable_reg;
 
 	rval = lm3560_init_device(flash);
 	if (rval < 0)
-		return rval;
+		goto error_disable_reg;
 
 	i2c_set_clientdata(client, flash);
 
 	return 0;
+
+error_disable_reg:
+	if (flash->in_reg)
+		regulator_disable(flash->in_reg);
+	return rval;
 }
 
 static int lm3560_remove(struct i2c_client *client)
@@ -529,6 +574,12 @@ static int lm3560_remove(struct i2c_client *client)
 		v4l2_ctrl_handler_free(&flash->ctrls_led[i]);
 		media_entity_cleanup(&flash->subdev_led[i].entity);
 	}
+
+	if (flash->sw_reg && flash->led_mode != V4L2_FLASH_LED_MODE_NONE)
+		regulator_disable(flash->sw_reg);
+
+	if (flash->in_reg)
+		regulator_disable(flash->in_reg);
 
 	return 0;
 }
