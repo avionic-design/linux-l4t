@@ -372,6 +372,13 @@ static int lm3560_subdev_init(struct lm3560_flash *flash,
 		goto err_out;
 	flash->subdev_led[led_no].entity.type = MEDIA_ENT_T_V4L2_SUBDEV_FLASH;
 
+	rval = v4l2_async_register_subdev(&flash->subdev_led[led_no]);
+	if (rval < 0) {
+		dev_err(&client->dev, "Failed to register async subdev: %d\n",
+			rval);
+		goto err_out;
+	}
+
 	return rval;
 
 err_out:
@@ -430,6 +437,49 @@ static int lm3560_probe(struct i2c_client *client,
 		pdata->max_flash_brt[LM3560_LED1] = LM3560_FLASH_BRT_MAX;
 		pdata->max_torch_brt[LM3560_LED1] = LM3560_TORCH_BRT_MAX;
 	}
+	if (client->dev.of_node) {
+		u32 val;
+		if (of_property_read_u32(client->dev.of_node,
+			"led1-max-flash-microamp", &val) == 0)
+			pdata->max_flash_brt[LM3560_LED0] =
+				((val > LM3560_FLASH_BRT_MAX) ?
+					LM3560_FLASH_BRT_MAX : val);
+		if (of_property_read_u32(client->dev.of_node,
+			"led2-max-flash-microamp", &val) == 0)
+			pdata->max_flash_brt[LM3560_LED1] =
+			((val > LM3560_FLASH_BRT_MAX) ?
+				LM3560_FLASH_BRT_MAX : val);
+		if (of_property_read_u32(client->dev.of_node,
+			"led1-max-torch-microamp", &val) == 0)
+			pdata->max_torch_brt[LM3560_LED0] =
+			((val > LM3560_TORCH_BRT_MAX) ?
+				LM3560_TORCH_BRT_MAX : val);
+		if (of_property_read_u32(client->dev.of_node,
+			"led2-max-torch-microamp", &val) == 0)
+			pdata->max_torch_brt[LM3560_LED1] =
+			((val > LM3560_TORCH_BRT_MAX) ?
+				LM3560_TORCH_BRT_MAX : val);
+		if (of_property_read_u32(client->dev.of_node,
+			"max-flash-timeout-ms", &val) == 0)
+			pdata->max_flash_timeout =
+			((val > LM3560_FLASH_TOUT_MAX) ?
+				LM3560_FLASH_TOUT_MAX : val);
+		if (of_property_read_u32(client->dev.of_node,
+			"peak-current", &val) == 0) {
+			switch (val) {
+			case LM3560_PEAK_1600mA:
+			case LM3560_PEAK_2300mA:
+			case LM3560_PEAK_3000mA:
+			case LM3560_PEAK_3600mA:
+				pdata->peak = val;
+				break;
+			default:
+				dev_err(&client->dev,
+					"Invalid peak-current value: 0x%02x\n",
+					val);
+			}
+		}
+	}
 	flash->pdata = pdata;
 	flash->dev = &client->dev;
 	mutex_init(&flash->lock);
@@ -457,7 +507,7 @@ static int lm3560_remove(struct i2c_client *client)
 	unsigned int i;
 
 	for (i = LM3560_LED0; i < LM3560_LED_MAX; i++) {
-		v4l2_device_unregister_subdev(&flash->subdev_led[i]);
+		v4l2_async_unregister_subdev(&flash->subdev_led[i]);
 		v4l2_ctrl_handler_free(&flash->ctrls_led[i]);
 		media_entity_cleanup(&flash->subdev_led[i].entity);
 	}
@@ -472,11 +522,18 @@ static const struct i2c_device_id lm3560_id_table[] = {
 
 MODULE_DEVICE_TABLE(i2c, lm3560_id_table);
 
+static const struct of_device_id lm3560_of_match[] = {
+	{ .compatible = "ti,lm3560" },
+	{}
+};
+MODULE_DEVICE_TABLE(of, lm3560_of_match);
+
 static struct i2c_driver lm3560_i2c_driver = {
 	.driver = {
-		   .name = LM3560_NAME,
-		   .pm = NULL,
-		   },
+		.name = LM3560_NAME,
+		.pm = NULL,
+		.of_match_table = of_match_ptr(lm3560_of_match),
+	},
 	.probe = lm3560_probe,
 	.remove = lm3560_remove,
 	.id_table = lm3560_id_table,

@@ -1,0 +1,44 @@
+TI LM3560 LED flash driver
+==========================
+
+Required properties:
+
+- compatible            : "ti,lm3560";
+- reg                   : I2C slave address of the driver;
+
+Optional properties:
+- led1-max-flash-microamp : Maximum current for LED1 in flash mode
+- led2-max-flash-microamp : Maximum current for LED2 in flash mode
+- led1-max-torch-microamp : Maximum current for LED1 in torch mode
+- led2-max-torch-microamp : Maximum current for LED2 in torch mode
+- max-flash-timeout-ms	  : Maximum timeout for flash
+- peak-current		  : Peak current of the chip
+			    0x00 = 1.6A
+			    0x20 = 2.3A
+			    0x40 = 3.0A
+			    0x60 = 3.6A
+
+
+The device must be referenced by a v4l2 host driver. Because the
+driver instantiates two v4l2 subdev, it can be referenced twice
+to access both LED outputs.
+
+Example:
+
+host1x {
+	vi {
+		status = "okay";
+		flash-devices = <&lm3560>, <&lm3560>;
+		port@0 {
+[...]
+
+
+i2c@7000c500 {
+	lm3560: lm3560@53 {
+		compatible = "ti,lm3560";
+		reg = <0x53>;
+		led0-max-flash-microamp = <600000>;
+		led1-max-flash-microamp = <600000>;
+		peak-current = <0x00>;
+	};
+[...]
