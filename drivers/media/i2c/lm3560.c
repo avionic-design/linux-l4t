@@ -204,6 +204,8 @@ static int lm3560_set_ctrl(struct v4l2_ctrl *ctrl, enum lm3560_led_id led_no)
 		flash->led_mode = ctrl->val;
 		if (flash->led_mode != V4L2_FLASH_LED_MODE_FLASH)
 			rval = lm3560_mode_ctrl(flash);
+		else
+			rval = 0;
 		break;
 
 	case V4L2_CID_FLASH_STROBE_SOURCE:
