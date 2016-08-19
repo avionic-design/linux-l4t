@@ -18,6 +18,7 @@
 #include <linux/init.h>
 #include <linux/i2c.h>
 #include <linux/regmap.h>
+#include <linux/regulator/consumer.h>
 #include <linux/pm_runtime.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
@@ -178,6 +179,7 @@ struct ads1015_data {
 	struct ads1015_channel_data channel_data[ADS1015_CHANNELS];
 
 	unsigned int *data_rate;
+	struct regulator *vdd_reg;
 };
 
 static bool ads1015_is_writeable_reg(struct device *dev, unsigned int reg)
@@ -602,10 +604,27 @@ static int ads1015_probe(struct i2c_client *client,
 	/* we need to keep this ABI the same as used by hwmon ADS1015 driver */
 	ads1015_get_channels_config(client);
 
+	data->vdd_reg = devm_regulator_get(&client->dev, "vdd");
+	if (IS_ERR(data->vdd_reg)) {
+		if (PTR_ERR(data->vdd_reg) != -ENODEV)
+			return PTR_ERR(data->vdd_reg);
+		data->vdd_reg = NULL;
+	}
+
+	if (data->vdd_reg) {
+		ret = regulator_enable(data->vdd_reg);
+		if (ret) {
+			dev_err(&client->dev, "Failed to enable regulator: %d\n",
+				ret);
+			return ret;
+		}
+	}
+
 	data->regmap = devm_regmap_init_i2c(client, &ads1015_regmap_config);
 	if (IS_ERR(data->regmap)) {
 		dev_err(&client->dev, "Failed to allocate register map\n");
-		return PTR_ERR(data->regmap);
+		ret = PTR_ERR(data->regmap);
+		goto err_disable_vdd;
 	}
 
 	ret = iio_triggered_buffer_setup(indio_dev, NULL,
@@ -613,7 +632,7 @@ static int ads1015_probe(struct i2c_client *client,
 					 &ads1015_buffer_setup_ops);
 	if (ret < 0) {
 		dev_err(&client->dev, "iio triggered buffer setup failed\n");
-		return ret;
+		goto err_disable_vdd;
 	}
 	ret = pm_runtime_set_active(&client->dev);
 	if (ret)
@@ -632,6 +651,9 @@ static int ads1015_probe(struct i2c_client *client,
 
 err_buffer_cleanup:
 	iio_triggered_buffer_cleanup(indio_dev);
+err_disable_vdd:
+	if (data->vdd_reg)
+		regulator_disable(data->vdd_reg);
 
 	return ret;
 }
@@ -640,6 +662,7 @@ static int ads1015_remove(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev = i2c_get_clientdata(client);
 	struct ads1015_data *data = iio_priv(indio_dev);
+	int ret;
 
 	iio_device_unregister(indio_dev);
 
@@ -650,9 +673,16 @@ static int ads1015_remove(struct i2c_client *client)
 	iio_triggered_buffer_cleanup(indio_dev);
 
 	/* power down single shot mode */
-	return regmap_update_bits(data->regmap, ADS1015_CFG_REG,
+	ret = regmap_update_bits(data->regmap, ADS1015_CFG_REG,
 				  ADS1015_CFG_MOD_MASK,
 				  ADS1015_SINGLESHOT << ADS1015_CFG_MOD_SHIFT);
+	if (ret)
+		return ret;
+
+	if (data->vdd_reg)
+		return regulator_disable(data->vdd_reg);
+
+	return 0;
 }
 
 #ifdef CONFIG_PM
