@@ -361,6 +361,16 @@ static int lm3560_subdev_init(struct lm3560_flash *flash,
 	struct i2c_client *client = to_i2c_client(flash->dev);
 	int rval;
 
+	/* default values */
+	rval = lm3560_torch_brt_ctrl(flash, led_no,
+		flash->pdata->max_torch_brt[led_no]);
+	if (rval < 0)
+		return rval;
+	rval = lm3560_flash_brt_ctrl(flash, led_no,
+		flash->pdata->max_flash_brt[led_no]);
+	if (rval < 0)
+		return rval;
+
 	v4l2_i2c_subdev_init(&flash->subdev_led[led_no], client, &lm3560_ops);
 	flash->subdev_led[led_no].flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	strcpy(flash->subdev_led[led_no].name, led_name);
@@ -390,12 +400,20 @@ static int lm3560_init_device(struct lm3560_flash *flash)
 {
 	int rval;
 	unsigned int reg_val;
+	u8 tout_bits;
 
 	/* set peak current */
 	rval = regmap_update_bits(flash->regmap,
 				  REG_FLASH_TOUT, 0x60, flash->pdata->peak);
 	if (rval < 0)
 		return rval;
+
+	/* default value */
+	tout_bits =
+		LM3560_FLASH_TOUT_ms_TO_REG(flash->pdata->max_flash_timeout);
+	rval = regmap_update_bits(flash->regmap,
+		REG_FLASH_TOUT, 0x1f, tout_bits);
+
 	/* output disable */
 	flash->led_mode = V4L2_FLASH_LED_MODE_NONE;
 	rval = lm3560_mode_ctrl(flash);
