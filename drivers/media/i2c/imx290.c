@@ -881,7 +881,7 @@ static int imx290_poweron(struct imx290_priv *priv)
 	struct i2c_client *client = v4l2_get_subdevdata(&priv->subdev);
 	int ret;
 
-	gpiod_set_value(priv->xclr, 1);
+	gpiod_set_value_cansleep(priv->xclr, 1);
 
 	ret = regulator_bulk_enable(
 		ARRAY_SIZE(priv->regulators), priv->regulators);
@@ -900,7 +900,7 @@ static int imx290_poweron(struct imx290_priv *priv)
 	}
 	usleep_range(1, 5);
 
-	gpiod_set_value(priv->xclr, 0);
+	gpiod_set_value_cansleep(priv->xclr, 0);
 	usleep_range(20, 100);
 
 	ret = regmap_multi_reg_write(priv->regmap, imx290_reg_default,
@@ -933,7 +933,7 @@ static int imx290_poweron(struct imx290_priv *priv)
 	return 0;
 
 set_xclr:
-	gpiod_set_value(priv->xclr, 1);
+	gpiod_set_value_cansleep(priv->xclr, 1);
 disable_regulators:
 	regulator_bulk_disable(ARRAY_SIZE(priv->regulators), priv->regulators);
 	dev_err(&client->dev, "Error powering on sensor: %d\n", ret);
@@ -942,7 +942,7 @@ disable_regulators:
 
 static void imx290_poweroff(struct imx290_priv *priv)
 {
-	gpiod_set_value(priv->xclr, 1);
+	gpiod_set_value_cansleep(priv->xclr, 1);
 	if (priv->inck)
 		clk_disable_unprepare(priv->inck);
 	regulator_bulk_disable(ARRAY_SIZE(priv->regulators), priv->regulators);
