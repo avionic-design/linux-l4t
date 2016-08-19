@@ -318,12 +318,12 @@ static int lm3560_init_controls(struct lm3560_flash *flash,
 
 	/* flash brt */
 	v4l2_ctrl_new_std(hdl, ops, V4L2_CID_FLASH_INTENSITY,
-			  LM3560_FLASH_BRT_MIN, max_flash_brt,
+			  0, max_flash_brt,
 			  LM3560_FLASH_BRT_STEP, max_flash_brt);
 
 	/* torch brt */
 	v4l2_ctrl_new_std(hdl, ops, V4L2_CID_FLASH_TORCH_INTENSITY,
-			  LM3560_TORCH_BRT_MIN, max_torch_brt,
+			  0, max_torch_brt,
 			  LM3560_TORCH_BRT_STEP, max_torch_brt);
 
 	/* fault */
