@@ -104,6 +104,7 @@ static const struct st_sensors st_gyro_sensors[] = {
 		.sensors_supported = {
 			[0] = L3G4200D_GYRO_DEV_NAME,
 			[1] = LSM330DL_GYRO_DEV_NAME,
+			[2] = I3G4250D_GYRO_DEV_NAME,
 		},
 		.ch = (struct iio_chan_spec *)st_gyro_16bit_channels,
 		.odr = {
