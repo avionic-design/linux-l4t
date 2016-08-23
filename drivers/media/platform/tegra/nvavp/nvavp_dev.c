@@ -1,7 +1,7 @@
 /*
  * drivers/media/video/tegra/nvavp/nvavp_dev.c
  *
- * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2016, NVIDIA CORPORATION.  All rights reserved.
  *
  * This file is licensed under the terms of the GNU General Public License
  * version 2. This program is licensed "as is" without any warranty of any
@@ -567,7 +567,10 @@ static void nvavp_clks_enable(struct nvavp_info *nvavp)
 
 static void nvavp_clks_disable(struct nvavp_info *nvavp)
 {
-	if ((--nvavp->clk_enabled == 0) && !nvavp->stay_on) {
+	if (nvavp->clk_enabled) {
+		nvavp->clk_enabled--;
+	}
+	if ((nvavp->clk_enabled == 0) && !nvavp->stay_on) {
 		clk_disable_unprepare(nvavp->bsev_clk);
 		clk_disable_unprepare(nvavp->vde_clk);
 		clk_set_rate(nvavp->emc_clk, 0);
@@ -1525,6 +1528,12 @@ static int nvavp_pushbuffer_submit_ioctl(struct file *filp, unsigned int cmd,
 	if (!hdr.cmdbuf.mem)
 		return 0;
 
+	if (hdr.num_relocs > NVAVP_MAX_RELOCATION_COUNT) {
+		dev_err(&nvavp->nvhost_dev->dev,
+			"invalid num_relocs %d\n", hdr.num_relocs);
+		return -EINVAL;
+	}
+
 	if (copy_from_user(clientctx->relocs, (void __user *)hdr.relocs,
 			sizeof(struct nvavp_reloc) * hdr.num_relocs)) {
 		return -EFAULT;
@@ -1535,6 +1544,14 @@ static int nvavp_pushbuffer_submit_ioctl(struct file *filp, unsigned int cmd,
 		dev_err(&nvavp->nvhost_dev->dev,
 			"invalid cmd buffer handle %08x\n", hdr.cmdbuf.mem);
 		return PTR_ERR(cmdbuf_dmabuf);
+	}
+
+	if ((hdr.cmdbuf.offset & 3)
+		|| (hdr.cmdbuf.offset >= cmdbuf_dmabuf->size)) {
+		dev_err(&nvavp->nvhost_dev->dev,
+			"invalid cmdbuf offset %d\n", hdr.cmdbuf.offset);
+		ret = -EINVAL;
+		goto err_dmabuf_attach;
 	}
 
 	cmdbuf_attach = dma_buf_attach(cmdbuf_dmabuf, &nvavp->nvhost_dev->dev);
@@ -1574,6 +1591,18 @@ static int nvavp_pushbuffer_submit_ioctl(struct file *filp, unsigned int cmd,
 			goto err_reloc_info;
 		}
 
+		if ((clientctx->relocs[i].cmdbuf_offset & 3)
+			|| (clientctx->relocs[i].cmdbuf_offset >=
+				cmdbuf_dmabuf->size)
+			|| (clientctx->relocs[i].cmdbuf_offset >=
+				(cmdbuf_dmabuf->size - hdr.cmdbuf.offset))) {
+			dev_err(&nvavp->nvhost_dev->dev,
+				"invalid reloc offset in cmdbuf %d\n",
+				clientctx->relocs[i].cmdbuf_offset);
+			ret = -EINVAL;
+			goto err_reloc_info;
+		}
+
 		reloc_addr = cmdbuf_data +
 			     (clientctx->relocs[i].cmdbuf_offset >> 2);
 
@@ -1582,6 +1611,17 @@ static int nvavp_pushbuffer_submit_ioctl(struct file *filp, unsigned int cmd,
 			ret = PTR_ERR(target_dmabuf);
 			goto target_dmabuf_fail;
 		}
+
+		if ((clientctx->relocs[i].target_offset & 3)
+			|| (clientctx->relocs[i].target_offset >=
+				target_dmabuf->size)) {
+			dev_err(&nvavp->nvhost_dev->dev,
+				"invalid target offset in reloc %d\n",
+				clientctx->relocs[i].target_offset);
+			ret = -EINVAL;
+			goto target_attach_fail;
+		}
+
 		target_attach = dma_buf_attach(target_dmabuf,
 					       &nvavp->nvhost_dev->dev);
 		if (IS_ERR(target_attach)) {

@@ -274,12 +274,6 @@ static int dbg_unbind_channel_gk20a(struct dbg_session_gk20a *dbg_s)
 
 	--g->dbg_sessions;
 
-	/* Powergate enable is called here as possibility of dbg_session
-	 * which called powergate disable ioctl, to be killed without calling
-	 * powergate enable ioctl
-	 */
-	dbg_set_powergate(dbg_s, NVHOST_DBG_GPU_POWERGATE_MODE_ENABLE);
-
 	dbg_s->ch = NULL;
 	fput(dbg_s->ch_f);
 	dbg_s->ch_f = NULL;
@@ -295,12 +289,21 @@ static int dbg_unbind_channel_gk20a(struct dbg_session_gk20a *dbg_s)
 int gk20a_dbg_gpu_dev_release(struct inode *inode, struct file *filp)
 {
 	struct dbg_session_gk20a *dbg_s = filp->private_data;
+	struct gk20a *g = dbg_s->g;
 
 	gk20a_dbg(gpu_dbg_gpu_dbg | gpu_dbg_fn, "%s", dev_name(dbg_s->dev));
 
 	/* unbind if it was bound */
 	if (dbg_s->ch)
 		dbg_unbind_channel_gk20a(dbg_s);
+
+	/* Powergate enable is called here as possibility of dbg_session
+	 * which called powergate disable ioctl, to be killed without calling
+	 * powergate enable ioctl
+	 */
+	mutex_lock(&g->dbg_sessions_lock);
+	dbg_set_powergate(dbg_s, NVHOST_DBG_GPU_POWERGATE_MODE_ENABLE);
+	mutex_unlock(&g->dbg_sessions_lock);
 
 	kfree(dbg_s);
 	return 0;
@@ -588,13 +591,13 @@ static int dbg_set_powergate(struct dbg_session_gk20a *dbg_s,
 		    --g->dbg_powergating_disabled_refcount == 0) {
 
 			g->elcg_enabled = true;
-			gr_gk20a_init_elcg_mode(g, ELCG_AUTO, ENGINE_GR_GK20A);
 			gr_gk20a_init_elcg_mode(g, ELCG_AUTO, ENGINE_CE2_GK20A);
+			gr_gk20a_init_elcg_mode(g, ELCG_AUTO, ENGINE_GR_GK20A);
 			gr_gk20a_init_blcg_mode(g, BLCG_AUTO, ENGINE_GR_GK20A);
 
-			g->ops.clock_gating.slcg_gr_load_gating_prod(g,
-					g->slcg_enabled);
 			g->ops.clock_gating.slcg_perf_load_gating_prod(g,
+					g->slcg_enabled);
+			g->ops.clock_gating.slcg_gr_load_gating_prod(g,
 					g->slcg_enabled);
 
 			gk20a_pmu_enable_elpg(g);

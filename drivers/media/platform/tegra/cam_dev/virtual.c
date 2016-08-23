@@ -1,7 +1,7 @@
 /*
  * virtual.c - Virtual kernel driver
  *
- * Copyright (c) 2013-2014, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2013-2016, NVIDIA CORPORATION. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -111,28 +111,8 @@ static int virtual_update(
 		}
 		case UPDATE_GPIO:
 		{
-			struct nvc_gpio *gpio;
-
-			if (upd[idx].index >= cdev->num_gpio) {
-				dev_err(cdev->dev,
-					"gpio index %d out of range.\n",
-					upd[idx].index);
-				err = -ENODEV;
-				break;
-			}
-			gpio = (void *)((unsigned long)upd[idx].arg);
-			if (gpio->gpio >= ARCH_NR_GPIOS) {
-				dev_err(cdev->dev,
-					"gpio index %d out of range.\n",
-					gpio->gpio);
-				err = -ENODEV;
-				break;
-			}
-
-			dev_dbg(cdev->dev, "UPDATE_GPIO: %d %u\n",
-				upd[idx].index, upd[idx].arg);
-			gpio->valid = true;
-			cdev->gpios[upd[idx].index] = *gpio;
+			dev_dbg(cdev->dev, "%s UPDATE_GPIO is deprecated\n",
+				__func__);
 			break;
 		}
 		default:
@@ -346,6 +326,12 @@ static int virtual_device_sanity_check(
 			__func__, dev_info->clk_num);
 	}
 
+	if (dev_info->reg_num >= VIRTUAL_DEV_MAX_REGULATORS) {
+		dev_err(dev, "%s too many regulators %u!\n",
+			__func__, dev_info->reg_num);
+		return -ENODEV;
+	}
+
 	*len = 0;
 	num = dev_info->reg_num;
 	nptr = &dev_info->reg_names[0];
@@ -361,6 +347,18 @@ static int virtual_device_sanity_check(
 		num--;
 	}
 	dev_dbg(dev, "regulator name size: %d\n", *len);
+
+	if (dev_info->pwr_on_size > VIRTUAL_DEV_MAX_POWER_SIZE) {
+		dev_err(dev, "%s power on function size too big %d!\n",
+		__func__, dev_info->pwr_on_size);
+		return -ENODEV;
+	}
+
+	if (dev_info->pwr_off_size > VIRTUAL_DEV_MAX_POWER_SIZE) {
+		dev_err(dev, "%s power off function size too big %d!\n",
+		__func__, dev_info->pwr_off_size);
+		return -ENODEV;
+	}
 
 	return 0;
 }
