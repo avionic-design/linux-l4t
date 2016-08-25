@@ -219,7 +219,7 @@ static int exynos_get_trip_type(struct thermal_zone_device *thermal, int trip,
 
 /* Get trip temperature callback functions for thermal zone */
 static int exynos_get_trip_temp(struct thermal_zone_device *thermal, int trip,
-				unsigned long *temp)
+				long *temp)
 {
 	if (trip < GET_TRIP(MONITOR_ZONE) || trip > GET_TRIP(PANIC_ZONE))
 		return -EINVAL;
@@ -233,7 +233,7 @@ static int exynos_get_trip_temp(struct thermal_zone_device *thermal, int trip,
 
 /* Get critical temperature callback functions for thermal zone */
 static int exynos_get_crit_temp(struct thermal_zone_device *thermal,
-				unsigned long *temp)
+				long *temp)
 {
 	int ret;
 	/* Panic zone */
@@ -333,7 +333,7 @@ static int exynos_unbind(struct thermal_zone_device *thermal,
 
 /* Get temperature callback functions for thermal zone */
 static int exynos_get_temp(struct thermal_zone_device *thermal,
-			unsigned long *temp)
+			long *temp)
 {
 	void *data;
 

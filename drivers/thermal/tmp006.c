@@ -132,7 +132,7 @@ static int tmp006_unbind(struct thermal_zone_device *thermal,
 }
 
 static int tmp006_get_trip_temp(struct thermal_zone_device *thz,
-				int trip, unsigned long *temp)
+				int trip, long *temp)
 {
 	*temp = 9000;
 	return 0;
@@ -390,7 +390,7 @@ static s16 tmp006_Calculate(s16 vout, s16 tdie)
 }
 
 static int tmp006_get_temp(struct thermal_zone_device *thermal,
-				unsigned long *t)
+				long *t)
 {
 	struct tmp006_data *data = thermal->devdata;
 	struct i2c_client *client = data->client;

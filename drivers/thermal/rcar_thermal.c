@@ -201,7 +201,7 @@ err_out_unlock:
 }
 
 static int rcar_thermal_get_temp(struct thermal_zone_device *zone,
-				 unsigned long *temp)
+				long *temp)
 {
 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
 
@@ -235,7 +235,7 @@ static int rcar_thermal_get_trip_type(struct thermal_zone_device *zone,
 }
 
 static int rcar_thermal_get_trip_temp(struct thermal_zone_device *zone,
-				      int trip, unsigned long *temp)
+				      int trip, long *temp)
 {
 	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
 	struct device *dev = rcar_priv_to_dev(priv);
