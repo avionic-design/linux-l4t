@@ -121,11 +121,10 @@ static int max8831_bl_probe(struct platform_device *pdev)
 	data->id = pdev->id;
 	data->notify = pData->notify;
 	data->is_powered = pData->is_powered;
-	data->regulator = regulator_get(data->max8831_dev,
-			"vin");
+	data->regulator = devm_regulator_get(&pdev->dev, "vin");
 	if (IS_ERR(data->regulator)) {
-		dev_err(&pdev->dev, "%s: Unable to get the backlight regulator\n",
-		       __func__);
+		if (PTR_ERR(data->regulator) != -ENODEV)
+			return PTR_ERR(data->regulator);
 		data->regulator = NULL;
 	} else {
 		err = regulator_enable(data->regulator);
@@ -139,7 +138,8 @@ static int max8831_bl_probe(struct platform_device *pdev)
 				       &max8831_backlight_ops, &props);
 	if (IS_ERR(bl)) {
 		dev_err(&pdev->dev, "failed to register backlight\n");
-		return PTR_ERR(bl);
+		err = PTR_ERR(bl);
+		goto err_disable_vin;
 	}
 
 	bl->props.brightness = pData->dft_brightness;
@@ -147,6 +147,11 @@ static int max8831_bl_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, bl);
 	backlight_update_status(bl);
 	return 0;
+
+err_disable_vin:
+	if (data->regulator)
+		regulator_disable(data->regulator);
+	return err;
 }
 
 static int max8831_bl_remove(struct platform_device *pdev)
@@ -155,7 +160,7 @@ static int max8831_bl_remove(struct platform_device *pdev)
 	struct max8831_backlight_data *data = bl_get_data(bl);
 
 	if (data->regulator != NULL)
-		regulator_put(data->regulator);
+		regulator_disable(data->regulator);
 
 	backlight_device_unregister(bl);
 
