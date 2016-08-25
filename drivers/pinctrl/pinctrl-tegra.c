@@ -397,7 +397,6 @@ static int tegra_pinctrl_enable(struct pinctrl_dev *pctldev, unsigned req_functi
 	int i;
 	u32 val;
 	unsigned long flags;
-	int ret;
 
 	g = &pmx->soc->groups[group];
 
