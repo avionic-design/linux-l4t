@@ -662,7 +662,7 @@ static int read_accel_hw_self_test_prod_shift(struct inv_gyro_state_s *st,
 
 static int inv_check_accl_self_test(struct inv_gyro_state_s *st,
 	int *reg_avg, int *st_avg){
-	int gravity, reg_z_avg, g_z_sign, fs, j, ret_val;
+	int gravity, reg_z_avg, g_z_sign, j, ret_val;
 	int tmp1;
 	int st_shift_prod[3], st_shift_cust[3], st_shift_ratio[3];
 
