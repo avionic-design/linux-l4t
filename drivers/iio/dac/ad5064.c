@@ -613,8 +613,10 @@ static int ad5064_probe(struct device *dev, enum ad5064_type type,
 	ret = devm_regulator_bulk_get(dev, ad5064_num_vref(st),
 		st->vref_reg);
 	if (ret) {
-		if (!st->chip_info->internal_vref)
+		if (ret != -ENODEV)
 			return ret;
+		if (!st->chip_info->internal_vref)
+			return -EINVAL;
 		st->use_internal_vref = true;
 		ret = ad5064_write(st, AD5064_CMD_CONFIG, 0,
 			AD5064_CONFIG_INT_VREF_ENABLE, 0);
