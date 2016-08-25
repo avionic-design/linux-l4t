@@ -168,7 +168,7 @@ void get_noise_gate(struct snd_soc_codec *codec, int *noise_gate_en,
 {
 	unsigned int reg = snd_soc_read(codec, RT5639_DRC_AGC_3);
 
-	dev_info("get_noise_gate reg=0x%04x\n", reg);
+	dev_info(codec->dev, "get_noise_gate reg=0x%04x\n", reg);
 	*noise_gate_en = (reg & RT5639_DRC_AGC_NG_MASK) >>
 				RT5639_DRC_AGC_NG_SFT;
 	*noise_gate_hold_en = (reg & RT5639_DRC_AGC_NGH_MASK) >>
