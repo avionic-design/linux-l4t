@@ -448,7 +448,7 @@ static int tmp006_probe(struct i2c_client *client,
 	if (tmp006_get_manufacture_id(client) != 0x5449 ||
 			tmp006_get_device_id(client) != 0x0067) {
 		dev_err(&client->dev,
-			"%s(): tmp006 device not present\n",
+			"%s(): tmp006 device not present err=%d\n",
 			__func__, err);
 		return -1;
 	}
