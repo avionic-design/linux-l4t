@@ -203,6 +203,7 @@
 	/* MMC card slot */
 	sdhci@700b0400 {
 		status = "okay";
+		wp-gpios = <&gpio TEGRA_GPIO(Q, 4) GPIO_ACTIVE_LOW>;
 		vddio_sd_slot-supply = <&vdd_3v3_sd>;
 	};
 
