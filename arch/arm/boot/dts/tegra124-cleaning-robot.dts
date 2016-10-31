@@ -1,0 +1,371 @@
+/dts-v1/;
+
+#include "tegra124-meerkat.dtsi"
+
+/ {
+	model = "Cyberdyne Cleaning Robot";
+	compatible = "cyberdyne,cleaning-robot", "ad,meerkat", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+
+	pinmux {
+		common {
+			uart3_rxd_pw7 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			uart3_txd_pw6 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			dap2_din_pa4 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			dap2_dout_pa5 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			dap2_fs_pa2 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			dap2_sclk_pa3 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+		};
+	};
+
+	pwm-fan {
+		status = "okay";
+	};
+
+	host1x {
+		dc@54200000 {
+			status = "okay";
+
+			nvidia,dc-connection = "external-display";
+			vdd_hdmi_5v0-supply = <&hdmi_vcc>;
+		};
+
+		hdmi {
+			status = "okay";
+		};
+	};
+
+	serial@70006040 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006200 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006300 {
+		status = "okay";
+	};
+
+	ahub {
+		status = "okay";
+
+		i2s@70301100 {
+			status = "okay";
+		};
+	};
+
+	/* Recovery USB */
+	usb@7d000000 {
+		status = "okay";
+
+		nvidia,port-otg;
+		nvidia,remote-wakeup-supported;
+		nvidia,power-off-on-suspend;
+
+		usb_vbus-supply = <&usb_client_vbus>;
+	};
+
+	udc@7d000000 {
+		status = "okay";
+
+		usb_vbus-supply = <&usb_client_vbus>;
+	};
+
+	otg@7d000000 {
+		status = "okay";
+
+		usb_vbus-supply = <&usb_client_vbus>;
+	};
+
+	/* USB 3.0 */
+	xusb@70090000 {
+		status = "okay";
+
+		nvidia,gpio_ss1_sata = <0>;
+		nvidia,portmap = <(XUSB_MUX_USB2_P1 | XUSB_MUX_SS_P0)>;
+		nvidia,ss_portmap = <XUSB_PADCTL_SS_PORTMAP(P1, DISABLE)>;
+		usb_vbus1-supply = <&usb3_vcc>;
+	};
+
+	/* CAN controller */
+	usb@7d008000 {
+		status = "okay";
+
+		usb_vbus-supply = <&usb2_vbus>;
+	};
+
+	pcie-controller {
+		status = "okay";
+
+		nvidia,port0_status = <1>;
+		nvidia,port1_status = <1>;
+		nvidia,lanes = <TEGRA_PCIE_LANES_X2_X1>;
+	};
+
+	/* GEN 1 */
+	i2c@7000c000 {
+		status = "okay";
+
+		wm8903: audio-codec@1a {
+			compatible = "wlf,wm8903";
+			reg = <0x1a>;
+
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(U, 5) IRQ_TYPE_LEVEL_HIGH>;
+
+			avdd-supply = <&ext_1v8>;
+			dbvdd-supply = <&ext_1v8>;
+			cpvdd-supply = <&ext_1v8>;
+			dcvdd-supply = <&ext_1v8>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			micdet-cfg = <0>;
+			micdet-delay = <100>;
+		};
+	};
+
+	/* GEN 2 */
+	i2c@7000c400 {
+		status = "okay";
+
+		rtc@51 {
+			compatible = "nxp,pcf8563";
+			reg = <0x51>;
+		};
+	};
+
+	/* HDMI DDC */
+	i2c@7000c700 {
+		status = "okay";
+	};
+
+	i2c@7000d000 {
+		pmic@40 {
+			pinmux@0 {
+				gpio5_6 {
+					pins = "gpio5", "gpio6";
+					function = "gpio";
+					bias-disable;
+				};
+			};
+		};
+	};
+
+	hda@70030000 {
+		status = "okay";
+	};
+
+	avp-audio {
+		compatible = "nvidia,tegra124-avp-audio", "nvidia,tegra30-avp-audio";
+	};
+
+	audio-offload {
+		compatible = "nvidia,tegra-offload";
+	};
+
+	sound {
+		compatible = "ad,tegra-audio-wm8903-medcom-wide",
+			     "nvidia,tegra-audio-wm8903";
+		nvidia,model = "Avionic Design Meerkat WM8903";
+
+		nvidia,audio-routing =
+			"Headphone Jack", "HPOUTR",
+			"Headphone Jack", "HPOUTL",
+			"IN1R", "Mic Jack",
+			"IN1L", "Mic Jack";
+
+		nvidia,memory-clients = <SWGID_PPCS>;
+		nvidia,i2s-controller = <&tegra_i2s1>;
+		nvidia,i2s-is-master;
+		nvidia,audio-codec = <&wm8903>;
+	};
+
+	/* SDMMC slot */
+	sdhci@700b0400 {
+		status = "okay";
+
+		vddio_sd_slot-supply = <&sdmmc3_3v3>;
+		wp-gpios = <>;
+	};
+
+	regulators {
+		vsys: regulator@100 {
+			compatible = "regulator-fixed";
+			reg = <100>;
+			regulator-name = "VSYS";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
+			regulator-name = "+5V_SYS";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+
+		vdd_3v3: regulator@102 {
+			compatible = "regulator-fixed";
+			reg = <102>;
+			regulator-name = "+3V3_SYS";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+
+		ext_5v0: regulator@103 {
+			compatible = "regulator-fixed";
+			reg = <103>;
+			regulator-name = "+5V_EXT";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+
+		ext_1v8: regulator@104 {
+			compatible = "regulator-fixed";
+			reg = <104>;
+			regulator-name = "+1V8_EXT";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_5v0>;
+		};
+
+		ext_3v3: regulator@105 {
+			compatible = "regulator-fixed";
+			reg = <105>;
+			regulator-name = "+3V3_EXT";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_5v0>;
+		};
+
+		sys_12v0: regulator@106 {
+			compatible = "regulator-fixed";
+			reg = <106>;
+			regulator-name = "+12V_SYS";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+
+		mPCIe_1v5: regulator@107 {
+			compatible = "regulator-fixed";
+			reg = <107>;
+			regulator-name = "+1V5_mPCIe";
+			regulator-min-microvolt = <150000>;
+			regulator-max-microvolt = <150000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&ext_3v3>;
+		};
+
+		ext_1v25: regulator@108 {
+			compatible = "regulator-fixed";
+			reg = <108>;
+			regulator-name = "+1V25_EXT";
+			regulator-min-microvolt = <125000>;
+			regulator-max-microvolt = <125000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&sys_12v0>;
+		};
+
+		sdmmc3_3v3: regulator@109 {
+			compatible = "regulator-fixed";
+			reg = <109>;
+			regulator-name = "+3V3_SD";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-enable-ramp-delay = <2500>;
+			gpio = <&gpio TEGRA_GPIO(R, 0) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			vin-supply = <&ext_3v3>;
+		};
+
+		hdmi_vcc: regulator@110 {
+			compatible = "regulator-fixed";
+			reg = <110>;
+			regulator-name = "HDMI_VCC";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio TEGRA_GPIO(H, 1) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			vin-supply = <&ext_5v0>;
+		};
+
+		usb_client_vbus: regulator@111 {
+			compatible = "regulator-fixed";
+			reg = <111>;
+			regulator-name = "USB_CLIENT_VBUS";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&ext_5v0>;
+			gpio = <&gpio TEGRA_GPIO(N, 4) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+		};
+
+		usb3_vcc: regulator@112 {
+			compatible = "regulator-fixed";
+			reg = <112>;
+			regulator-name = "USB3_VCC";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&ext_3v3>;
+			gpio = <&gpio TEGRA_GPIO(N, 5) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+		};
+
+		usb2_vbus: regulator@113 {
+			compatible = "regulator-fixed";
+			reg = <113>;
+			regulator-name = "USB2_VBUS";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			vin-supply = <&ext_3v3>;
+			gpio = <&gpio TEGRA_GPIO(FF, 1) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+		};
+	};
+};
