@@ -9,6 +9,11 @@
 
 	pinmux {
 		common {
+			/* codec interrupt */
+			dap1_dout_pn2 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
+
 			/* i2s1 (DAP2) */
 			dap2_din_pa4 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
@@ -86,18 +91,13 @@
 			reg = <0x1a>;
 
 			interrupt-parent = <&gpio>;
-			interrupts = <TEGRA_GPIO(U, 5) IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <TEGRA_GPIO(N, 2) IRQ_TYPE_LEVEL_HIGH>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
 
 			micdet-cfg = <0>;
 			micdet-delay = <100>;
-			gpio-cfg = <0x381 /* GPIO input active high, debounced */
-				    0x381
-				    0x0   /* Output GPIO low, no pulls */
-				    0xffffffff
-				    0xffffffff>;
 		};
 	};
 
@@ -225,7 +225,7 @@
 			"Mic Jack", "MICBIAS",
 			"IN1L", "Mic Jack";
 
-		nvidia,hp-det-gpios = <&wm8903 0 GPIO_ACTIVE_LOW>;
+		nvidia,hp-det-gpios = <&gpio TEGRA_GPIO(R, 5) GPIO_ACTIVE_LOW>;
 
 		nvidia,memory-clients = <SWGID_PPCS>;
 		nvidia,i2s-controller = <&tegra_i2s1>;
