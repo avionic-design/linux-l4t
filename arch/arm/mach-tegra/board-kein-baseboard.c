@@ -30,16 +30,6 @@ static const char * const kein_baseboard_dt_board_compat[] = {
 	NULL
 };
 
-static struct of_dev_auxdata kein_baseboard_auxdata_lookup[] __initdata = {
-	COM_MEERKAT_AUXDATA,
-	{}
-};
-
-void __init kein_baseboard_init(void)
-{
-	tegra_meerkat_dt_init(kein_baseboard_auxdata_lookup);
-}
-
 DT_MACHINE_START(MEERKAT_DT, "Avionic Design Meerkat (Device Tree)")
 	.atag_offset	= 0x100,
 	.smp		= smp_ops(tegra_smp_ops),
@@ -48,7 +38,7 @@ DT_MACHINE_START(MEERKAT_DT, "Avionic Design Meerkat (Device Tree)")
 	.init_early	= tegra_meerkat_init_early,
 	.init_irq	= irqchip_init,
 	.init_time	= clocksource_of_init,
-	.init_machine	= kein_baseboard_init,
+	.init_machine	= tegra_meerkat_init,
 	.restart	= tegra_assert_system_reset,
 	.dt_compat	= kein_baseboard_dt_board_compat,
 	.init_late	= tegra_meerkat_init_late
