@@ -2273,7 +2273,13 @@
 			regulator-max-microvolt = <3300000>;
 			regulator-always-on;
 			regulator-boot-on;
-			gpio = <&pmic 1 GPIO_ACTIVE_HIGH>;
+			/* gpio is not set to avoid reference loops between
+			 * regulator and pinctrl drivers of the pmu. This is
+			 * needed to avoid probe deferrals on regulator setup.
+			 * As this supply is enabled on boot anyway, the gpio
+			 * would not be used by the kernel at all.
+			 *
+			 * gpio = <&pmic 1 GPIO_ACTIVE_HIGH>; */
 			enable-active-high;
 			vin-supply = <&vdd_3v3_sys>;
 		};
