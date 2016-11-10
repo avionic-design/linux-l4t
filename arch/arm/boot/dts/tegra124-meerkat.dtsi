@@ -2218,7 +2218,16 @@
 		i2c-pmic-integration = <&cl_dvfs_pmu_i2c>;
 	};
 
+	/* For the base board regulators, they should be probed first to avoid
+	 * having probe deferals on PMIC regulators. For this they should appear
+	 * first in the DTB, so we create the node here. */
 	regulators {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	com_regulators {
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <0>;
