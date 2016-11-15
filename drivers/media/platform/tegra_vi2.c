@@ -1509,6 +1509,92 @@ unlock:
 	return err;
 }
 
+#define tegra_vi_channel_subdev_op(file, ops, func, args...)		\
+	({								\
+		struct video_device *vdev = video_devdata(file);	\
+		struct tegra_vi_channel *chan = container_of(		\
+			vdev, struct tegra_vi_channel, vdev);		\
+		int err;						\
+									\
+		err = tegra_vi_channel_input_lock(chan, false);		\
+		if (err)						\
+			return err;					\
+									\
+		err = v4l2_subdev_call(chan->input->sensor,		\
+				ops, func, args);			\
+									\
+		tegra_vi_channel_input_unlock(chan);			\
+									\
+		err;							\
+	})
+
+static int tegra_vi_channel_g_dv_timings(struct file *file, void *priv,
+				struct v4l2_dv_timings *timings)
+{
+	return tegra_vi_channel_subdev_op(file, video, g_dv_timings, timings);
+}
+
+static int tegra_vi_channel_s_dv_timings(struct file *file, void *priv,
+				struct v4l2_dv_timings *timings)
+{
+	return tegra_vi_channel_subdev_op(file, video, s_dv_timings, timings);
+}
+
+static int tegra_vi_channel_enum_dv_timings(struct file *file, void *priv,
+				struct v4l2_enum_dv_timings *timings)
+{
+	return tegra_vi_channel_subdev_op(file, video,
+					enum_dv_timings, timings);
+}
+
+static int tegra_vi_channel_dv_timings_cap(struct file *file, void *priv,
+				struct v4l2_dv_timings_cap *cap)
+{
+	return tegra_vi_channel_subdev_op(file, video, dv_timings_cap, cap);
+}
+
+static int tegra_vi_channel_g_std(struct file *file, void *priv,
+				v4l2_std_id *norm)
+{
+	return tegra_vi_channel_subdev_op(file, core, g_std, norm);
+}
+
+static int tegra_vi_channel_s_std(struct file *file, void *priv,
+				v4l2_std_id norm)
+{
+	return tegra_vi_channel_subdev_op(file, core, s_std, norm);
+}
+
+static int tegra_vi_channel_querystd(struct file *file, void *priv,
+				v4l2_std_id *norm)
+{
+	return tegra_vi_channel_subdev_op(file, video, querystd, norm);
+}
+
+static int tegra_vi_channel_g_tuner(struct file *file, void *priv,
+				struct v4l2_tuner *a)
+{
+	return tegra_vi_channel_subdev_op(file, tuner, g_tuner, a);
+}
+
+static int tegra_vi_channel_s_tuner(struct file *file, void *priv,
+				const struct v4l2_tuner *a)
+{
+	return tegra_vi_channel_subdev_op(file, tuner, s_tuner, a);
+}
+
+static int tegra_vi_channel_g_frequency(struct file *file, void *priv,
+				struct v4l2_frequency *freq)
+{
+	return tegra_vi_channel_subdev_op(file, tuner, g_frequency, freq);
+}
+
+static int tegra_vi_channel_s_frequency(struct file *file, void *priv,
+				const struct v4l2_frequency *freq)
+{
+	return tegra_vi_channel_subdev_op(file, tuner, s_frequency, freq);
+}
+
 static int tegra_vi_channel_open(struct file *file)
 {
 	struct video_device *vdev = video_devdata(file);
@@ -1573,6 +1659,17 @@ static const struct v4l2_ioctl_ops tegra_vi_channel_ioctl_ops = {
 	.vidioc_g_parm			= tegra_vi_channel_g_parm,
 	.vidioc_enum_framesizes		= tegra_vi_channel_enum_framesizes,
 	.vidioc_enum_frameintervals	= tegra_vi_channel_enum_frameintervals,
+	.vidioc_g_dv_timings		= tegra_vi_channel_g_dv_timings,
+	.vidioc_s_dv_timings		= tegra_vi_channel_s_dv_timings,
+	.vidioc_enum_dv_timings		= tegra_vi_channel_enum_dv_timings,
+	.vidioc_dv_timings_cap		= tegra_vi_channel_dv_timings_cap,
+	.vidioc_g_std			= tegra_vi_channel_g_std,
+	.vidioc_s_std			= tegra_vi_channel_s_std,
+	.vidioc_querystd		= tegra_vi_channel_querystd,
+	.vidioc_g_tuner			= tegra_vi_channel_g_tuner,
+	.vidioc_s_tuner			= tegra_vi_channel_s_tuner,
+	.vidioc_g_frequency		= tegra_vi_channel_g_frequency,
+	.vidioc_s_frequency		= tegra_vi_channel_s_frequency,
 	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
