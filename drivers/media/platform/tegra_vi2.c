@@ -1639,9 +1639,16 @@ static int tegra_vi_channel_s_frequency(struct file *file, void *priv,
 static int tegra_vi_channel_open(struct file *file)
 {
 	struct video_device *vdev = video_devdata(file);
+	struct tegra_vi2 *vi2 =
+		container_of(vdev->v4l2_dev, struct tegra_vi2, v4l2_dev);
 	struct tegra_vi_channel *chan =
 		container_of(vdev, struct tegra_vi_channel, vdev);
 	int err = 0;
+
+	if (!vi2->sensors_complete) {
+		dev_err(vi2->v4l2_dev.dev, "Some sensors are missing\n");
+		return -ENODEV;
+	}
 
 	mutex_lock(&chan->lock);
 
@@ -1813,7 +1820,7 @@ static int tegra_vi_sensors_complete(struct v4l2_async_notifier *notifier)
 	struct tegra_vi2 *vi2 =
 		container_of(notifier, struct tegra_vi2, sd_notifier);
 	unsigned int inputs = 0;
-	int c, i;
+	int err, c, i;
 
 	/* Create a bitmap of the sensors */
 	for (i = 0; i < ARRAY_SIZE(vi2->input); i++) {
@@ -1836,7 +1843,15 @@ static int tegra_vi_sensors_complete(struct v4l2_async_notifier *notifier)
 		}
 	}
 
-	return v4l2_device_register_subdev_nodes(&vi2->v4l2_dev);
+	err = v4l2_device_register_subdev_nodes(&vi2->v4l2_dev);
+	if (err) {
+		dev_err(vi2->v4l2_dev.dev,
+			"Failed to register subdevices nodes\n");
+		return err;
+	}
+
+	vi2->sensors_complete = true;
+	return 0;
 }
 
 static void tegra_vi_sensor_unbind(struct v4l2_async_notifier *notifier,

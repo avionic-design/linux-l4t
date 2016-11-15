@@ -294,6 +294,7 @@ struct tegra_vi2 {
 
 	struct v4l2_async_subdev* asd[3];
 	struct v4l2_async_notifier sd_notifier;
+	bool sensors_complete;
 
 	struct clk *vi_clk;
 	struct clk *csi_clk;
