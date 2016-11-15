@@ -251,6 +251,17 @@ static int tegra_vi_videobuf_start_streaming(struct vb2_queue *q,
 
 	mutex_lock(&chan->input->lock);
 	if (chan->input->streaming_count == 0) {
+		u32 status = 0;
+
+		/* Check if there is a signal before starting */
+		err = v4l2_subdev_call(chan->input->sensor, video,
+				g_input_status, &status);
+		if (!err && (status & V4L2_IN_ST_NO_SIGNAL)) {
+			dev_err(&vdev->dev, "No input signal\n");
+			err = -ENODATA;
+			goto unlock_input;
+		}
+
 		tegra_vi_input_start(vi2, chan->input);
 
 		err = v4l2_subdev_call(chan->input->sensor, video, s_stream, 1);
@@ -284,6 +295,7 @@ static int tegra_vi_videobuf_start_streaming(struct vb2_queue *q,
 
 input_error:
 	tegra_vi_input_stop(vi2, chan->input);
+unlock_input:
 	mutex_unlock(&chan->input->lock);
 
 	tegra_vi_channel_clear_queue(chan);
