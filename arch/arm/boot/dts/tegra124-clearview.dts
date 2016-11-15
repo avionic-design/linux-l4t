@@ -33,6 +33,15 @@
 			dap2_sclk_pa3 {
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+
+			/* IRQ for the ADV */
+			pk3 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			pi5 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
 		};
 	};
 
@@ -160,6 +169,10 @@
 		adv7181m_1: camera@20 {
 			compatible = "adi,adv7281-m";
 			reg = <0x20 0x40>;
+
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(K, 3) IRQ_TYPE_LEVEL_LOW>;
+
 			reset-gpio = <&gpio TEGRA_GPIO(H, 6) GPIO_ACTIVE_HIGH>;
 
 			port {
@@ -172,6 +185,10 @@
 		adv7181m_2: camera@21 {
 			compatible = "adi,adv7281-m";
 			reg = <0x21 0x42>;
+
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(I, 5) IRQ_TYPE_LEVEL_LOW>;
+
 			reset-gpio = <&gpio TEGRA_GPIO(K, 2) GPIO_ACTIVE_HIGH>;
 
 			port {
