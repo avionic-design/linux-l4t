@@ -143,6 +143,7 @@
 
 		camera@10 {
 			compatible = "sony,imx219";
+			status = "disabled";
 			reg = <0x10>;
 
 			vdd-supply = <&vdd_3v3_ext>;
