@@ -550,6 +550,21 @@ static int uh2c_s_stream(struct v4l2_subdev *sd, int on)
 	return err;
 }
 
+static int uh2c_g_input_status(struct v4l2_subdev *sd, u32 *status)
+{
+	struct uh2c *priv = container_of(sd, struct uh2c, subdev);
+
+	mutex_lock(&priv->lock);
+
+	if (!priv->vsync)
+		*status = V4L2_IN_ST_NO_SIGNAL | V4L2_IN_ST_NO_SYNC;
+	else
+		*status = 0;
+
+	mutex_unlock(&priv->lock);
+
+	return 0;
+}
 
 static int uh2c_g_chip_ident(struct v4l2_subdev *sd,
 		struct v4l2_dbg_chip_ident *id)
@@ -581,6 +596,7 @@ static struct v4l2_subdev_video_ops uh2c_subdev_video_ops = {
 	.cropcap = uh2c_cropcap,
 	.g_mbus_config = uh2c_g_mbus_config,
 	.s_stream = uh2c_s_stream,
+	.g_input_status = uh2c_g_input_status,
 };
 
 static struct v4l2_subdev_core_ops uh2c_subdev_core_ops = {
