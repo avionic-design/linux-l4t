@@ -346,7 +346,17 @@ static int tegra_vi_channel_querycap(
 static int tegra_vi_channel_enum_input(
 	struct file *file, void *__fh, struct v4l2_input *i)
 {
-	i->type = V4L2_INPUT_TYPE_CAMERA;
+	struct video_device *vdev = video_devdata(file);
+	struct tegra_vi2 *vi2 =
+		container_of(vdev->v4l2_dev, struct tegra_vi2, v4l2_dev);
+	struct tegra_vi_channel *chan =
+		container_of(vdev, struct tegra_vi_channel, vdev);
+	struct tegra_vi_input *input;
+	u32 index = i->index;
+	int has_s_power;
+
+	memset(i, 0, sizeof(*i));
+	i->index = index;
 
 	switch (i->index) {
 	case INPUT_CSI_A:
@@ -364,6 +374,37 @@ static int tegra_vi_channel_enum_input(
 	default:
 		return -EINVAL;
 	}
+
+	/* Report the input as powered down for compatibility with naive
+	 * enumerations that stop on any error, not only EINVAL. */
+	input = i->index == INPUT_PATTERN_GENERATOR ?
+		&chan->tpg : &vi2->input[i->index];
+	if (!input->sensor) {
+		i->status = V4L2_IN_ST_NO_POWER;
+		return 0;
+	}
+
+	/* Guess the input type */
+	if (v4l2_subdev_has_op(input->sensor, tuner, s_frequency))
+		i->type = V4L2_INPUT_TYPE_TUNER;
+	else
+		i->type = V4L2_INPUT_TYPE_CAMERA;
+
+	/* Get the input status if possible */
+	has_s_power = v4l2_subdev_has_op(input->sensor, core, s_power);
+	if (has_s_power && input->use_count == 0)
+		i->status = V4L2_IN_ST_NO_POWER;
+	else
+		v4l2_subdev_call(input->sensor, video,
+				g_input_status, &i->status);
+
+	/* Check if S_DV_TIMINGS is supported by the sensor */
+	if (v4l2_subdev_has_op(input->sensor, video, s_dv_timings))
+		i->capabilities |= V4L2_IN_CAP_DV_TIMINGS;
+
+	/* Check if S_STD is supported by the sensor */
+	if (v4l2_subdev_has_op(input->sensor, core, s_std))
+		i->capabilities |= V4L2_IN_CAP_STD;
 
 	return 0;
 }
