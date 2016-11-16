@@ -380,7 +380,7 @@ struct tegra_qc_list {
  */
 struct tegra_ahci_host_priv {
 	struct ahci_host_priv	ahci_host_priv;
-	struct regulator	*power_rails[NUM_SATA_POWER_RAILS];
+	struct regulator_bulk_data power_rails[NUM_SATA_POWER_RAILS];
 	void __iomem		*bars_table[6];
 	struct ata_host		*host;
 	struct timer_list	idle_timer;
@@ -750,76 +750,41 @@ static void tegra_ahci_set_pad_cntrl_regs(
 	scfg_writel(SATA0_NONE_SELECTED, T_SATA0_INDEX_OFFSET);
 }
 
-int tegra_ahci_get_rails(struct regulator *regulators[])
+int tegra_ahci_get_rails(struct device *dev,
+			struct regulator_bulk_data *regulators)
 {
-	struct regulator *reg;
-	int i;
-	int ret = 0;
-
-	for (i = 0; i < NUM_SATA_POWER_RAILS; ++i) {
-		reg = regulator_get(g_tegra_hpriv->dev, sata_power_rails[i]);
-		if (IS_ERR_OR_NULL(reg)) {
-			pr_err("%s: can't get regulator %s\n",
-				__func__, sata_power_rails[i]);
-			WARN_ON(PTR_ERR(reg) != -EPROBE_DEFER);
-			ret = PTR_ERR(reg);
-			goto exit;
-		}
-		regulators[i] = reg;
-	}
-exit:
-	return ret;
-}
-
-void tegra_ahci_put_rails(struct regulator *regulators[])
-{
+	int ret;
 	int i;
 
 	for (i = 0; i < NUM_SATA_POWER_RAILS; ++i)
-		regulator_put(regulators[i]);
-}
+		regulators[i].supply = sata_power_rails[i];
 
-int tegra_ahci_power_on_rails(struct regulator *regulators[])
-{
-	struct regulator *reg;
-	int i;
-	int ret = 0;
+	ret = devm_regulator_bulk_get(dev, NUM_SATA_POWER_RAILS, regulators);
+	if (ret && ret != -EPROBE_DEFER)
+		dev_err(dev, "%s: can't get regulators\n", __func__);
 
-	for (i = 0; i < NUM_SATA_POWER_RAILS; ++i) {
-		reg = regulators[i];
-		ret = regulator_enable(reg);
-		if (ret) {
-			pr_err("%s: can't enable regulator[%d]\n",
-				__func__, i);
-			WARN_ON(1);
-			goto exit;
-		}
-	}
-
-exit:
 	return ret;
 }
 
-int tegra_ahci_power_off_rails(struct regulator *regulators[])
+int tegra_ahci_power_on_rails(struct regulator_bulk_data *regulators)
 {
-	struct regulator *reg;
-	int i;
-	int ret = 0;
+	int ret;
 
-	for (i = 0; i < NUM_SATA_POWER_RAILS; ++i) {
-		reg = regulators[i];
-		if (!IS_ERR_OR_NULL(reg)) {
-			ret = regulator_disable(reg);
-			if (ret) {
-				pr_err("%s: can't disable regulator[%d]\n",
-					__func__, i);
-				WARN_ON(1);
-				goto exit;
-			}
-		}
-	}
+	ret = regulator_bulk_enable(NUM_SATA_POWER_RAILS, regulators);
+	if (ret)
+		pr_err("%s: can't enable regulators\n", __func__);
 
-exit:
+	return ret;
+}
+
+int tegra_ahci_power_off_rails(struct regulator_bulk_data *regulators)
+{
+	int ret;
+
+	ret = regulator_bulk_disable(NUM_SATA_POWER_RAILS, regulators);
+	if (ret)
+		pr_err("%s: can't disable regulators\n", __func__);
+
 	return ret;
 }
 
@@ -866,8 +831,7 @@ static int tegra_first_level_clk_ungate(void)
 	return ret;
 }
 
-static int tegra_ahci_controller_init(struct tegra_ahci_host_priv *tegra_hpriv,
-		int lp0)
+static int tegra_ahci_controller_init(struct tegra_ahci_host_priv *tegra_hpriv)
 {
 	int err;
 	struct clk *clk_sata = NULL;
@@ -878,18 +842,10 @@ static int tegra_ahci_controller_init(struct tegra_ahci_host_priv *tegra_hpriv,
 	u32 val;
 	u32 timeout;
 
-	if (!lp0) {
-		err = tegra_ahci_get_rails(tegra_hpriv->power_rails);
-		if (err) {
-			pr_err("%s: fails to get rails (%d)\n", __func__, err);
-			goto exit;
-		}
-
-	}
 	err = tegra_ahci_power_on_rails(tegra_hpriv->power_rails);
 	if (err) {
 		pr_err("%s: fails to power on rails (%d)\n", __func__, err);
-		goto exit;
+		return err;
 	}
 
 	/* pll_p is the parent of tegra_sata and tegra_sata_oob */
@@ -1185,8 +1141,6 @@ exit:
 	if (err) {
 		/* turn off all SATA power rails; ignore returned status */
 		tegra_ahci_power_off_rails(tegra_hpriv->power_rails);
-		/* return regulators to system */
-		tegra_ahci_put_rails(tegra_hpriv->power_rails);
 	}
 	return err;
 }
@@ -1219,9 +1173,6 @@ static void tegra_ahci_controller_remove(struct platform_device *pdev)
 				   status);
 	tegra_ahci_power_off_rails(tegra_hpriv->power_rails);
 #endif
-
-	/* return system resources */
-	tegra_ahci_put_rails(tegra_hpriv->power_rails);
 }
 
 #ifdef CONFIG_PM
@@ -1337,7 +1288,7 @@ static int tegra_ahci_resume(struct platform_device *pdev)
 	if (rc != 0)
 		return rc;
 
-	rc = tegra_ahci_controller_init(g_tegra_hpriv, 1);
+	rc = tegra_ahci_controller_init(g_tegra_hpriv);
 	if (rc != 0) {
 		dev_err(host->dev, "TEGRA SATA init failed in resume\n");
 		return rc;
@@ -2496,8 +2447,15 @@ static int tegra_ahci_init_one(struct platform_device *pdev)
 	}
 	g_tegra_hpriv = tegra_hpriv;
 
+	rc = tegra_ahci_get_rails(dev, tegra_hpriv->power_rails);
+	if (rc) {
+		if (rc != -EPROBE_DEFER)
+			dev_err(dev, "failed to get rails (%d)\n", rc);
+		goto fail;
+	}
+
 	/* Call tegra init routine */
-	rc = tegra_ahci_controller_init(tegra_hpriv, 0);
+	rc = tegra_ahci_controller_init(tegra_hpriv);
 	if (rc != 0) {
 		dev_err(dev, "TEGRA SATA init failed\n");
 		goto fail;
