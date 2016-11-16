@@ -65,7 +65,7 @@ static void of_get_regulator_consumer_list(struct device *dev,
 				"regulator-consumer-device",
 				&consumer[ncount].dev_name);
 		if (ret < 0)
-			dev_info(dev, "Consumer %s does not have device name\n",
+			dev_dbg(dev, "Consumer %s does not have device name\n",
 					child->name);
 		ncount++;
 	}
