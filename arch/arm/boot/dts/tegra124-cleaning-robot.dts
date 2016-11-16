@@ -7,6 +7,11 @@
 	compatible = "cyberdyne,cleaning-robot", "ad,meerkat", "nvidia,tegra124";
 	nvidia,dtsfilename = __FILE__;
 
+	aliases {
+		rtc0 = "/i2c@7000c400/rtc@51";
+		rtc1 = "/i2c@7000d000/pmic@40";
+	};
+
 	pinmux {
 		common {
 			uart3_rxd_pw7 {
