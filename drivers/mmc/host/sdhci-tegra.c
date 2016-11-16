@@ -888,7 +888,7 @@ static int sdhci_tegra_freq_gov_init(struct sdhci_host *sdhci)
 
 	if (!((sdhci->mmc->ios.timing == MMC_TIMING_UHS_SDR104) ||
 		(sdhci->mmc->ios.timing == MMC_TIMING_MMC_HS200))) {
-		dev_info(mmc_dev(sdhci->mmc),
+		dev_dbg(mmc_dev(sdhci->mmc),
 			"DFS not required for current operating mode\n");
 		return -EACCES;
 	}
@@ -904,7 +904,7 @@ static int sdhci_tegra_freq_gov_init(struct sdhci_host *sdhci)
 	}
 
 	/* Find the supported frequencies */
-	dev_info(mmc_dev(sdhci->mmc), "DFS supported freqs");
+	dev_dbg(mmc_dev(sdhci->mmc), "DFS supported freqs");
 	for (i = 0; i < tegra_host->tuning_freq_count; i++) {
 		freq = tegra_host->tuning_data[i].freq_hz;
 		/*
@@ -916,7 +916,7 @@ static int sdhci_tegra_freq_gov_init(struct sdhci_host *sdhci)
 		freq = get_nearest_clock_freq(pll_p_rate, freq);
 		if (freq > tegra_host->gov_data->freqs[i])
 			tegra_host->gov_data->freqs[i] = freq;
-		pr_err("%d,", tegra_host->gov_data->freqs[i]);
+		pr_debug("%d,", tegra_host->gov_data->freqs[i]);
 	}
 
 	tegra_host->gov_data->monitor_idle_load = false;
@@ -1853,19 +1853,19 @@ static void calculate_vmin_values(struct sdhci_host *sdhci,
 			tuning_data->calc_values.t2t_vmax) /
 			tuning_data->calc_values.t2t_vmin;
 
-	pr_info("**********Tuning values*********\n");
-	pr_info("**estimated values**\n");
-	pr_info("T2T_Vmax %d, T2T_Vmin %d, 1'st_hole_Vmax %d, UI_Vmax %d\n",
+	pr_debug("**********Tuning values*********\n");
+	pr_debug("**estimated values**\n");
+	pr_debug("T2T_Vmax %d, T2T_Vmin %d, 1'st_hole_Vmax %d, UI_Vmax %d\n",
 		est_values->t2t_vmax, est_values->t2t_vmin,
 		est_values->vmax_thole, est_values->ui);
-	pr_info("**Calculated values**\n");
-	pr_info("T2T_Vmax %d, 1'st_hole_Vmax %d, UI_Vmax %d\n",
+	pr_debug("**Calculated values**\n");
+	pr_debug("T2T_Vmax %d, 1'st_hole_Vmax %d, UI_Vmax %d\n",
 		calc_values->t2t_vmax, calc_values->vmax_thole,
 		calc_values->ui);
-	pr_info("T2T_Vmin %d, 1'st_hole_Vmin %d, UI_Vmin %d\n",
+	pr_debug("T2T_Vmin %d, 1'st_hole_Vmin %d, UI_Vmin %d\n",
 		calc_values->t2t_vmin, calc_values->vmin_thole,
 		calc_values->ui_vmin);
-	pr_info("***********************************\n");
+	pr_debug("***********************************\n");
 }
 
 static int slide_window_start(struct sdhci_host *sdhci,
@@ -1952,13 +1952,13 @@ static int adjust_window_boundaries(struct sdhci_host *sdhci,
 			vmin_tap_hole);
 	}
 
-	pr_info("***********final tuning windows**********\n");
+	pr_debug("***********final tuning windows**********\n");
 	for (i = 0; i < tuning_data->num_of_valid_tap_wins; i++) {
 		tap_data = &temp_tap_data[i];
-		pr_info("win[%d]: %d - %d\n", i, tap_data->win_start,
+		pr_debug("win[%d]: %d - %d\n", i, tap_data->win_start,
 			tap_data->win_end);
 	}
-	pr_info("********************************\n");
+	pr_debug("********************************\n");
 	return 0;
 }
 
@@ -2006,7 +2006,7 @@ static int find_best_tap_value(struct tegra_tuning_data *tuning_data,
 			tuning_data->calc_values.t2t_vmax);
 	}
 
-	pr_info("best tap win - (%d-%d), best tap value %d prev_best_tap %d\n",
+	pr_debug("best tap win - (%d-%d), best tap value %d prev_best_tap %d\n",
 			tap_data->win_start, tap_data->win_end,
 			best_tap_value, prev_best_tap);
 	if (prev_best_tap >= tap_data->win_start &&
@@ -2412,16 +2412,16 @@ static int adjust_holes_in_tap_windows(struct sdhci_host *sdhci,
 	/* Update the num of valid wins count after tap holes insertion */
 	tuning_data->num_of_valid_tap_wins = j;
 
-	pr_info("********tuning windows after inserting holes*****\n");
-	pr_info("WIN_ATTR legend: 0-BOUN_ST, 1-BOUN_END, 2-HOLE\n");
+	pr_debug("********tuning windows after inserting holes*****\n");
+	pr_debug("WIN_ATTR legend: 0-BOUN_ST, 1-BOUN_END, 2-HOLE\n");
 	for (i = 0; i < tuning_data->num_of_valid_tap_wins; i++) {
 		final_tap_data = &tuning_data->final_tap_data[i];
-		pr_info("win[%d]:%d(%d) - %d(%d)\n", i,
+		pr_debug("win[%d]:%d(%d) - %d(%d)\n", i,
 			final_tap_data->win_start,
 			final_tap_data->win_start_attr,
 			final_tap_data->win_end, final_tap_data->win_end_attr);
 	}
-	pr_info("***********************************************\n");
+	pr_debug("***********************************************\n");
 
 	return 0;
 }
@@ -2616,15 +2616,15 @@ static int sdhci_tegra_get_tap_window_data(struct sdhci_host *sdhci,
 	valid_num_uis = num_of_uis;
 
 	/* Print info of all tap windows */
-	pr_info("**********Auto tuning windows*************\n");
-	pr_info("WIN_ATTR legend: 0-BOUN_ST, 1-BOUN_END, 2-HOLE\n");
+	pr_debug("**********Auto tuning windows*************\n");
+	pr_debug("WIN_ATTR legend: 0-BOUN_ST, 1-BOUN_END, 2-HOLE\n");
 	for (j = 0; j < tuning_data->num_of_valid_tap_wins; j++) {
 		tap_data = &tuning_data->tap_data[j];
-		pr_info("win[%d]: %d(%d) - %d(%d)\n",
+		pr_debug("win[%d]: %d(%d) - %d(%d)\n",
 			j, tap_data->win_start, tap_data->win_start_attr,
 			tap_data->win_end, tap_data->win_end_attr);
 	}
-	pr_info("***************************************\n");
+	pr_debug("***************************************\n");
 
 	/* Mark the first last partial UIs as invalid */
 	tuning_ui[0].is_valid_ui = false;
@@ -2845,7 +2845,7 @@ static int find_tuning_coeffs_data(struct sdhci_host *sdhci,
 				if (!strcmp(dev_id, t2t_coeffs->dev_id)) {
 					tuning_data->t2t_coeffs = t2t_coeffs;
 					coeffs_set = true;
-					dev_info(mmc_dev(sdhci->mmc),
+					dev_dbg(mmc_dev(sdhci->mmc),
 						"Found T2T coeffs data\n");
 					break;
 				}
@@ -2870,7 +2870,7 @@ static int find_tuning_coeffs_data(struct sdhci_host *sdhci,
 					tuning_data->thole_coeffs =
 						thole_coeffs;
 					coeffs_set = true;
-					dev_info(mmc_dev(sdhci->mmc),
+					dev_dbg(mmc_dev(sdhci->mmc),
 						"%dMHz tap hole coeffs found\n",
 						(freq_khz / 1000));
 					break;
@@ -3115,7 +3115,7 @@ static int sdhci_tegra_verify_best_tap(struct sdhci_host *sdhci)
 			"Trying to verify invalid best tap value\n");
 		return -EINVAL;
 	} else {
-		dev_info(mmc_dev(sdhci->mmc),
+		dev_dbg(mmc_dev(sdhci->mmc),
 			"%s: tuning freq %dhz, best tap %d\n",
 			__func__, tuning_data->freq_hz,
 			tuning_data->best_tap_value);
@@ -3557,7 +3557,7 @@ static int set_trim_override_value(void *data, u64 value)
 					tegra_host->dbg_cfg.trim_val =
 						value;
 				} else {
-					pr_info("%s: Disable clock gating before setting value\n",
+					pr_debug("%s: Disable clock gating before setting value\n",
 						mmc_hostname(host->mmc));
 				}
 			}
@@ -3608,7 +3608,7 @@ static int set_tap_override_value(void *data, u64 value)
 					sdhci_tegra_set_tap_delay(host, value);
 					tegra_host->dbg_cfg.tap_val = value;
 				} else {
-					pr_info("%s: Disable clock gating before setting value\n",
+					pr_debug("%s: Disable clock gating before setting value\n",
 						mmc_hostname(host->mmc));
 				}
 			}
@@ -4268,7 +4268,7 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 			rc = -EPROBE_DEFER;
 			goto err_clk_get;
 		}
-		dev_info(mmc_dev(host->mmc), "%s regulator not found: %ld."
+		dev_dbg(mmc_dev(host->mmc), "%s regulator not found: %ld."
 			"Assuming vddio_sdmmc is not required.\n",
 			"vddio_sdmmc", PTR_ERR(tegra_host->vdd_io_reg));
 		tegra_host->vdd_io_reg = NULL;
@@ -4294,7 +4294,7 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 			rc = -EPROBE_DEFER;
 			goto err_clk_get;
 		}
-		dev_info(mmc_dev(host->mmc), "%s regulator not found: %ld."
+		dev_dbg(mmc_dev(host->mmc), "%s regulator not found: %ld."
 			" Assuming vddio_sd_slot is not required.\n",
 			"vddio_sd_slot", PTR_ERR(tegra_host->vdd_slot_reg));
 		tegra_host->vdd_slot_reg = NULL;
@@ -4375,7 +4375,7 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 	tegra_host->instance = pdev->id;
 	tegra_host->tap_cmd = TAP_CMD_TRIM_DEFAULT_VOLTAGE;
 	tegra_host->speedo = plat->cpu_speedo;
-	dev_info(mmc_dev(host->mmc), "Speedo value %d\n", tegra_host->speedo);
+	dev_dbg(mmc_dev(host->mmc), "Speedo value %d\n", tegra_host->speedo);
 	host->mmc->pm_caps |= plat->pm_caps;
 	host->mmc->pm_flags |= plat->pm_flags;
 
@@ -4430,7 +4430,7 @@ static int sdhci_tegra_probe(struct platform_device *pdev)
 		tegra_host->min_vcore_override_mv = plat->min_vcore_override_mv;
 	if (plat->boot_vcore_mv)
 		tegra_host->boot_vcore_mv = plat->boot_vcore_mv;
-	dev_info(mmc_dev(host->mmc),
+	dev_dbg(mmc_dev(host->mmc),
 		"Tuning constraints: nom_mv %d, boot_mv %d, min_or_mv %d\n",
 		tegra_host->nominal_vcore_mv, tegra_host->boot_vcore_mv,
 		tegra_host->min_vcore_override_mv);
