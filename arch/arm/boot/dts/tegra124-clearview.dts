@@ -138,6 +138,11 @@
 			interrupt-parent = <&gpio>;
 			interrupts = <TEGRA_GPIO(U, 5) IRQ_TYPE_LEVEL_HIGH>;
 
+			avdd-supply = <&vdd_1v8_ext>;
+			dbvdd-supply = <&vdd_1v8_ext>;
+			cpvdd-supply = <&vdd_1v8_ext>;
+			dcvdd-supply = <&vdd_1v8_ext>;
+
 			gpio-controller;
 			#gpio-cells = <2>;
 
@@ -352,6 +357,17 @@
 			vin-supply = <&vdd_3v3_ext>;
 			gpio = <&gpio TEGRA_GPIO(R, 0) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
+		};
+
+		vdd_1v8_ext: regulator@108 {
+			compatible = "regulator-fixed";
+			reg = <108>;
+			regulator-name = "+1V8_EXT";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vddio_1v8>;
 		};
 
 	};
