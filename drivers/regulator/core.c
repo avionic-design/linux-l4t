@@ -1561,7 +1561,8 @@ static struct regulator *_regulator_get(struct device *dev, const char *id,
 	}
 #endif
 
-	goto out;
+	mutex_unlock(&regulator_list_mutex);
+	return regulator;
 
 found:
 	if (rdev->exclusive) {
@@ -1597,13 +1598,6 @@ found:
 
 out:
 	mutex_unlock(&regulator_list_mutex);
-
-	if (IS_ERR(regulator)) {
-		ret = PTR_ERR(regulator);
-		if(ret != -EPROBE_DEFER)
-			pr_err("regulator_get() failed for (%s,%s), %d\n",
-				(devname) ? devname : "NULL", id, ret);
-	}
 
 	return regulator;
 }
