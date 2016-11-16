@@ -200,6 +200,7 @@
 				gpio5 {
 					pins = "gpio5";
 					function = "clk32k-out";
+					bias-disable;
 				};
 			};
 		};
