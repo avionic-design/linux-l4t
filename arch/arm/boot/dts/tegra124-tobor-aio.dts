@@ -97,7 +97,6 @@
 		};
 
 		dsi {
-			nvidia,dsi-controller-vs = <DSI_VS_1>;
 			status = "okay";
 			panel: panel-n-720-1280-5 {
 				status = "okay";

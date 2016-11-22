@@ -35,7 +35,6 @@
 				nvidia,dsi-video-data-type = <TEGRA_DSI_VIDEO_TYPE_COMMAND_MODE>;
 				nvidia,dsi-video-clock-mode = <TEGRA_DSI_VIDEO_CLOCK_TX_ONLY>;
 				nvidia,dsi-ganged-type = <TEGRA_DSI_GANGED_SYMMETRIC_LEFT_RIGHT>;
-				nvidia,dsi-controller-vs = <DSI_VS_1>;
 				nvidia,dsi-virtual-channel = <TEGRA_DSI_VIRTUAL_CHANNEL_0>;
 				nvidia,dsi-panel-reset = <TEGRA_DSI_ENABLE>;
 				nvidia,dsi-power-saving-suspend = <TEGRA_DSI_ENABLE>;

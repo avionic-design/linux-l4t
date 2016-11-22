@@ -73,7 +73,6 @@
 		};
 
 		dsi {
-			nvidia,dsi-controller-vs = <DSI_VS_1>;
 			status = "okay";
 			panel: panel-tianma-tm057jdhp04 {
 				enable-gpios = <&gpio TEGRA_GPIO(H, 3) GPIO_ACTIVE_HIGH>;

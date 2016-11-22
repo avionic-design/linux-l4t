@@ -611,6 +611,7 @@
 			reg = <0x54300000 0x00040000>,
 			      <0x54400000 0x00040000>;
 			status = "disabled";
+			nvidia,dsi-controller-vs = <1>;
 		};
 
 		edp {

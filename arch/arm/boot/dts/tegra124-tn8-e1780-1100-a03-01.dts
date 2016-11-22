@@ -72,7 +72,6 @@
 			vdd_hdmi_5v0-supply = <&vdd_hdmi>;
 		};
 		dsi {
-			nvidia,dsi-controller-vs = <DSI_VS_1>;
 			status = "okay";
 			panel-l-wxga-7 {
 				nvidia,dsi-panel-bl-pwm-gpio = <&gpio TEGRA_GPIO(H, 1) 0>; /* PH1 */
