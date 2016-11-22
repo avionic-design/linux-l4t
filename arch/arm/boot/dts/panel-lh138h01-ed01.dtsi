@@ -1,0 +1,100 @@
+#include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/display/tegra-panel.h>
+
+/ {
+	host1x {
+		dsi {
+			panel-lh138h01-ed01 {
+				compatible = "lg,lh138h01-ed01", "none,panel-generic";
+				status = "disabled";
+
+				nvidia,dsi-n-data-lanes = <1>;
+				nvidia,dsi-pixel-format = <TEGRA_DSI_PIXEL_FORMAT_24BIT_P>;
+				nvidia,dsi-refresh-rate = <60>;
+				nvidia,dsi-video-data-type = <TEGRA_DSI_VIDEO_TYPE_COMMAND_MODE>;
+				nvidia,dsi-video-burst-mode = <TEGRA_DSI_VIDEO_NONE_BURST_MODE>;
+				nvidia,dsi-video-clock-mode = <TEGRA_DSI_VIDEO_CLOCK_TX_ONLY>;
+				nvidia,dsi-virtual-channel = <TEGRA_DSI_VIRTUAL_CHANNEL_0>;
+				nvidia,dsi-panel-reset = <TEGRA_DSI_ENABLE>;
+				nvidia,dsi-power-saving-suspend = <TEGRA_DSI_ENABLE>;
+				nvidia,dsi-lp00-pre-panel-wakeup = <TEGRA_DSI_ENABLE>;
+
+				reset-hold = <1>;
+				reset-settle = <10>;
+				nvidia,dsi-init-cmd =
+					/* Display Control */
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM 0x53 0x20 0>,
+					/* Write brightness level */
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x03 0x00 0
+						0x51 0xB4 0x00
+						0 0>,
+					/* Sleep Out */
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x11 0 0>,
+					<TEGRA_DSI_DELAY_MS 120>,
+					/* Image Enhancement Control*/
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM 0x5C 0x20 0>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x02 0x00 0
+						0x5E 0x0B
+						0 0>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x31 0x00 0
+						0x5F
+						0x80 0x80 0x80 0x80 0x80 0x80
+						0x80 0x80 0x80 0x80 0x80 0x80
+						0x8D 0x8D 0x8D 0x8D 0x8D 0x8D
+						0x8D 0x8D 0x8D 0x8D 0x8D 0x8D
+						0x7F 0x7F 0x7F 0x7F 0x7F 0x7F
+						0x7F 0x7F 0x7F 0x7F 0x7F 0x7F
+						0xFF 0xFF 0xFF 0xFF 0xFF 0xFF
+						0xFF 0xFF 0xFF 0xFF 0xFF 0xFF
+						0 0>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM 0xB0 0xAC 0>,
+					<TEGRA_DSI_DELAY_MS 10>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x09 0x00 0
+						0xD8 0x61 0x3F 0x70 0x84 0x85 0x85 0x69 0x25
+						0 0>,
+					/* TE On */
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x35 0 0>,
+					/* Display On */
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x29 0 0>;
+				nvidia,dsi-n-init-cmd = <12>;
+
+				nvidia,dsi-suspend-cmd =
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM 0x63 0x60 0>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x38 0 0>,
+					/* Display Off */
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x28 0 0>,
+					/* Sleep In */
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x10 0 0>;
+				nvidia,dsi-n-suspend-cmd = <4>;
+
+				disp-default-out {
+					nvidia,out-type = <TEGRA_DC_OUT_DSI>;
+					nvidia,out-width = <35>;
+					nvidia,out-height = <35>;
+					nvidia,out-flags = <TEGRA_DC_OUT_CONTINUOUS_MODE>;
+					nvidia,out-parent-clk = "pll_d_out0";
+					nvidia,out-xres = <480>;
+					nvidia,out-yres = <480>;
+				};
+
+				display-timings {
+					480x480-32 {
+						clock-frequency = <16663740>;
+
+						hactive = <480>;
+						hfront-porch = <5>;
+						hback-porch = <5>;
+						hsync-len = <37>;
+						nvidia,h-ref-to-sync = <0>;
+
+						vactive = <480>;
+						vfront-porch = <5>;
+						vback-porch = <5>;
+						vsync-len = <37>;
+						nvidia,v-ref-to-sync = <0>;
+					};
+				};
+			};
+		};
+	};
+};

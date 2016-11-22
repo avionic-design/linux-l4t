@@ -1,0 +1,35 @@
+#include "tegra124-meerkat-evalboard.dts"
+#include "panel-lh138h01-ed01.dtsi"
+
+/ {
+	nvidia,dtsfilename = __FILE__;
+
+	pinmux {
+		common {
+			ph5 {
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+		};
+	};
+
+	host1x {
+		dc@54200000 {
+			nvidia,dc-connection = "internal-lcd";
+			panel = <&dsi_panel>;
+		};
+
+		hdmi {
+			status = "disabled";
+		};
+
+		dsi {
+			status = "okay";
+			dsi_panel: panel-lh138h01-ed01 {
+				status = "okay";
+				nvidia,dsi-instance = <DSI_INSTANCE_0>;
+				reset-gpios = <&gpio TEGRA_GPIO(H, 5) GPIO_ACTIVE_LOW>;
+			};
+		};
+	};
+};
