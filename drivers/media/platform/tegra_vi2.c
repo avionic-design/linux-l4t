@@ -98,6 +98,14 @@ static const struct tegra_formats tegra_formats[] = {
 		},
 	},
 	{
+		.v4l2 = V4L2_PIX_FMT_BGR32,
+		.nv = 65,
+		.mbus = {
+			V4L2_MBUS_FMT_RGB888_1X24,
+			V4L2_MBUS_FMT_RGB666_1X18,
+		},
+	},
+	{
 		.v4l2 = V4L2_PIX_FMT_RGB565,
 		.nv = 33,
 		.mbus = {

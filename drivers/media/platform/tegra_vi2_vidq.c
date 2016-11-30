@@ -51,6 +51,7 @@ static int v4l2_pix_format_stride(const struct v4l2_pix_format *pf, int *stride)
 		stride[0] = ROUND_STRIDE(pf->width * 2);
 		return 1;
 	case V4L2_PIX_FMT_RGB32:
+	case V4L2_PIX_FMT_BGR32:
 		stride[0] = ROUND_STRIDE(pf->width * 4);
 		return 1;
 	case V4L2_PIX_FMT_YUV422P:
