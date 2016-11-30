@@ -1997,7 +1997,7 @@ static int tegra_vi_channel_init(struct platform_device *pdev, unsigned id)
 
 	q = &chan->vb;
 	q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	q->io_modes = VB2_MMAP | VB2_USERPTR;
+	q->io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
 	q->drv_priv = chan;
 	q->buf_struct_size = sizeof(struct tegra_vi_buffer);
 	q->ops = &tegra_vi_qops;
