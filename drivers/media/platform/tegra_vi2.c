@@ -457,6 +457,10 @@ static int tegra_formats_match_mbus(
 	int count = 0;
 	int f;
 
+	compiletime_assert(
+		sizeof(unsigned long) * 8 >= ARRAY_SIZE(tegra_formats),
+		"Too many output formats, use a larger mask size");
+
 	for (f = 0; f < ARRAY_SIZE(tegra_formats); f++) {
 		if (*mask & BIT(f))
 			continue;
