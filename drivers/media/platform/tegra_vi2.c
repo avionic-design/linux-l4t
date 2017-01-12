@@ -1648,6 +1648,26 @@ static int tegra_vi_channel_s_frequency(struct file *file, void *priv,
 	return tegra_vi_channel_subdev_op(file, tuner, s_frequency, freq);
 }
 
+static int tegra_vi_channel_g_chip_ident(struct file *file, void *fh,
+					struct v4l2_dbg_chip_ident *chip)
+{
+	return tegra_vi_channel_subdev_op(file, core, g_chip_ident, chip);
+}
+
+#ifdef CONFIG_VIDEO_ADV_DEBUG
+static int tegra_vi_channel_g_register(struct file *file, void *fh,
+				struct v4l2_dbg_register *reg)
+{
+	return tegra_vi_channel_subdev_op(file, core, g_register, reg);
+}
+
+static int tegra_vi_channel_s_register(struct file *file, void *fh,
+				const struct v4l2_dbg_register *reg);
+{
+	return tegra_vi_channel_subdev_op(file, core, s_register, reg);
+}
+#endif
+
 static int tegra_vi_channel_open(struct file *file)
 {
 	struct video_device *vdev = video_devdata(file);
@@ -1730,6 +1750,11 @@ static const struct v4l2_ioctl_ops tegra_vi_channel_ioctl_ops = {
 	.vidioc_s_tuner			= tegra_vi_channel_s_tuner,
 	.vidioc_g_frequency		= tegra_vi_channel_g_frequency,
 	.vidioc_s_frequency		= tegra_vi_channel_s_frequency,
+	.vidioc_g_chip_ident		= tegra_vi_channel_g_chip_ident,
+#ifdef CONFIG_VIDEO_ADV_DEBUG
+	.vidioc_g_register		= tegra_vi_channel_g_register,
+	.vidioc_s_register		= tegra_vi_channel_s_register,
+#endif
 	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
