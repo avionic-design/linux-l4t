@@ -44,6 +44,14 @@ static bool iio_buffer_is_active(struct iio_dev *indio_dev,
 	return false;
 }
 
+static bool iio_buffer_data_available(struct iio_buffer *buf)
+{
+	if (buf->access->data_available)
+		return buf->access->data_available(buf);
+
+	return buf->stufftoread;
+}
+
 /**
  * iio_buffer_read_first_n_outer() - chrdev read for buffer access
  *
@@ -77,7 +85,7 @@ unsigned int iio_buffer_poll(struct file *filp,
 		return -ENODEV;
 
 	poll_wait(filp, &rb->pollq, wait);
-	if (rb->stufftoread)
+	if (iio_buffer_data_available(rb))
 		return POLLIN | POLLRDNORM;
 	/* need a way of knowing if there may be enough data... */
 	return 0;
