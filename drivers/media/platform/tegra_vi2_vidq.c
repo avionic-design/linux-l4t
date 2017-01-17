@@ -22,6 +22,9 @@
 #define ROUND_UP(v, a) (DIV_ROUND_UP(v, a) * (a))
 #define ROUND_STRIDE(v) ROUND_UP(v, 64)
 
+#define TEGRA_SYNCPT_MEMORY_WRITE_ACK(x) (6 + (x))
+#define TEGRA_SYNCPT_FRAME_START(x) (9 + (x))
+
 static int tegra_vi_channel_capture_thread(void *data);
 
 static int show_statistics;
@@ -502,7 +505,8 @@ static int tegra_vi_channel_capture_thread(void *data)
 	if (!chan->active_buffer)
 		goto finish;
 
-	tegra_vi_channel_queue_syncpt(chan, 9 + chan->id, &syncpt_val);
+	tegra_vi_channel_queue_syncpt(
+		chan, TEGRA_SYNCPT_FRAME_START(chan->id), &syncpt_val);
 
 	if (show_statistics)
 		start_time = ktime_get();
@@ -548,7 +552,9 @@ static int tegra_vi_channel_capture_thread(void *data)
 
 		/* Setup the next pending buffer */
 		chan->pending_buffer = tegra_vi_channel_set_next_buffer(chan);
-		tegra_vi_channel_queue_syncpt(chan, 6 + chan->id, &syncpt_val);
+		tegra_vi_channel_queue_syncpt(
+			chan, TEGRA_SYNCPT_MEMORY_WRITE_ACK(chan->id),
+			&syncpt_val);
 		if (chan->pending_buffer) {
 			/* Queue a buffer update on the next shot */
 			vi_writel(1, &chan->vi_regs->single_shot);
