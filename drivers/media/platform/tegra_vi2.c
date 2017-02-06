@@ -2083,6 +2083,7 @@ static void tegra_vi_channel_uninit(struct tegra_vi_channel *chan)
 	vb2_dma_contig_cleanup_ctx(chan->vb2_alloc_ctx);
 	video_unregister_device(&chan->vdev);
 	v4l2_device_unregister_subdev(chan->tpg.sensor);
+	clk_disable_unprepare(chan->sensor_clk);
 }
 
 static void tegra_vi_channel_reset(const struct tegra_vi_channel *chan, bool reset)
