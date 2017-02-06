@@ -356,18 +356,22 @@ const struct vb2_ops tegra_vi_qops = {
 	.stop_streaming = tegra_vi_videobuf_stop_streaming,
 };
 
-static void tegra_vi_channel_queue_syncpt(
-	const struct tegra_vi_channel *chan, unsigned cond, u32 *syncpt_val)
+static void tegra_vi_channel_arm_syncpt(
+	const struct tegra_vi_channel *chan, u32 *syncpt_val)
 {
 	const struct video_device *vdev = &chan->vdev;
 	struct platform_device *pdev = to_platform_device(vdev->v4l2_dev->dev);
-	const struct tegra_vi2 *vi2 =
-		container_of(vdev->v4l2_dev, struct tegra_vi2, v4l2_dev);
 
 	/* Update the sync point value */
-	if (!nvhost_syncpt_read_ext_check(pdev, chan->syncpt_id, syncpt_val))
-		*syncpt_val = nvhost_syncpt_incr_max_ext(
-			pdev, chan->syncpt_id, 1);
+	*syncpt_val = nvhost_syncpt_incr_max_ext(pdev, chan->syncpt_id, 1);
+}
+
+static void tegra_vi_channel_queue_syncpt_raise(
+	const struct tegra_vi_channel *chan, unsigned cond)
+{
+	const struct video_device *vdev = &chan->vdev;
+	const struct tegra_vi2 *vi2 =
+		container_of(vdev->v4l2_dev, struct tegra_vi2, v4l2_dev);
 
 	/* Queue a sync point raise on the condition */
 	vi_writel((cond << 8) | chan->syncpt_id, &vi2->vi_regs->vi_incr_syncpt);
@@ -481,11 +485,32 @@ static void tegra_vi_channel_print_errors(struct tegra_vi_channel *chan)
 	tegra_vi_channel_clear_errors(chan);
 }
 
+static void tegra_vi_channel_shoot_next_buffer(struct tegra_vi_channel *chan,
+					struct tegra_vi_buffer *active_buffer)
+{
+	/* Shoot the next buffer */
+	if (active_buffer) {
+		/* Queue syncpt raise on SOF (for the next frame) */
+		tegra_vi_channel_queue_syncpt_raise(
+			chan, TEGRA_SYNCPT_FRAME_START(chan->id));
+		/* Queue syncpt raise on write ACK (for the next frame) */
+		tegra_vi_channel_queue_syncpt_raise(
+			chan, TEGRA_SYNCPT_MEMORY_WRITE_ACK(chan->id));
+
+		/* Queue a buffer update on the next shot */
+		vi_writel(1, &chan->vi_regs->single_shot);
+	} else {
+		vi_writel(0xf002, &chan->mipi_regs->pp_command);
+	}
+}
+
 /* Capture loop */
 static int tegra_vi_channel_capture_thread(void *data)
 {
 	struct tegra_vi_channel *chan = data;
 	struct video_device *vdev = &chan->vdev;
+	struct tegra_vi_buffer *active_buffer;
+	struct platform_device *pdev;
 	ktime_t start_time;
 	u32 syncpt_val;
 	int err;
@@ -500,13 +525,22 @@ static int tegra_vi_channel_capture_thread(void *data)
 
 	tegra_vi_channel_clear_errors(chan);
 
+	/* Get the initial value of the syncpt */
+	pdev = to_platform_device(vdev->v4l2_dev->dev);
+	if (nvhost_syncpt_read_ext_check(pdev, chan->syncpt_id, &syncpt_val)) {
+		dev_err(&vdev->dev, "Failed to get initial syncpt value!\n");
+		goto finish;
+	}
+
 	/* Program DMA for first buffer */
-	chan->active_buffer = tegra_vi_channel_set_next_buffer(chan);
-	if (!chan->active_buffer)
+	active_buffer = tegra_vi_channel_set_next_buffer(chan);
+	if (!active_buffer)
 		goto finish;
 
-	tegra_vi_channel_queue_syncpt(
-		chan, TEGRA_SYNCPT_FRAME_START(chan->id), &syncpt_val);
+	tegra_vi_channel_queue_syncpt_raise(
+		chan, TEGRA_SYNCPT_FRAME_START(chan->id));
+	tegra_vi_channel_queue_syncpt_raise(
+		chan, TEGRA_SYNCPT_MEMORY_WRITE_ACK(chan->id));
 
 	if (show_statistics)
 		start_time = ktime_get();
@@ -516,66 +550,47 @@ static int tegra_vi_channel_capture_thread(void *data)
 	/* Queue a buffer update on the next shot */
 	vi_writel(1, &chan->vi_regs->single_shot);
 
-	/* Wait for SOF */
-	err = tegra_vi_channel_wait_for_syncpt(chan, syncpt_val);
-	if (err) {
-		dev_err(&vdev->dev, "Initial wait for SOF failed!\n");
-		tegra_vi_channel_print_errors(chan);
-		goto stop_vi;
-	}
-
-	/* Program DMA for the second buffer (in the shadow registers) */
-	chan->pending_buffer = tegra_vi_channel_set_next_buffer(chan);
-	if (!chan->pending_buffer)
-		goto stop_vi;
-
-	/* FIXME: We should check for chan->active_buffer here, but the last
-	 *        sync point wait fails. As a workaround we stop one frame
-	 *        earlier. */
-	while (chan->pending_buffer) {
+	while (active_buffer) {
 		struct tegra_vi_buffer *done_buffer;
 
-		/* Wait for the write ACK */
+		/* Wait for SOF */
+		tegra_vi_channel_arm_syncpt(chan, &syncpt_val);
 		err = tegra_vi_channel_wait_for_syncpt(chan, syncpt_val);
 		if (err) {
-			if (!chan->should_stop) {
-				dev_err(&vdev->dev,
-					"Failed to capture frame\n");
-				tegra_vi_channel_print_errors(chan);
-			}
+			dev_err(&vdev->dev, "Wait for SOF failed!\n");
+			tegra_vi_channel_print_errors(chan);
+			vi_writel(0xf003, &chan->mipi_regs->pp_command);
 			break;
 		}
 
-		/* The active buffer is done and then pending is now active */
-		done_buffer = chan->active_buffer;
-		chan->active_buffer = chan->pending_buffer;
-
-		/* Setup the next pending buffer */
-		chan->pending_buffer = tegra_vi_channel_set_next_buffer(chan);
-		tegra_vi_channel_queue_syncpt(
-			chan, TEGRA_SYNCPT_MEMORY_WRITE_ACK(chan->id),
-			&syncpt_val);
-		if (chan->pending_buffer) {
-			/* Queue a buffer update on the next shot */
-			vi_writel(1, &chan->vi_regs->single_shot);
-		} else {
-			vi_writel(0, &chan->vi_regs->single_shot);
-			if (chan->active_buffer) {
-				/* Last frame stop the pixel parser once done */
-				vi_writel(0xf002, &chan->mipi_regs->pp_command);
-			}
-		}
-		/* Return the last active buffer */
+		/* The active buffer will be done and pending will become active */
+		done_buffer = active_buffer;
 		do_gettimeofday(&done_buffer->vb.v4l2_buf.timestamp);
+		active_buffer = tegra_vi_channel_set_next_buffer(chan);
+
+		/* For non interlaced we can queue the next shoot here */
+		if (chan->pixfmt.field == V4L2_FIELD_NONE)
+			tegra_vi_channel_shoot_next_buffer(chan, active_buffer);
+
+		/* Wait for the write ACK */
+		tegra_vi_channel_arm_syncpt(chan, &syncpt_val);
+		err = tegra_vi_channel_wait_for_syncpt(chan, syncpt_val);
+		if (err) {
+			dev_err(&vdev->dev, "Wait for write ACK failed!\n");
+			tegra_vi_channel_print_errors(chan);
+			vb2_buffer_done(&done_buffer->vb, VB2_BUF_STATE_ERROR);
+			vi_writel(0xf003, &chan->mipi_regs->pp_command);
+			break;
+		}
+
+		/* For interlaced we have to wait for the write to be done */
+		if (chan->pixfmt.field != V4L2_FIELD_NONE)
+			tegra_vi_channel_shoot_next_buffer(chan, active_buffer);
+
+		/* Return the last active buffer */
 		done_buffer->vb.v4l2_buf.sequence = chan->sequence++;
 		vb2_buffer_done(&done_buffer->vb, VB2_BUF_STATE_DONE);
 	}
-
-stop_vi:
-	/* Stop capture shot */
-	vi_writel(0, &chan->vi_regs->single_shot);
-	/* Stop the Pixel Parser */
-	vi_writel(0xf003, &chan->mipi_regs->pp_command);
 
 	if (show_statistics) {
 		u32 tdiff = ktime_to_ms(ktime_sub(ktime_get(), start_time));
@@ -592,17 +607,8 @@ stop_vi:
 	}
 
 	/* Release the active and pending buffer it not yet done */
-	if (chan->active_buffer) {
-		vb2_buffer_done(&chan->active_buffer->vb,
-				VB2_BUF_STATE_ERROR);
-		chan->active_buffer = NULL;
-	}
-
-	if (chan->pending_buffer) {
-		vb2_buffer_done(&chan->pending_buffer->vb,
-				VB2_BUF_STATE_ERROR);
-		chan->pending_buffer = NULL;
-	}
+	if (active_buffer)
+		vb2_buffer_done(&active_buffer->vb, VB2_BUF_STATE_ERROR);
 
 finish:
 	mutex_unlock(&chan->lock);
