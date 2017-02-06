@@ -414,6 +414,9 @@ static struct tegra_vi_buffer * tegra_vi_channel_set_next_buffer(struct tegra_vi
 
 		if (!missed && !buf)
 			missed = true;
+
+		if (!buf)
+			usleep_range(200, 1000);
 	}
 
 	/* Setup the DMA registers */
