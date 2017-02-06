@@ -597,8 +597,13 @@ static int tegra_vi_channel_capture_thread(void *data)
 		u64 cap_per_us = 1000000 * chan->sequence;
 		u32 subfps;
 
-		do_div(cap_per_us, tdiff);
-		subfps = do_div(cap_per_us, 1000);
+		if (tdiff > 0) {
+			do_div(cap_per_us, tdiff);
+			subfps = do_div(cap_per_us, 1000);
+		} else {
+			cap_per_us = 0;
+			subfps = 0;
+		}
 		dev_info(&vdev->dev,
 			"Captured %lu frames in %u ms (%u.%u fps), "
 			"%lu missed buffers\n",
