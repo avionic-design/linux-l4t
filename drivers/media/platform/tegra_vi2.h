@@ -267,8 +267,6 @@ struct tegra_vi_channel {
 	/* Lock for the buffer list */
 	spinlock_t vq_lock;
 	struct list_head capture;
-	struct tegra_vi_buffer *active_buffer;
-	struct tegra_vi_buffer *pending_buffer;
 	unsigned long sequence;
 	unsigned long missed_buffer;
 
