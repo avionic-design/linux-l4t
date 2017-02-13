@@ -2742,7 +2742,7 @@ static int tegra_se_probe(struct platform_device *pdev)
 			if (err) {
 				dev_err(se_dev->dev,
 				"crypto_register_sha alg failed index[%d]\n",
-				i);
+				j);
 				goto clean;
 			}
 		}
@@ -2800,7 +2800,7 @@ clean:
 		crypto_unregister_alg(&aes_algs[k]);
 
 	for (k = 0; k < j; k++)
-		crypto_unregister_ahash(&hash_algs[j]);
+		crypto_unregister_ahash(&hash_algs[k]);
 
 	tegra_se_free_ll_buf(se_dev);
 
