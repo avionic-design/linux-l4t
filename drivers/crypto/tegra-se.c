@@ -269,7 +269,8 @@ static int tegra_init_key_slot(struct tegra_se_dev *se_dev)
 {
 	int i;
 
-	se_dev->slot_list = kzalloc(sizeof(struct tegra_se_slot) *
+	se_dev->slot_list = devm_kzalloc(se_dev->dev,
+					sizeof(struct tegra_se_slot) *
 					TEGRA_SE_KEYSLOT_COUNT, GFP_KERNEL);
 	if (se_dev->slot_list == NULL) {
 		dev_err(se_dev->dev, "slot list memory allocation failed\n");
@@ -1959,7 +1960,8 @@ static int tegra_init_rsa_key_slot(struct tegra_se_dev *se_dev)
 {
 	int i;
 
-	se_dev->rsa_slot_list = kzalloc(sizeof(struct tegra_se_rsa_slot) *
+	se_dev->rsa_slot_list = devm_kzalloc(se_dev->dev,
+					sizeof(struct tegra_se_rsa_slot) *
 					TEGRA_SE_RSA_KEYSLOT_COUNT, GFP_KERNEL);
 	if (se_dev->rsa_slot_list == NULL) {
 		dev_err(se_dev->dev, "rsa slot list memory allocation failed\n");
@@ -2609,7 +2611,8 @@ static int tegra_se_probe(struct platform_device *pdev)
 	const struct of_device_id *match;
 	int err = 0, i = 0, j = 0, k = 0;
 
-	se_dev = kzalloc(sizeof(struct tegra_se_dev), GFP_KERNEL);
+	se_dev = devm_kzalloc(
+		&pdev->dev, sizeof(struct tegra_se_dev), GFP_KERNEL);
 	if (!se_dev) {
 		dev_err(&pdev->dev, "memory allocation failed\n");
 		return -ENOMEM;
@@ -2635,64 +2638,58 @@ static int tegra_se_probe(struct platform_device *pdev)
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
-		err = -ENXIO;
 		dev_err(se_dev->dev, "platform_get_resource failed\n");
-		goto fail;
+		return -ENXIO;
 	}
 
-	se_dev->io_reg = ioremap(res->start, resource_size(res));
-	if (!se_dev->io_reg) {
-		err = -ENOMEM;
+	se_dev->io_reg = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(se_dev->io_reg)) {
 		dev_err(se_dev->dev, "ioremap failed\n");
-		goto fail;
+		return PTR_ERR(se_dev->io_reg);
 	}
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 	if (!res) {
-		err = -ENXIO;
 		dev_err(se_dev->dev, "platform_get_resource failed\n");
-		goto err_pmc;
+		return -ENXIO;
 	}
 
-	se_dev->pmc_io_reg = ioremap(res->start, resource_size(res));
-	if (!se_dev->pmc_io_reg) {
-		err = -ENOMEM;
+	se_dev->pmc_io_reg = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(se_dev->pmc_io_reg)) {
 		dev_err(se_dev->dev, "pmc ioremap failed\n");
-		goto err_pmc;
+		return PTR_ERR(se_dev->pmc_io_reg);
 	}
 
 	se_dev->irq = platform_get_irq(pdev, 0);
 	if (!se_dev->irq) {
-		err = -ENODEV;
 		dev_err(se_dev->dev, "platform_get_irq failed\n");
-		goto err_irq;
+		return -ENODEV;
 	}
 
 	/* Initialize the clock */
-	se_dev->pclk = clk_get(se_dev->dev, "se");
+	se_dev->pclk = devm_clk_get(se_dev->dev, "se");
 	if (IS_ERR(se_dev->pclk)) {
 		dev_err(se_dev->dev, "clock intialization failed (%ld)\n",
 			PTR_ERR(se_dev->pclk));
-		err = PTR_ERR(se_dev->pclk);
-		goto clean;
+		return PTR_ERR(se_dev->pclk);
 	}
 
 	err = clk_set_rate(se_dev->pclk, ULONG_MAX);
 	if (err) {
 		dev_err(se_dev->dev, "clock set_rate failed.\n");
-		goto clean;
+		return err;
 	}
 
 	err = tegra_init_key_slot(se_dev);
 	if (err) {
 		dev_err(se_dev->dev, "init_key_slot failed\n");
-		goto clean;
+		return err;
 	}
 
 	err = tegra_init_rsa_key_slot(se_dev);
 	if (err) {
 		dev_err(se_dev->dev, "init_rsa_key_slot failed\n");
-		goto clean;
+		return err;
 	}
 
 	init_completion(&se_dev->complete);
@@ -2701,7 +2698,7 @@ static int tegra_se_probe(struct platform_device *pdev)
 				WQ_HIGHPRI | WQ_UNBOUND, 16);
 	if (!se_work_q) {
 		dev_err(se_dev->dev, "alloc_workqueue failed\n");
-		goto clean;
+		return -ENOMEM;
 	}
 
 	sg_tegra_se_dev = se_dev;
@@ -2709,12 +2706,12 @@ static int tegra_se_probe(struct platform_device *pdev)
 	pm_runtime_enable(se_dev->dev);
 	tegra_se_key_read_disable_all();
 
-	err = request_irq(se_dev->irq, tegra_se_irq, IRQF_DISABLED,
-			DRIVER_NAME, se_dev);
+	err = devm_request_irq(se_dev->dev, se_dev->irq, tegra_se_irq,
+			IRQF_DISABLED, DRIVER_NAME, se_dev);
 	if (err) {
 		dev_err(se_dev->dev, "request_irq failed - irq[%d] err[%d]\n",
 			se_dev->irq, err);
-		goto err_irq;
+		goto clean;
 	}
 
 	err = tegra_se_alloc_ll_buf(se_dev, SE_MAX_SRC_SG_COUNT,
@@ -2795,7 +2792,16 @@ static int tegra_se_probe(struct platform_device *pdev)
 	return 0;
 
 clean:
-	pm_runtime_disable(se_dev->dev);
+	if (se_dev->ctx_save_buf) {
+		if (!se_dev->chipdata->drbg_supported)
+			dma_free_coherent(se_dev->dev, SE_CONTEXT_BUFER_SIZE,
+				se_dev->ctx_save_buf, se_dev->ctx_save_buf_adr);
+		else
+			dma_free_coherent(se_dev->dev,
+				SE_CONTEXT_DRBG_BUFER_SIZE,
+				se_dev->ctx_save_buf, se_dev->ctx_save_buf_adr);
+	}
+
 	for (k = 0; k < i; k++)
 		crypto_unregister_alg(&aes_algs[k]);
 
@@ -2804,26 +2810,12 @@ clean:
 
 	tegra_se_free_ll_buf(se_dev);
 
+	pm_runtime_disable(se_dev->dev);
+
+	sg_tegra_se_dev = NULL;
+
 	if (se_work_q)
 		destroy_workqueue(se_work_q);
-
-	if (se_dev->enclk)
-		clk_put(se_dev->enclk);
-
-	if (se_dev->pclk)
-		clk_put(se_dev->pclk);
-
-	free_irq(se_dev->irq, &pdev->dev);
-
-err_irq:
-	iounmap(se_dev->pmc_io_reg);
-err_pmc:
-	iounmap(se_dev->io_reg);
-
-fail:
-	platform_set_drvdata(pdev, NULL);
-	kfree(se_dev);
-	sg_tegra_se_dev = NULL;
 
 	return err;
 }
@@ -2850,8 +2842,6 @@ static int tegra_se_remove(struct platform_device *pdev)
 	if (se_dev->enclk)
 		clk_put(se_dev->enclk);
 
-	if (se_dev->pclk)
-		clk_put(se_dev->pclk);
 	tegra_se_free_ll_buf(se_dev);
 	if (se_dev->ctx_save_buf) {
 		if (!se_dev->chipdata->drbg_supported)
@@ -2863,9 +2853,6 @@ static int tegra_se_remove(struct platform_device *pdev)
 				se_dev->ctx_save_buf, se_dev->ctx_save_buf_adr);
 		se_dev->ctx_save_buf = NULL;
 	}
-	iounmap(se_dev->io_reg);
-	iounmap(se_dev->pmc_io_reg);
-	kfree(se_dev);
 	sg_tegra_se_dev = NULL;
 
 	return 0;
