@@ -1818,22 +1818,43 @@ static void tegra_vi_notify(struct v4l2_subdev *sd,
 	}
 }
 
+static struct tegra_vi_input *tegra_vi_get_asd_input(
+	struct tegra_vi2 *vi2, const struct v4l2_async_subdev *asd)
+{
+	struct tegra_vi_input *input;
+	int i, j;
+
+	for (i = 0; i < ARRAY_SIZE(vi2->input); i++) {
+		input = &vi2->input[i];
+		for (j = 0; j < ARRAY_SIZE(input->asd); j++)
+			if (asd == &input->asd[j])
+				return input;
+	}
+
+	return NULL;
+}
+
 static int tegra_vi_sensor_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_subdev *subdev,
 				struct v4l2_async_subdev *asd)
 {
 	struct tegra_vi2 *vi2 =
 		container_of(notifier, struct tegra_vi2, sd_notifier);
-	struct tegra_vi_input *input =
-		container_of(asd, struct tegra_vi_input, asd);
 	struct device *dev = vi2->v4l2_dev.dev;
+	struct tegra_vi_input *input;
 	int err = 0;
+
+	input = tegra_vi_get_asd_input(vi2, asd);
+	if(!input) {
+		dev_err(dev, "Failed to find the input for subdev %s\n",
+			subdev->name);
+		return -EINVAL;
+	}
 
 	mutex_lock(&input->lock);
 
-	if (input->sensor) {
-		err = -EBUSY;
-	} else {
+	/* Take the first subdev supporting video operations as sensor */
+	if (!input->sensor && subdev->ops->video) {
 		input->sensor = subdev;
 
 		/* Check and store the CIS config */
@@ -1895,8 +1916,17 @@ static void tegra_vi_sensor_unbind(struct v4l2_async_notifier *notifier,
 				struct v4l2_subdev *subdev,
 				struct v4l2_async_subdev *asd)
 {
-	struct tegra_vi_input *input =
-		container_of(asd, struct tegra_vi_input, asd);
+	struct tegra_vi2 *vi2 =
+		container_of(notifier, struct tegra_vi2, sd_notifier);
+	struct device *dev = vi2->v4l2_dev.dev;
+	struct tegra_vi_input *input;
+
+	input = tegra_vi_get_asd_input(vi2, asd);
+	if(!input) {
+		dev_err(dev, "Failed to find the input for subdev %s\n",
+			subdev->name);
+		return;
+	}
 
 	mutex_lock(&input->lock);
 
@@ -2094,6 +2124,39 @@ static void tegra_vi_channel_reset(const struct tegra_vi_channel *chan, bool res
 	vi_writel(reset ? 0x1F : 0, &chan->vi_regs->sw_reset);
 }
 
+static struct device_node *tegra_vi2_get_remote_port_parent(
+	const struct device_node *node, int index)
+{
+	struct device_node *np;
+	unsigned int depth;
+
+	/* Get the remote endpoint node */
+	np = of_parse_phandle(node, "remote-endpoint", index);
+	if (!np)
+		return ERR_PTR(-ENODEV);
+
+	/* Check that the endpoint is not disabled */
+	if (!of_device_is_available(np)) {
+		of_node_put(np);
+		return ERR_PTR(-EBUSY);
+	}
+
+	/* Walk 3 levels up only if there is 'ports' node. */
+	for (depth = 3; depth && np; depth--) {
+                np = of_get_next_parent(np);
+		if (depth == 2 && of_node_cmp(np->name, "ports"))
+			break;
+	}
+
+	/* Check that the device is not disabled */
+	if (!of_device_is_available(np)) {
+		of_node_put(np);
+		return ERR_PTR(-EBUSY);
+	}
+
+	return np;
+}
+
 static int tegra_vi2_probe(struct platform_device *pdev)
 {
 	static struct resource cal_regs = {
@@ -2114,10 +2177,11 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 	/* Read the config from OF */
 	while ((np = v4l2_of_get_next_endpoint(pdev->dev.of_node, np))) {
 		struct v4l2_async_subdev *asd;
+		struct tegra_vi_input *in;
 		struct device_node *port;
-		struct device_node *ep;
 		struct device_node *sd;
 		u32 reg;
+		int i;
 
 		port = of_get_parent(np);
 		err = of_property_read_u32(port, "reg", &reg);
@@ -2129,36 +2193,36 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 			of_node_put(np);
 			return -EINVAL;
 		}
-		asd = &vi2->input[reg].asd;
 
-		if (asd->match.of.node) {
-			dev_err(&pdev->dev,
-				"Port must have only one endpoint\n");
-			of_node_put(np);
-			return -EINVAL;
+		in = &vi2->input[reg];
+
+		for (i = 0; ; i++) {
+			sd = tegra_vi2_get_remote_port_parent(np, i);
+			if (IS_ERR(sd)) {
+				if (PTR_ERR(sd) == -EBUSY)
+					continue;
+				break;
+			}
+
+			/* Check that we can add the endpoint */
+			if (in->asd_count >= ARRAY_SIZE(in->asd)) {
+				dev_err(&pdev->dev,
+					"Port %d has too many endpoints\n",
+					in->id);
+				of_node_put(np);
+				return -EINVAL;
+			}
+
+			asd = &in->asd[in->asd_count];
+			asd->match_type = V4L2_ASYNC_MATCH_OF;
+			asd->match.of.node = sd;
+			in->asd_count++;
+
+			vi2->asd[vi2->sd_notifier.num_subdevs] = asd;
+			vi2->sd_notifier.num_subdevs++;
 		}
 
-		ep = of_parse_phandle(np, "remote-endpoint", 0);
-		if (!ep || !of_device_is_available(ep)) {
-			of_node_put(ep);
-			of_node_put(np);
-			continue;
-		}
-		of_node_put(ep);
-
-		sd = v4l2_of_get_remote_port_parent(np);
 		of_node_put(np);
-
-		if (!sd || !of_device_is_available(sd)) {
-			of_node_put(sd);
-			continue;
-		}
-
-		asd->match_type = V4L2_ASYNC_MATCH_OF;
-		asd->match.of.node = sd;
-
-		vi2->asd[vi2->sd_notifier.num_subdevs] = asd;
-		vi2->sd_notifier.num_subdevs++;
 	}
 
 	if (!vi2->sd_notifier.num_subdevs) {

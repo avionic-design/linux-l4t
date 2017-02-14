@@ -207,12 +207,14 @@ struct tegra_formats {
  * a specific pixel parser.
  */
 #define TEGRA_VI_INPUT_NUM_CIL 2
+#define TEGRA_VI_INPUT_NUM_SUBDEV 3
 struct tegra_vi_input {
 	enum tegra_vi_input_id id;
 
 	struct tegra_mipi_cil_regs *cil_regs[TEGRA_VI_INPUT_NUM_CIL];
 	struct v4l2_subdev *sensor;
-	struct v4l2_async_subdev asd;
+	struct v4l2_async_subdev asd[TEGRA_VI_INPUT_NUM_SUBDEV];
+	unsigned asd_count;
 
 	/* Supported MBUS flags on this input */
 	unsigned mbus_caps;
@@ -280,7 +282,7 @@ struct tegra_vi_channel {
 
 #define TEGRA_VI2_NUM_CHANNEL 2
 #define TEGRA_VI2_NUM_INPUT 3
-#define TEGRA_VI2_NUM_SUBDEV TEGRA_VI2_NUM_INPUT
+#define TEGRA_VI2_NUM_SUBDEV (TEGRA_VI2_NUM_INPUT * TEGRA_VI_INPUT_NUM_SUBDEV)
 struct tegra_vi2 {
 	void __iomem *base;
 
