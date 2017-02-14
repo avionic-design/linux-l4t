@@ -206,10 +206,11 @@ struct tegra_formats {
  * generator input is a special case as it has not CIL and is bound to
  * a specific pixel parser.
  */
+#define TEGRA_VI_INPUT_NUM_CIL 2
 struct tegra_vi_input {
 	enum tegra_vi_input_id id;
 
-	struct tegra_mipi_cil_regs *cil_regs[2];
+	struct tegra_mipi_cil_regs *cil_regs[TEGRA_VI_INPUT_NUM_CIL];
 	struct v4l2_subdev *sensor;
 	struct v4l2_async_subdev asd;
 
@@ -235,6 +236,7 @@ struct tegra_vi_input {
 };
 
 /* Pixel processing channel */
+#define TEGRA_VI_CHANNEL_NUM_FORMATS 16
 struct tegra_vi_channel {
 	unsigned id;
 	struct video_device vdev;
@@ -272,10 +274,13 @@ struct tegra_vi_channel {
 
 	int syncpt_id;
 
-	struct tegra_formats formats[16];
+	struct tegra_formats formats[TEGRA_VI_CHANNEL_NUM_FORMATS];
 	unsigned formats_count;
 };
 
+#define TEGRA_VI2_NUM_CHANNEL 2
+#define TEGRA_VI2_NUM_INPUT 3
+#define TEGRA_VI2_NUM_SUBDEV TEGRA_VI2_NUM_INPUT
 struct tegra_vi2 {
 	void __iomem *base;
 
@@ -285,12 +290,12 @@ struct tegra_vi2 {
 	/* TODO: Move that to a separate device */
 	struct tegra_mipi_cal_regs *cal_regs;
 
-	struct tegra_vi_channel channel[2];
-	struct tegra_vi_input input[3];
+	struct tegra_vi_channel channel[TEGRA_VI2_NUM_CHANNEL];
+	struct tegra_vi_input input[TEGRA_VI2_NUM_INPUT];
 
 	struct v4l2_device v4l2_dev;
 
-	struct v4l2_async_subdev* asd[3];
+	struct v4l2_async_subdev* asd[TEGRA_VI2_NUM_SUBDEV];
 	struct v4l2_async_notifier sd_notifier;
 	bool sensors_complete;
 
