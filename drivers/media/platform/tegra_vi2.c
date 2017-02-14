@@ -2140,23 +2140,25 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 
 		ep = of_parse_phandle(np, "remote-endpoint", 0);
 		if (!ep || !of_device_is_available(ep)) {
+			of_node_put(ep);
 			of_node_put(np);
 			continue;
 		}
+		of_node_put(ep);
 
 		sd = v4l2_of_get_remote_port_parent(np);
 		of_node_put(np);
 
-		if (!sd || !of_device_is_available(sd))
+		if (!sd || !of_device_is_available(sd)) {
+			of_node_put(sd);
 			continue;
+		}
 
 		asd->match_type = V4L2_ASYNC_MATCH_OF;
 		asd->match.of.node = sd;
 
 		vi2->asd[vi2->sd_notifier.num_subdevs] = asd;
 		vi2->sd_notifier.num_subdevs++;
-
-		of_node_put(sd);
 	}
 
 	if (!vi2->sd_notifier.num_subdevs) {
