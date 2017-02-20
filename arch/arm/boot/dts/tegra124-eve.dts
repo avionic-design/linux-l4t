@@ -218,6 +218,25 @@
 				reg = <0>;
 				pull-ups-supply = <&vdd_3v3>;
 
+				ads1015_hs: ads1015@48 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					compatible = "ads1015";
+					reg = <0x48>;
+					vdd-supply = <&vdd_3v3>;
+
+					channel0 {
+						reg = <0>;              /* ADS1015_AIN0_AIN1 */
+						ti,gain = <2>;          /* +- 2V */
+						ti,datarate = <0>;      /* 128SPS */
+					};
+					channel1 {
+						reg = <3>;              /* ADS1015_AIN2_AIN3 */
+						ti,gain = <2>;          /* +- 2V */
+						ti,datarate = <0>;      /* 128SPS */
+					};
+				};
+
 				m24512: m24512@50 {
 					compatible = "24c512";
 					reg = <0x50>;
@@ -408,6 +427,12 @@
 						};
 					};
 				};
+
+				tmp102_0@48 {
+					compatible = "ti,tmp102";
+					reg = <0x48>;
+					vcc-supply = <&dvdd_1v2_cam1>;
+				};
 			};
 
 			obmux_2: port@2 {
@@ -433,6 +458,12 @@
 							data-lanes = <0 1>;
 						};
 					};
+				};
+
+				tmp102_1@48 {
+					compatible = "ti,tmp102";
+					reg = <0x48>;
+					vcc-supply = <&dvdd_1v2_cam2>;
 				};
 			};
 
