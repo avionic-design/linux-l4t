@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <linux/delay.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
@@ -27,6 +28,7 @@
 #include <linux/mutex.h>
 #include <linux/device.h>
 #include <linux/jiffies.h>
+#include <linux/regulator/consumer.h>
 
 #define	DRIVER_NAME "tmp102"
 
@@ -54,6 +56,7 @@ struct tmp102 {
 	u16 config_orig;
 	unsigned long last_update;
 	int temp[3];
+	struct regulator *vcc_reg;
 };
 
 /* convert left adjusted 13-bit TMP102 register value to milliCelsius */
@@ -166,6 +169,22 @@ static int tmp102_probe(struct i2c_client *client,
 
 	i2c_set_clientdata(client, tmp102);
 
+	tmp102->vcc_reg = devm_regulator_get(&client->dev, "vcc");
+	if (IS_ERR(tmp102->vcc_reg)) {
+		if (PTR_ERR(tmp102->vcc_reg) != -ENODEV)
+			return PTR_ERR(tmp102->vcc_reg);
+		tmp102->vcc_reg = NULL;
+	}
+	if (tmp102->vcc_reg) {
+		status = regulator_enable(tmp102->vcc_reg);
+		if (status) {
+			dev_err(&client->dev,
+				"Failed to enable vcc: %d\n", status);
+			return status;
+		}
+		usleep_range(500, 600);
+	}
+
 	status = i2c_smbus_read_word_swapped(client, TMP102_CONF_REG);
 	if (status < 0) {
 		dev_err(&client->dev, "error reading config register\n");
@@ -232,6 +251,9 @@ static int tmp102_remove(struct i2c_client *client)
 			i2c_smbus_write_word_swapped(client, TMP102_CONF_REG,
 						     config | TMP102_CONF_SD);
 	}
+
+	if (tmp102->vcc_reg)
+		regulator_disable(tmp102->vcc_reg);
 
 	return 0;
 }
