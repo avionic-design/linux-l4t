@@ -1,7 +1,7 @@
 /dts-v1/;
 
 #include "tegra124-meerkat.dtsi"
-#include "panel-tianma-tm057jdhp04.dtsi"
+#include "panel-tianma-tm057jdhp04-30.dtsi"
 
 / {
 	model = "Avionic Design Kitt";
@@ -74,7 +74,7 @@
 
 		dsi {
 			status = "okay";
-			panel: panel-tianma-tm057jdhp04 {
+			panel: panel-tianma-tm057jdhp04-30 {
 				enable-gpios = <&gpio TEGRA_GPIO(H, 3) GPIO_ACTIVE_HIGH>;
 				nvidia,dsi-te-gpio = <&gpio TEGRA_GPIO(K, 0) GPIO_ACTIVE_HIGH>;
 				backlight = <&display_bl>;
@@ -241,7 +241,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x71>;
-			vcc-supply = <&vddio_1v8>;
+			vcc-supply = <&vdd_1v8>;
 
 			i2c@0 {
 				#address-cells = <1>;
@@ -371,9 +371,19 @@
 	};
 
 	regulators {
-		vdd_5v0: regulator@100 {
+		vsys: regulator@100 {
 			compatible = "regulator-fixed";
 			reg = <100>;
+			regulator-name = "VSYS";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
 			regulator-name = "+VDD_5V";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
@@ -381,9 +391,9 @@
 			regulator-boot-on;
 		};
 
-		vdd_3v3: regulator@101 {
+		vdd_3v3: regulator@102 {
 			compatible = "regulator-fixed";
-			reg = <101>;
+			reg = <102>;
 			regulator-name = "+VDD_3V3";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
@@ -391,30 +401,30 @@
 			regulator-boot-on;
 		};
 
-		vdd_usb2_vbus: regulator@102 {
+		vdd_usb2_vbus: regulator@103 {
 			compatible = "regulator-fixed";
-			reg = <102>;
+			reg = <103>;
 			regulator-name = "+USB2_VCC";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			gpio = <&gpio TEGRA_GPIO(FF, 1) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 			gpio-open-drain;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		vdd_2v9: regulator@103 {
+		vdd_2v9: regulator@104 {
 			compatible = "regulator-fixed";
-			reg = <103>;
+			reg = <104>;
 			regulator-name = "+2V9";
 			regulator-min-microvolt = <2900000>;
 			regulator-max-microvolt = <2900000>;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		vdd_5v0_hdmi: regulator@104 {
+		vdd_5v0_hdmi: regulator@105 {
 			compatible = "regulator-fixed";
-			reg = <104>;
+			reg = <105>;
 			regulator-name = "+5V_HDMI";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
@@ -423,78 +433,89 @@
 			enable-active-high;
 		};
 
-		vdd_usb0_vbus: regulator@105 {
+		vdd_usb0_vbus: regulator@106 {
 			compatible = "regulator-fixed";
-			reg = <105>;
+			reg = <106>;
 			regulator-name = "+USB0_VCC";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			gpio = <&gpio TEGRA_GPIO(N, 4) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 			gpio-open-drain;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		vdd_ltc_vref: regulator@106 {
+		vdd_ltc_vref: regulator@107 {
 			compatible = "regulator-fixed";
-			reg = <106>;
+			reg = <107>;
 			regulator-name = "LTC26xx VREF";
 			regulator-min-microvolt = <2500000>;
 			regulator-max-microvolt = <2500000>;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		dvdd_1v2_cam: regulator@107 {
+		dvdd_1v2_cam: regulator@108 {
 			compatible = "regulator-fixed";
-			reg = <107>;
+			reg = <108>;
 			regulator-name = "DVDD_CAM";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1200000>;
 			vin-supply = <&vdd_3v3>;
 		};
 
-		ovdd_1v8_cam: regulator@108 {
+		ovdd_1v8_cam: regulator@109 {
 			compatible = "regulator-fixed";
-			reg = <108>;
+			reg = <109>;
 			regulator-name = "OVDD";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
 			vin-supply = <&vdd_3v3>;
 		};
 
-		avdd_2v9_cam: regulator@109 {
+		avdd_2v9_cam: regulator@110 {
 			compatible = "regulator-fixed";
-			reg = <109>;
+			reg = <110>;
 			regulator-name = "AVDD";
 			regulator-min-microvolt = <2900000>;
 			regulator-max-microvolt = <2900000>;
 			vin-supply = <&vdd_3v3>;
 		};
-		dvdd_1v2_cam2: regulator@110 {
+		dvdd_1v2_cam2: regulator@111 {
 			compatible = "regulator-fixed";
-			reg = <110>;
+			reg = <111>;
 			regulator-name = "DVDD";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1200000>;
 			vin-supply = <&vdd_3v3>;
 		};
 
-		ovdd_1v8_cam2: regulator@111 {
+		ovdd_1v8_cam2: regulator@112 {
 			compatible = "regulator-fixed";
-			reg = <111>;
+			reg = <112>;
 			regulator-name = "OVDD";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
 			vin-supply = <&vdd_3v3>;
 		};
 
-		avdd_2v9_cam2: regulator@112 {
+		avdd_2v9_cam2: regulator@113 {
 			compatible = "regulator-fixed";
-			reg = <112>;
+			reg = <113>;
 			regulator-name = "AVDD";
 			regulator-min-microvolt = <2900000>;
 			regulator-max-microvolt = <2900000>;
 			vin-supply = <&vdd_3v3>;
+		};
+
+		vdd_1v8: regulator@114 {
+			compatible = "regulator-fixed";
+			reg = <114>;
+			regulator-name = "VDD_1V8";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
 		};
 	};
 
