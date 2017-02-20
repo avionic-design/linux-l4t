@@ -336,6 +336,20 @@
 								  <8>; /* Disable dam buster */
 					};
 				};
+
+				iis2dh: iis2dh@19 {
+					compatible = "st,iis2dh-accel";
+					reg = <0x19>;
+					interrupt-parent = <&gpio>;
+					interrupts = <TEGRA_GPIO(H, 6) IRQ_TYPE_LEVEL_HIGH>;
+				};
+
+				i3g4250d: i3g4250d@69 {
+					compatible = "st,i3g4250d-gyro";
+					reg = <0x69>;
+					interrupt-parent = <&gpio>;
+					interrupts = <TEGRA_GPIO(I, 2) IRQ_TYPE_LEVEL_HIGH>;
+				};
 			};
 
 			obmux_1: port@1 {
