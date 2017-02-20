@@ -3,7 +3,8 @@ Sony IMX290LLR and IMX290LQR CMOS sensor
 
 Required properties:
 
-- compatible		: "sony,imx290llr" or "sony,imx290lqr";
+- compatible		: "sony,imx290llr", "sony,imx290lqr" or
+			  "sony,imx290";
 - reg			: I2C slave address of the sensor;
 - xclr-gpio		: GPIO pin for sensor reset;
 - dvdd-supply		: digital power supply (1.2V);

@@ -189,6 +189,19 @@ struct imx290_priv {
 	struct mutex			lock;
 };
 
+static const u32 imx290llr_framefmt_codes[] = {
+	V4L2_MBUS_FMT_Y12_1X12,
+};
+
+static const u32 imx290lqr_framefmt_codes[] = {
+	V4L2_MBUS_FMT_SRGGB12_1X12,
+};
+
+static const u32 imx290_framefmt_codes[] = {
+	V4L2_MBUS_FMT_SRGGB12_1X12,
+	V4L2_MBUS_FMT_Y12_1X12,
+};
+
 #define csi_timing_for_rate(rate, priv) \
 	((rate)->csi_timing[(priv)->num_data_lanes / 4])
 
@@ -711,25 +724,53 @@ error:
 	return ret;
 }
 
-static u32 imx290_get_framefmt_code(struct imx290_priv *priv, int bits)
+static int imx290_get_framefmt_codes(struct imx290_priv *priv,
+				const u32 **framefmt_codes)
 {
-	if (bits == 10) {
-		switch (priv->ident) {
-		case V4L2_IDENT_IMX290LLR:
-			return V4L2_MBUS_FMT_Y10_1X10;
-		case V4L2_IDENT_IMX290LQR:
-		default:
-			return V4L2_MBUS_FMT_SRGGB10_1X10;
-		}
-	} else {
-		switch (priv->ident) {
-		case V4L2_IDENT_IMX290LLR:
-			return V4L2_MBUS_FMT_Y12_1X12;
-		case V4L2_IDENT_IMX290LQR:
-		default:
-			return V4L2_MBUS_FMT_SRGGB12_1X12;
-		}
+	switch (priv->ident) {
+	case V4L2_IDENT_IMX290LLR:
+		*framefmt_codes = imx290llr_framefmt_codes;
+		return ARRAY_SIZE(imx290llr_framefmt_codes);
+
+	case V4L2_IDENT_IMX290LQR:
+		*framefmt_codes = imx290lqr_framefmt_codes;
+		return ARRAY_SIZE(imx290lqr_framefmt_codes);
+
+	case V4L2_IDENT_IMX290:
+		*framefmt_codes = imx290_framefmt_codes;
+		return ARRAY_SIZE(imx290_framefmt_codes);
+
+	default:
+		return -EINVAL;
 	}
+}
+
+static u32 imx290_get_framefmt_code(struct imx290_priv *priv, int index)
+{
+	const u32 *framefmt_codes;
+	int count;
+
+	count = imx290_get_framefmt_codes(priv, &framefmt_codes);
+	if (count < 0 || index < 0 || index >= count)
+		return 0; /* 0 is not a valid MBUS format */
+
+	return framefmt_codes[index];
+}
+
+static u32 imx290_try_framefmt_code(struct imx290_priv *priv, u32 code)
+{
+	const u32 *framefmt_codes;
+	int i, count;
+
+	count = imx290_get_framefmt_codes(priv, &framefmt_codes);
+	if (count <= 0)
+		return 0; /* 0 is not a valid MBUS format */
+
+	for (i = 0; i < count; i++)
+		if (framefmt_codes[i] == code)
+			return code;
+
+	return framefmt_codes[0];
 }
 
 static void imx290_set_default_fmt(struct imx290_priv *priv)
@@ -739,7 +780,7 @@ static void imx290_set_default_fmt(struct imx290_priv *priv)
 	mf->width = imx290_modes[0].width;
 	mf->height = imx290_modes[0].height;
 
-	mf->code = imx290_get_framefmt_code(priv, 12);
+	mf->code = imx290_get_framefmt_code(priv, 0);
 	mf->field = V4L2_FIELD_NONE;
 	mf->colorspace = V4L2_COLORSPACE_SRGB;
 
@@ -768,7 +809,7 @@ static const struct imx290_mode *imx290_get_framefmt(
 	mf->height = mode->height;
 
 	mf->field = V4L2_FIELD_NONE;
-	mf->code = imx290_get_framefmt_code(priv, 12);
+	mf->code = imx290_try_framefmt_code(priv, mf->code);
 	mf->colorspace = V4L2_COLORSPACE_SRGB;
 
 	return mode;
@@ -835,11 +876,9 @@ static int imx290_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
 {
 	struct imx290_priv *priv = to_imx290(sd);
 
-	if (index > 0)
-		return -EINVAL;
+	*code = imx290_get_framefmt_code(priv, index);
 
-	*code = imx290_get_framefmt_code(priv, 12);
-	return 0;
+	return *code > 0 ? 0 : -EINVAL;
 }
 
 static int imx290_g_mbus_config(struct v4l2_subdev *sd,
@@ -1374,6 +1413,7 @@ static int imx290_remove(struct i2c_client *client)
 static const struct i2c_device_id imx290_id[] = {
 	{ "imx290lqr", V4L2_IDENT_IMX290LQR },
 	{ "imx290llr", V4L2_IDENT_IMX290LLR },
+	{ "imx290", V4L2_IDENT_IMX290 },
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, imx290_id);
@@ -1387,6 +1427,12 @@ static const struct of_device_id imx290_of_match[] = {
 	{
 		.compatible = "sony,imx290llr",
 		.data = (void *)V4L2_IDENT_IMX290LLR
+	},
+	{
+		/* This compatiblity string works for both,
+		   b/w and color sensor */
+		.compatible = "sony,imx290",
+		.data = (void *)V4L2_IDENT_IMX290
 	},
 	{ },
 };
