@@ -203,20 +203,20 @@
 	/* I2C Gen2 */
 	i2c@7000c400 {
 		status = "okay";
-		pull-ups-supply = <&vdd_3v3_sys>;
+		pull-ups-supply = <&vdd_3v3>;
 
 		tca9548a_mb: tca9548a@70 {
 			compatible = "nxp,pca9548";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x70>;
-			vcc-supply = <&vddio_1v8>;
+			vcc-supply = <&vdd_1v8>;
 
 			mbmux_0: port@0 {
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0>;
-				pull-ups-supply = <&vdd_3v3_sys>;
+				pull-ups-supply = <&vdd_3v3>;
 
 				m24512: m24512@50 {
 					compatible = "24c512";
@@ -234,7 +234,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <1>;
-				pull-ups-supply = <&vddio_1v8>;
+				pull-ups-supply = <&vdd_1v8>;
 
 				wm8903: wm8903@1a {
 					compatible = "wlf,wm8903";
@@ -261,7 +261,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <2>;
-				pull-ups-supply = <&vdd_5v0_sys>;
+				pull-ups-supply = <&vdd_5v0>;
 
 				ltc2617_laser: ltc2617@10 {
 					compatible = "linear,ltc2617";
@@ -306,20 +306,20 @@
         /* I2C Cam / Optics */
         i2c@7000c500 {
                 status = "okay";
-		pull-ups-supply = <&vddio_1v8>;
+/*		pull-ups-supply = <&vdd_1v8>;*/
 
                 tca9548a_ob: tca9548a@71 {
                         compatible = "nxp,pca9548";
                         #address-cells = <1>;
                         #size-cells = <0>;
                         reg = <0x71>;
-                        vcc-supply = <&vddio_1v8>;
+                        vcc-supply = <&vdd_1v8>;
 
 			obmux_0: port@0 {
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0>;
-				pull-ups-supply = <&vdd_3v3_sys>;
+				pull-ups-supply = <&vdd_3v3>;
 
 				optics_gpio: tca6424@23 {
 					compatible = "ti,tca6424";
@@ -410,7 +410,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <3>;
-				pull-ups-supply = <&vdd_5v0_sys>;
+				pull-ups-supply = <&vdd_5v0>;
 
 				ads1015: ads1015@48 {
 					#address-cells = <1>;
@@ -443,7 +443,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <4>;
-				pull-ups-supply = <&vdd_3v3_sys>;
+				pull-ups-supply = <&vdd_3v3>;
 
 				button_gpio: tca6408@20 {
 					compatible = "ti,tca6408";
@@ -478,7 +478,7 @@
 	/* HDMI DDC */
 	i2c@7000c700 {
 		status = "okay";
-		pull-ups-supply = <&vdd_3v3_sys>;
+		pull-ups-supply = <&vdd_3v3>;
 	};
 
 	/* Gen1 I2C / SMBus */
@@ -486,7 +486,7 @@
 		/* Keep SMBus disabled as we have a problem with
 		   multi-master access */
 		status = "disabled";
-		pull-ups-supply = <&vdd_3v3_sys>;
+		pull-ups-supply = <&vdd_3v3>;
 		clock-frequency = <100000>;
 	};
 
@@ -593,190 +593,213 @@
 	};
 
 	regulators {
-		vdd_5v0: regulator@100 {
+		vsys: regulator@100 {
 			compatible = "regulator-fixed";
 			reg = <100>;
+			regulator-name = "VSYS";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
 			regulator-name = "+VDD_5V";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			regulator-always-on;
 			regulator-boot-on;
+			vin-supply = <&vsys>;
 		};
 
-		vdd_3v3: regulator@101 {
+		vdd_3v3: regulator@102 {
 			compatible = "regulator-fixed";
-			reg = <101>;
+			reg = <102>;
 			regulator-name = "+VDD_3V3";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
 			regulator-always-on;
 			regulator-boot-on;
+			vin-supply = <&vsys>;
 		};
 
-		vdd_5v0_hdmi: regulator@102 {
+		vdd_5v0_hdmi: regulator@103 {
 			compatible = "regulator-fixed";
-			reg = <102>;
+			reg = <103>;
 			regulator-name = "+5V_HDMI";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 			gpio = <&gpio TEGRA_GPIO(H, 1) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
 
-		vdd_5v0_usb0: regulator@103 {
+		vdd_5v0_usb0: regulator@104 {
 			compatible = "regulator-fixed";
-			reg = <103>;
+			reg = <104>;
 			regulator-name = "+USB0_VCC";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			gpio = <&gpio TEGRA_GPIO(N, 4) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 			gpio-open-drain;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		vdd_5v0_usb1: regulator@104 {
+		vdd_5v0_usb1: regulator@105 {
 			compatible = "regulator-fixed";
-			reg = <104>;
+			reg = <105>;
 			regulator-name = "+USB1_VCC";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 			gpio = <&gpio TEGRA_GPIO(N, 5) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
 
-                vdd_5v0_usb2: regulator@105 {
+                vdd_5v0_usb2: regulator@106 {
                         compatible = "regulator-fixed";
-                        reg = <105>;
+                        reg = <106>;
                         regulator-name = "+USB2_VCC";
                         regulator-min-microvolt = <5000000>;
                         regulator-max-microvolt = <5000000>;
                         gpio = <&gpio TEGRA_GPIO(FF, 1) GPIO_ACTIVE_HIGH>;
                         enable-active-high;
                         gpio-open-drain;
-                        vin-supply = <&vdd_5v0_sys>;
+                        vin-supply = <&vdd_5v0>;
                 };
 
-		vref_laser: regulator@106 {
+		vref_laser: regulator@107 {
 			compatible = "regulator-fixed";
-			reg = <106>;
+			reg = <107>;
 			regulator-name = "VREF_LASER";
 			regulator-min-microvolt = <2500000>;
 			regulator-max-microvolt = <2500000>;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		vbatt_5v0_spkr: regulator@107 {
+		vbatt_5v0_spkr: regulator@108 {
 			compatible = "regulator-fixed";
-			reg = <107>;
+			reg = <108>;
 			regulator-name = "Speaker supply";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			gpio = <&gpio TEGRA_GPIO(R, 5) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		vdd_1v8_audio: regulator@108 {
+		vdd_1v8_audio: regulator@109 {
 			compatible = "regulator-fixed";
-			reg = <108>;
+			reg = <109>;
 			regulator-name = "Audio 1.8V supply";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
 			gpio = <&gpio TEGRA_GPIO(H, 5) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		dvdd_1v2_cam1: regulator@109 {
+		dvdd_1v2_cam1: regulator@110 {
 			compatible = "regulator-fixed";
-			reg = <109>;
+			reg = <110>;
 			regulator-name = "DVDD_CAM1";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1200000>;
 			gpio = <&optics_gpio 0 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		avdd_2v9_cam1: regulator@110 {
+		avdd_2v9_cam1: regulator@111 {
 			compatible = "regulator-fixed";
-			reg = <110>;
+			reg = <111>;
 			regulator-name = "AVDD_CAM1";
 			regulator-min-microvolt = <2900000>;
 			regulator-max-microvolt = <2900000>;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		ovdd_1v8_cam1: regulator@111 {
+		ovdd_1v8_cam1: regulator@112 {
 			compatible = "regulator-fixed";
-			reg = <111>;
+			reg = <112>;
 			regulator-name = "OVDD_CAM1";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		dvdd_1v2_cam2: regulator@112 {
+		dvdd_1v2_cam2: regulator@113 {
 			compatible = "regulator-fixed";
-			reg = <112>;
+			reg = <113>;
 			regulator-name = "DVDD_CAM2";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1200000>;
 			gpio = <&optics_gpio 3 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		avdd_2v9_cam2: regulator@113 {
+		avdd_2v9_cam2: regulator@114 {
 			compatible = "regulator-fixed";
-			reg = <113>;
+			reg = <114>;
 			regulator-name = "AVDD_CAM2";
 			regulator-min-microvolt = <2900000>;
 			regulator-max-microvolt = <2900000>;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		ovdd_1v8_cam2: regulator@114 {
+		ovdd_1v8_cam2: regulator@115 {
 			compatible = "regulator-fixed";
-			reg = <114>;
+			reg = <115>;
 			regulator-name = "OVDD_CAM2";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
-			vin-supply = <&vdd_3v3_sys>;
+			vin-supply = <&vdd_3v3>;
 		};
 
-		vdd_5v0_tec: regulator@115 {
+		vdd_5v0_tec: regulator@116 {
 			compatible = "regulator-fixed";
-			reg = <115>;
+			reg = <116>;
 			regulator-name = "VDD_TEC";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			gpio = <&optics_gpio 9 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		vref_tec: regulator@116 {
+		vref_tec: regulator@117 {
 			compatible = "regulator-fixed";
-			reg = <116>;
+			reg = <117>;
 			regulator-name = "VREF_TEC";
 			regulator-min-microvolt = <1500000>;
 			regulator-max-microvolt = <1500000>;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
 		};
 
-		vdd_5v0_laser: regulator@117 {
+		vdd_5v0_laser: regulator@118 {
 			compatible = "regulator-fixed";
-			reg = <117>;
+			reg = <118>;
 			regulator-name = "VDD_LASER";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			gpio = <&gpio TEGRA_GPIO(R, 6) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			vin-supply = <&vdd_5v0_sys>;
+			vin-supply = <&vdd_5v0>;
+		};
+
+		vdd_1v8: regulator@119 {
+			compatible = "regulator-fixed";
+			reg = <119>;
+			regulator-name = "VDD_1V8";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
 		};
 	};
 };
