@@ -483,16 +483,11 @@
 
 	/* Gen1 I2C / SMBus */
 	i2c@7000c000 {
-		status = "okay";
+		/* Keep SMBus disabled as we have a problem with
+		   multi-master access */
+		status = "disabled";
 		pull-ups-supply = <&vdd_3v3_sys>;
 		clock-frequency = <100000>;
-
-		sbs@0b {
-			compatible = "sbs,sbs-battery";
-			reg = <0xb>;
-			sbs,i2c-retry-count = <2>;
-			sbs,poll-retry-count = <10>;
-		};
 	};
 
 
