@@ -130,6 +130,7 @@
 
 	/* uC UART */
 	serial@70006040 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
 		status = "okay";
 	};
 
@@ -304,6 +305,21 @@
 				#size-cells = <0>;
 				reg = <0>;
 				pull-ups-supply = <&vdd_3v3_sys>;
+
+				optics_gpio: tca6424@23 {
+					compatible = "ti,tca6424";
+					reg = <0x23>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					interrupt-parent = <&gpio>;
+					interrups = <TEGRA_GPIO(K, 4) IRQ_TYPE_LEVEL_LOW>;
+
+					gpio-init-names = "optics_default";
+					gpio-init-0 = <&optics_gpio_default>;
+					optics_gpio_default: default {
+						gpio-output-low = <8>; /* Disable dam buster */
+					};
+				};
 			};
 
 			obmux_1: port@1 {
@@ -431,8 +447,9 @@
 		gpio-init-names = "default";
 		gpio-init-0 = <&gpio_default>;
 		gpio_default: default {
-			gpio-output-low = <TEGRA_GPIO(N, 2)>,
-					  <TEGRA_GPIO(EE, 2)>;
+			gpio-output-low = <TEGRA_GPIO(N, 2)>,	/* Disable UC_ISP_EN# */
+					  <TEGRA_GPIO(EE, 2)>,	/* Disable UC_RESET# */
+					  <TEGRA_GPIO(K, 5)>;	/* Disable TK_GPIO0 (Laser) */
 		};
 	};
 
