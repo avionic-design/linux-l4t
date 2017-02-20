@@ -131,7 +131,7 @@
 			};
 			port@1 {
 				csi_cd_ep: endpoint@0 {
-					remote-endpoint = <&imx290_1>;
+					remote-endpoint = <&imx290_1>, <&lm3560_flash0_ep>, <&lm3560_flash1_ep>;
 				};
 			};
 		};
@@ -334,7 +334,8 @@
 					optics_gpio_default: default {
 						gpio-output-low = <1>, /* ConvMode low for cam1 */
 								  <4>, /* ConvMode low for cam2 */
-								  <8>; /* Disable dam buster */
+								  <8>, /* Disable dam buster */
+								  <7>; /* Set TORCH/TX1 low */
 					};
 				};
 
@@ -350,6 +351,35 @@
 					reg = <0x69>;
 					interrupt-parent = <&gpio>;
 					interrupts = <TEGRA_GPIO(I, 2) IRQ_TYPE_LEVEL_HIGH>;
+				};
+
+				lm3560: lm3560@53 {
+					compatible = "ti,lm3560";
+					reg = <0x53>;
+					peak-current = <0x00>;
+					in-supply = <&vdd_3v3_led>;
+					sw-supply = <&vdd_3v9_led>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						max-flash-microamp = <700000>;
+						port {
+							lm3560_flash0_ep: endpoint {
+								remote-endpoint = <&csi_cd_ep>;
+							};
+						};
+					};
+					led@1 {
+						reg = <1>;
+						max-flash-microamp = <700000>;
+						port {
+							lm3560_flash1_ep: endpoint {
+								remote-endpoint = <&csi_cd_ep>;
+							};
+						};
+					};
 				};
 			};
 
@@ -800,6 +830,26 @@
 			regulator-always-on;
 			regulator-boot-on;
 			vin-supply = <&vsys>;
+		};
+
+		vdd_3v3_led: regulator@120 {
+			compatible = "regulator-fixed";
+			reg = <120>;
+			regulator-name = "VDD_LED";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			gpio = <&optics_gpio 10 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		vdd_3v9_led: regulator@121 {
+			compatible = "regulator-fixed";
+			reg = <121>;
+			regulator-name = "SW_LED";
+			regulator-min-microvolt = <3900000>;
+			regulator-max-microvolt = <3900000>;
+			vin-supply = <&vdd_5v0>;
 		};
 	};
 };
