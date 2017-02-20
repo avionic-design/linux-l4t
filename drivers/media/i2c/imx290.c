@@ -185,6 +185,7 @@ struct imx290_priv {
 	struct regulator_bulk_data	regulators[ARRAY_SIZE(imx290_regulators)];
 	struct clk			*inck;
 	unsigned long			inck_rate;
+	unsigned int			inck_max_startup_time_us;
 	struct gpio_desc		*xclr;
 	struct mutex			lock;
 };
@@ -937,7 +938,8 @@ static int imx290_poweron(struct imx290_priv *priv)
 			goto disable_regulators;
 		}
 	}
-	usleep_range(1, 5);
+	usleep_range(1 + priv->inck_max_startup_time_us,
+		5 + priv->inck_max_startup_time_us);
 
 	gpiod_set_value_cansleep(priv->xclr, 0);
 	usleep_range(20, 100);
@@ -1222,6 +1224,11 @@ static int imx290_of_parse(struct i2c_client *client,
 			return PTR_ERR(priv->inck);
 		}
 	}
+
+	/* inck_max_startup_time_us */
+	priv->inck_max_startup_time_us = 0;
+	of_property_read_u32(client->dev.of_node,
+		"inck-max-startup-time-us", &priv->inck_max_startup_time_us);
 
 	/* xvs_output_len */
 	/* valid values: 0, 1, 2, 4, 8 */
