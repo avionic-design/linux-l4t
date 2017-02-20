@@ -604,6 +604,7 @@
 			gpio-output-low = <TEGRA_GPIO(N, 2)>,	/* Disable UC_ISP_EN# */
 					  <TEGRA_GPIO(EE, 2)>,	/* Disable UC_RESET# */
 					  <TEGRA_GPIO(K, 5)>;	/* Disable TK_GPIO0 (Laser) */
+			gpio-output-high = <TEGRA_GPIO(P, 1)>;  /* Enable touch screen */
 		};
 	};
 
@@ -880,6 +881,8 @@
 			regulator-name = "SW_LED";
 			regulator-min-microvolt = <3900000>;
 			regulator-max-microvolt = <3900000>;
+			gpio = <&gpio TEGRA_GPIO(I, 4) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
 			vin-supply = <&vdd_5v0>;
 		};
 	};
