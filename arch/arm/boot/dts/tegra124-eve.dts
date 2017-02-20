@@ -263,10 +263,11 @@
 				reg = <2>;
 				pull-ups-supply = <&vdd_5v0_sys>;
 
-				ltc2617: ltc2617@10 {
+				ltc2617_laser: ltc2617@10 {
 					compatible = "linear,ltc2617";
 					reg = <0x10>;
-					vref-supply = <&vdd_ltc_vref>;
+					vref-supply = <&vref_laser>;
+					vcc-supply = <&vdd_5v0_laser>;
 				};
 			};
 
@@ -410,6 +411,32 @@
 				#size-cells = <0>;
 				reg = <3>;
 				pull-ups-supply = <&vdd_5v0_sys>;
+
+				ads1015: ads1015@48 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					compatible = "ads1015";
+					reg = <0x48>;
+					vdd-supply = <&vdd_5v0_tec>;
+
+					channel0 {
+						reg = <0>;              /* ADS1015_AIN0_AIN1 */
+						ti,gain = <2>;          /* +- 2V */
+						ti,datarate = <0>;      /* 128SPS */
+					};
+					channel1 {
+						reg = <6>;              /* ADS1015_AIN2 */
+						ti,gain = <2>;          /* +- 2V */
+						ti,datarate = <0>;      /* 128SPS */
+					};
+				};
+
+				ltc2617_tec: ltc2617@12 {
+					compatible = "linear,ltc2617";
+					reg = <0x12>;
+					vref-supply = <&vref_tec>;
+					vcc-supply = <&vdd_5v0_tec>;
+				};
 			};
 
 			obmux_4: port@4 {
@@ -637,14 +664,12 @@
                         vin-supply = <&vdd_5v0_sys>;
                 };
 
-		vdd_ltc_vref: regulator@106 {
+		vref_laser: regulator@106 {
 			compatible = "regulator-fixed";
 			reg = <106>;
-			regulator-name = "LTC26xx VREF";
+			regulator-name = "VREF_LASER";
 			regulator-min-microvolt = <2500000>;
 			regulator-max-microvolt = <2500000>;
-			gpio = <&gpio TEGRA_GPIO(R, 6) GPIO_ACTIVE_HIGH>;
-			enable-active-high;
 			vin-supply = <&vdd_5v0_sys>;
 		};
 
@@ -726,6 +751,37 @@
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
 			vin-supply = <&vdd_3v3_sys>;
+		};
+
+		vdd_5v0_tec: regulator@115 {
+			compatible = "regulator-fixed";
+			reg = <115>;
+			regulator-name = "VDD_TEC";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&optics_gpio 9 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			vin-supply = <&vdd_5v0_sys>;
+		};
+
+		vref_tec: regulator@116 {
+			compatible = "regulator-fixed";
+			reg = <116>;
+			regulator-name = "VREF_TEC";
+			regulator-min-microvolt = <1500000>;
+			regulator-max-microvolt = <1500000>;
+			vin-supply = <&vdd_5v0_sys>;
+		};
+
+		vdd_5v0_laser: regulator@117 {
+			compatible = "regulator-fixed";
+			reg = <117>;
+			regulator-name = "VDD_LASER";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio TEGRA_GPIO(R, 6) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			vin-supply = <&vdd_5v0_sys>;
 		};
 	};
 };
