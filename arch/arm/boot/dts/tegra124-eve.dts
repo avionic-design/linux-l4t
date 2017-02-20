@@ -121,6 +121,20 @@
 				};
 			};
 		};
+
+		vi {
+			status = "okay";
+			port@0 {
+				csi_ab_ep: endpoint@0 {
+					remote-endpoint = <&imx290_0>;
+				};
+			};
+			port@1 {
+				csi_cd_ep: endpoint@0 {
+					remote-endpoint = <&imx290_1>;
+				};
+			};
+		};
 	};
 
 	/* Debug UART */
@@ -317,7 +331,9 @@
 					gpio-init-names = "optics_default";
 					gpio-init-0 = <&optics_gpio_default>;
 					optics_gpio_default: default {
-						gpio-output-low = <8>; /* Disable dam buster */
+						gpio-output-low = <1>, /* ConvMode low for cam1 */
+								  <4>, /* ConvMode low for cam2 */
+								  <8>; /* Disable dam buster */
 					};
 				};
 			};
@@ -326,12 +342,53 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <1>;
+
+				imx290_0@1a {
+					compatible = "sony,imx290";
+					reg = <0x1a>;
+
+					xvs-output-len = <8>;
+					xclr-gpio = <&optics_gpio 2 GPIO_ACTIVE_LOW>;
+					inck-max-startup-time-us = <5000>;
+
+					dvdd-supply = <&dvdd_1v2_cam1>;
+					ovdd-supply = <&ovdd_1v8_cam1>;
+					avdd-supply = <&avdd_2v9_cam1>;
+
+					port {
+						imx290_0: endpoint {
+							remote-endpoint = <&csi_ab_ep>;
+							clock-lanes = <0>;
+							data-lanes = <0 1>;
+						};
+					};
+				};
 			};
 
 			obmux_2: port@2 {
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <2>;
+
+				imx290_1@1a {
+					compatible = "sony,imx290";
+					reg = <0x1a>;
+
+					xclr-gpio = <&optics_gpio 5 GPIO_ACTIVE_LOW>;
+					inck-max-startup-time-us = <5000>;
+
+					dvdd-supply = <&dvdd_1v2_cam2>;
+					ovdd-supply = <&ovdd_1v8_cam2>;
+					avdd-supply = <&avdd_2v9_cam2>;
+
+					port {
+						imx290_1: endpoint {
+							remote-endpoint = <&csi_cd_ep>;
+							clock-lanes = <0>;
+							data-lanes = <0 1>;
+						};
+					};
+				};
 			};
 
 			obmux_3: port@3 {
@@ -596,6 +653,64 @@
 			regulator-max-microvolt = <1800000>;
 			gpio = <&gpio TEGRA_GPIO(H, 5) GPIO_ACTIVE_HIGH>;
 			enable-active-high;
+			vin-supply = <&vdd_3v3_sys>;
+		};
+
+		dvdd_1v2_cam1: regulator@109 {
+			compatible = "regulator-fixed";
+			reg = <109>;
+			regulator-name = "DVDD_CAM1";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			gpio = <&optics_gpio 0 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			vin-supply = <&vdd_3v3_sys>;
+		};
+
+		avdd_2v9_cam1: regulator@110 {
+			compatible = "regulator-fixed";
+			reg = <110>;
+			regulator-name = "AVDD_CAM1";
+			regulator-min-microvolt = <2900000>;
+			regulator-max-microvolt = <2900000>;
+			vin-supply = <&vdd_3v3_sys>;
+		};
+
+		ovdd_1v8_cam1: regulator@111 {
+			compatible = "regulator-fixed";
+			reg = <111>;
+			regulator-name = "OVDD_CAM1";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			vin-supply = <&vdd_3v3_sys>;
+		};
+
+		dvdd_1v2_cam2: regulator@112 {
+			compatible = "regulator-fixed";
+			reg = <112>;
+			regulator-name = "DVDD_CAM2";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			gpio = <&optics_gpio 3 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			vin-supply = <&vdd_3v3_sys>;
+		};
+
+		avdd_2v9_cam2: regulator@113 {
+			compatible = "regulator-fixed";
+			reg = <113>;
+			regulator-name = "AVDD_CAM2";
+			regulator-min-microvolt = <2900000>;
+			regulator-max-microvolt = <2900000>;
+			vin-supply = <&vdd_3v3_sys>;
+		};
+
+		ovdd_1v8_cam2: regulator@114 {
+			compatible = "regulator-fixed";
+			reg = <114>;
+			regulator-name = "OVDD_CAM2";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
 			vin-supply = <&vdd_3v3_sys>;
 		};
 	};
