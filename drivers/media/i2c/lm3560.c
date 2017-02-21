@@ -440,6 +440,66 @@ static int lm3560_init_device(struct lm3560_flash *flash)
 	return rval;
 }
 
+static void lm3560_of_parse(struct lm3560_flash *flash)
+{
+	struct lm3560_platform_data *pdata = flash->pdata;
+	struct device_node *led_node;
+	u32 reg, val;
+	int err;
+
+	err = of_property_read_u32(
+		flash->dev->of_node, "max-flash-timeout-ms", &val);
+	if (err == 0)
+		pdata->max_flash_timeout =
+			min(val, (u32) LM3560_FLASH_TOUT_MAX);
+
+	err = of_property_read_u32(
+		flash->dev->of_node, "peak-current", &val);
+	if (err == 0) {
+		switch (val) {
+		case LM3560_PEAK_1600mA:
+		case LM3560_PEAK_2300mA:
+		case LM3560_PEAK_3000mA:
+		case LM3560_PEAK_3600mA:
+			pdata->peak = val;
+			break;
+		default:
+			dev_err(flash->dev,
+				"Invalid peak-current value: 0x%02x\n",
+				val);
+		}
+	}
+
+	for_each_child_of_node(flash->dev->of_node, led_node) {
+		if (of_node_cmp(led_node->name, "led")) {
+			of_node_put(led_node);
+			continue;
+		}
+
+		err = of_property_read_u32(led_node, "reg", &reg);
+		if (err || reg > LM3560_LED1) {
+			dev_err(flash->dev,
+				"Led is missing/invalid 'reg' property\n");
+			of_node_put(led_node);
+			continue;
+		}
+
+		err = of_property_read_u32(
+			led_node, "max-flash-microamp", &val);
+		if (err == 0)
+			pdata->max_flash_brt[reg] =
+				min(val, (u32)LM3560_FLASH_BRT_MAX);
+
+		err = of_property_read_u32(
+			led_node, "max-torch-microamp", &val);
+		if (err == 0)
+			pdata->max_torch_brt[reg] =
+				min(val, (u32)LM3560_TORCH_BRT_MAX);
+
+		flash->subdev_led[reg].of_node = led_node;
+	}
+}
+
 static int lm3560_probe(struct i2c_client *client,
 			const struct i2c_device_id *devid)
 {
@@ -498,52 +558,13 @@ static int lm3560_probe(struct i2c_client *client,
 		pdata->max_flash_brt[LM3560_LED1] = LM3560_FLASH_BRT_MAX;
 		pdata->max_torch_brt[LM3560_LED1] = LM3560_TORCH_BRT_MAX;
 	}
-	if (client->dev.of_node) {
-		u32 val;
-		if (of_property_read_u32(client->dev.of_node,
-			"led1-max-flash-microamp", &val) == 0)
-			pdata->max_flash_brt[LM3560_LED0] =
-				((val > LM3560_FLASH_BRT_MAX) ?
-					LM3560_FLASH_BRT_MAX : val);
-		if (of_property_read_u32(client->dev.of_node,
-			"led2-max-flash-microamp", &val) == 0)
-			pdata->max_flash_brt[LM3560_LED1] =
-			((val > LM3560_FLASH_BRT_MAX) ?
-				LM3560_FLASH_BRT_MAX : val);
-		if (of_property_read_u32(client->dev.of_node,
-			"led1-max-torch-microamp", &val) == 0)
-			pdata->max_torch_brt[LM3560_LED0] =
-			((val > LM3560_TORCH_BRT_MAX) ?
-				LM3560_TORCH_BRT_MAX : val);
-		if (of_property_read_u32(client->dev.of_node,
-			"led2-max-torch-microamp", &val) == 0)
-			pdata->max_torch_brt[LM3560_LED1] =
-			((val > LM3560_TORCH_BRT_MAX) ?
-				LM3560_TORCH_BRT_MAX : val);
-		if (of_property_read_u32(client->dev.of_node,
-			"max-flash-timeout-ms", &val) == 0)
-			pdata->max_flash_timeout =
-			((val > LM3560_FLASH_TOUT_MAX) ?
-				LM3560_FLASH_TOUT_MAX : val);
-		if (of_property_read_u32(client->dev.of_node,
-			"peak-current", &val) == 0) {
-			switch (val) {
-			case LM3560_PEAK_1600mA:
-			case LM3560_PEAK_2300mA:
-			case LM3560_PEAK_3000mA:
-			case LM3560_PEAK_3600mA:
-				pdata->peak = val;
-				break;
-			default:
-				dev_err(&client->dev,
-					"Invalid peak-current value: 0x%02x\n",
-					val);
-			}
-		}
-	}
+
 	flash->pdata = pdata;
 	flash->dev = &client->dev;
 	mutex_init(&flash->lock);
+
+	if (flash->dev->of_node)
+		lm3560_of_parse(flash);
 
 	rval = lm3560_subdev_init(flash, LM3560_LED0, "lm3560-led0");
 	if (rval < 0)
