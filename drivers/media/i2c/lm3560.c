@@ -389,22 +389,25 @@ static int lm3560_subdev_init(struct lm3560_flash *flash,
 	strcpy(flash->subdev_led[led_no].name, led_name);
 	rval = lm3560_init_controls(flash, led_no);
 	if (rval)
-		goto err_out;
+		goto free_ctrl_handler;
+
 	rval = media_entity_init(&flash->subdev_led[led_no].entity, 0, NULL, 0);
 	if (rval < 0)
-		goto err_out;
+		goto free_ctrl_handler;
 	flash->subdev_led[led_no].entity.type = MEDIA_ENT_T_V4L2_SUBDEV_FLASH;
 
 	rval = v4l2_async_register_subdev(&flash->subdev_led[led_no]);
 	if (rval < 0) {
 		dev_err(&client->dev, "Failed to register async subdev: %d\n",
 			rval);
-		goto err_out;
+		goto cleanup_media_entity;
 	}
 
 	return rval;
 
-err_out:
+cleanup_media_entity:
+	media_entity_cleanup(&flash->subdev_led[led_no].entity);
+free_ctrl_handler:
 	v4l2_ctrl_handler_free(&flash->ctrls_led[led_no]);
 	return rval;
 }
@@ -548,16 +551,24 @@ static int lm3560_probe(struct i2c_client *client,
 
 	rval = lm3560_subdev_init(flash, LM3560_LED1, "lm3560-led1");
 	if (rval < 0)
-		goto error_disable_reg;
+		goto error_unregister_led0;
 
 	rval = lm3560_init_device(flash);
 	if (rval < 0)
-		goto error_disable_reg;
+		goto error_unregister_led1;
 
 	i2c_set_clientdata(client, flash);
 
 	return 0;
 
+error_unregister_led1:
+	v4l2_async_unregister_subdev(&flash->subdev_led[1]);
+	v4l2_ctrl_handler_free(&flash->ctrls_led[1]);
+	media_entity_cleanup(&flash->subdev_led[1].entity);
+error_unregister_led0:
+	v4l2_async_unregister_subdev(&flash->subdev_led[0]);
+	v4l2_ctrl_handler_free(&flash->ctrls_led[0]);
+	media_entity_cleanup(&flash->subdev_led[0].entity);
 error_disable_reg:
 	if (flash->in_reg)
 		regulator_disable(flash->in_reg);
