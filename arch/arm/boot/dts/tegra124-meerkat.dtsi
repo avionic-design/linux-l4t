@@ -1966,8 +1966,8 @@
 					regulator-name = "+1V2_GEN_AVDD";
 					regulator-min-microvolt = <1200000>;
 					regulator-max-microvolt = <1200000>;
+					regulator-always-on;
 					regulator-boot-on;
-					/* CHECK in mainline also regulator-always-on */
 					consumers {
 						/* Second vi has no DT entry, provide reg supply here */
 						c1 {
