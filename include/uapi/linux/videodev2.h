@@ -389,6 +389,16 @@ struct v4l2_pix_format {
 	 */
 #define V4L2_PIX_FMT_SBGGR16 v4l2_fourcc('B', 'Y', 'R', '2') /* 16  BGBG.. GRGR.. */
 
+/* Bayer with infrared */
+#define V4L2_PIX_FMT_SBGIR8  v4l2_fourcc('I', 'R', '8', '1') /*  8  BGBG.. IRIR.. */
+#define V4L2_PIX_FMT_SGBRI8  v4l2_fourcc('G', 'B', 'R', 'I') /*  8  GBGB.. RIRI.. */
+#define V4L2_PIX_FMT_SIRBG8  v4l2_fourcc('I', 'R', 'B', 'G') /*  8  IRIR.. BGBG.. */
+#define V4L2_PIX_FMT_SRIGB8  v4l2_fourcc('R', 'I', 'G', 'B') /*  8  RIRI.. GBGB.. */
+#define V4L2_PIX_FMT_SBGIR14 v4l2_fourcc('I', 'R', '1', '4') /* 14  BGBG.. IRIR.. */
+#define V4L2_PIX_FMT_SGBRI14 v4l2_fourcc('R', 'I', '1', '4') /* 14  GBGB.. RIRI.. */
+#define V4L2_PIX_FMT_SIRBG14 v4l2_fourcc('i', 'r', '1', '4') /* 14  IRIR.. BGBG.. */
+#define V4L2_PIX_FMT_SRIGB14 v4l2_fourcc('r', 'i', '1', '4') /* 14  RIRI.. GBGB.. */
+
 /* compressed formats */
 #define V4L2_PIX_FMT_MJPEG    v4l2_fourcc('M', 'J', 'P', 'G') /* Motion-JPEG   */
 #define V4L2_PIX_FMT_JPEG     v4l2_fourcc('J', 'P', 'E', 'G') /* JFIF JPEG     */
