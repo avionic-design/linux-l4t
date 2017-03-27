@@ -38,6 +38,10 @@ static int v4l2_pix_format_stride(const struct v4l2_pix_format *pf, int *stride)
 	case V4L2_PIX_FMT_SGBRG8:
 	case V4L2_PIX_FMT_SGRBG8:
 	case V4L2_PIX_FMT_SRGGB8:
+	case V4L2_PIX_FMT_SBGIR8:
+	case V4L2_PIX_FMT_SGBRI8:
+	case V4L2_PIX_FMT_SIRBG8:
+	case V4L2_PIX_FMT_SRIGB8:
 		stride[0] = ROUND_STRIDE(pf->width);
 		return 1;
 	case V4L2_PIX_FMT_RGB555:
@@ -46,6 +50,10 @@ static int v4l2_pix_format_stride(const struct v4l2_pix_format *pf, int *stride)
 	case V4L2_PIX_FMT_SGBRG14:
 	case V4L2_PIX_FMT_SGRBG14:
 	case V4L2_PIX_FMT_SRGGB14:
+	case V4L2_PIX_FMT_SBGIR14:
+	case V4L2_PIX_FMT_SGBRI14:
+	case V4L2_PIX_FMT_SIRBG14:
+	case V4L2_PIX_FMT_SRIGB14:
 	case V4L2_PIX_FMT_Y14:
 	case V4L2_PIX_FMT_YUYV:
 	case V4L2_PIX_FMT_YVYU:
