@@ -168,6 +168,10 @@ enum v4l2_colorfx {
  * We reserve 16 controls for this driver. */
 #define V4L2_CID_USER_OV468X_BASE		(V4L2_CID_USER_BASE + 0x1090)
 
+/* The base for the IR filter driver controls.
+ * We reserve 16 controls for this driver. */
+#define V4L2_CID_USER_IR_FILTER_BASE		(V4L2_CID_USER_BASE + 0x10A0)
+
 /* The base for the uh2c driver controls.
  * We reserve 16 controls for this driver. */
 #define V4L2_CID_USER_UH2C_BASE			(V4L2_CID_USER_BASE + 0x10F0)

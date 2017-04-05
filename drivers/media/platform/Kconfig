@@ -31,6 +31,12 @@ config VIDEO_TEGRA_VI2
 	help
 	  This is a v4l2 driver for the VI2 of Tegra SoCs.
 
+config VIDEO_IR_FILTER
+	tristate "IR Filter"
+	depends on OF
+	help
+	  This a v4l2 driver to control an infrared filter with 2 GPIO.
+
 #
 # Platform multimedia device configuration
 #
