@@ -216,6 +216,9 @@ struct tegra_vi_input {
 	struct v4l2_async_subdev asd[TEGRA_VI_INPUT_NUM_SUBDEV];
 	unsigned asd_count;
 
+	/* The combined controls of all subdevs */
+	struct v4l2_ctrl_handler ctrl_handler;
+
 	/* Supported MBUS flags on this input */
 	unsigned mbus_caps;
 	/* Position in the phy cil_command register */

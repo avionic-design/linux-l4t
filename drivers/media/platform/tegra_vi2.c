@@ -758,7 +758,7 @@ static int tegra_vi_channel_set_input(
 	}
 
 	/* Connect ctrl_handler */
-	chan->vdev.ctrl_handler = input->sensor->ctrl_handler;
+	chan->vdev.ctrl_handler = &input->ctrl_handler;
 
 	mutex_unlock(&input->lock);
 
@@ -1885,6 +1885,15 @@ static int tegra_vi_sensor_bound(struct v4l2_async_notifier *notifier,
 		}
 	}
 
+	/* Add the subdevs controls */
+	if (!err) {
+		err = v4l2_ctrl_add_handler(&input->ctrl_handler,
+					subdev->ctrl_handler, NULL);
+		if (err)
+			dev_err(dev, "Failed to add controls of subdev %s\n",
+				subdev->name);
+	}
+
 	mutex_unlock(&input->lock);
 
 	return err;
@@ -1961,6 +1970,7 @@ static int tegra_vi_input_init(struct platform_device *pdev,
 
 	input->id = id;
 	mutex_init(&input->lock);
+	v4l2_ctrl_handler_init(&input->ctrl_handler, 16);
 
 	switch (id) {
 	case INPUT_CSI_A:
