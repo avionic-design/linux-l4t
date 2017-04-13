@@ -2160,7 +2160,9 @@ static struct device_node *tegra_vi2_get_remote_port_parent(
 
 	/* Walk 3 levels up only if there is 'ports' node. */
 	for (depth = 3; depth && np; depth--) {
-                np = of_get_next_parent(np);
+		np = of_get_next_parent(np);
+		if (!np)
+			return ERR_PTR(-ENODEV);
 		if (depth == 2 && of_node_cmp(np->name, "ports"))
 			break;
 	}
