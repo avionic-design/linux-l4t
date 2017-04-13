@@ -1,0 +1,74 @@
+#include "tegra124-meerkat-evalboard.dts"
+
+/ {
+	nvidia,dtsfilename = __FILE__;
+
+	pinmux {
+		common {
+			pbb3 {
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+			pbb4 {
+				nvidia,function = "safe";
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+			ph2 {
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+			ph5 {
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+		};
+	};
+
+	host1x {
+		vi {
+			port@0 {
+				csi_ab_ep: endpoint@0 {
+					remote-endpoint = <&cam_csi_a>, <&ir_filter>;
+					clock-lanes = <0>;
+					data-lanes = <0 1 2 3>;
+				};
+			};
+		};
+	};
+
+	i2c@7000c500 {
+		status = "okay";
+
+		ov4682@36 {
+			compatible = "ovti,ov4682";
+			reg = <0x36>;
+
+			avdd-supply = <&ext_5v0>;
+			dovdd-supply = <&ext_5v0>;
+			dvdd-supply = <&ext_5v0>;
+
+			extclk-name = "mclk";
+
+			pwdnb-gpios = <&gpio TEGRA_GPIO(BB, 3) GPIO_ACTIVE_LOW>;
+			xshutdown-gpios = <&gpio TEGRA_GPIO(BB, 4) GPIO_ACTIVE_LOW>;
+
+			port {
+				cam_csi_a: endpoint {
+					remote-endpoint = <&csi_ab_ep>;
+					clock-lanes = <0>;
+					data-lanes = <0 1 2 3>;
+				};
+			};
+		};
+	};
+
+	ir-filter@0 {
+		compatible = "ir-filter";
+
+		enable-gpios = <&gpio TEGRA_GPIO(H, 5) GPIO_ACTIVE_HIGH>;
+		disable-gpios = <&gpio TEGRA_GPIO(H, 2) GPIO_ACTIVE_HIGH>;
+
+		port {
+			ir_filter: endpoint {
+				remote-endpoint = <&csi_ab_ep>;
+			};
+		};
+	};
+};

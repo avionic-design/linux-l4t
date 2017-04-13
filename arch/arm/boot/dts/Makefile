@@ -269,6 +269,7 @@ dtb-$(CONFIG_ARCH_TEGRA) += tegra20-harmony.dtb \
 	tegra124-meerkat-evalboard-auo-g156htn.dtb \
 	tegra124-meerkat-evalboard-lh138h01-ed01.dtb \
 	tegra124-meerkat-evalboard-ov4689.dtb \
+	tegra124-meerkat-evalboard-ov4682.dtb \
 	tegra124-cleaning-robot.dtb
 dtb-$(CONFIG_ARCH_VERSATILE) += versatile-ab.dtb \
 	versatile-pb.dtb
