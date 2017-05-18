@@ -151,6 +151,12 @@
 		};
 	};
 
+	/* Adapter board USB */
+	usb@7d008000 {
+		status = "okay";
+		usb_vbus-supply = <&vbus_adapter>;
+	};
+
 	/* GEN2 */
 	i2c@7000c400 {
 		status = "okay";
@@ -216,6 +222,15 @@
 			ams,battery-backup-charge-current = <AS3722_BBCCUR_50UA>;
 			ams,battery-backup-enable-bypass;
 			ams,battery-backup-charge-mode = <AS3722_BBCMODE_ACT_STBY_OFF>;
+
+			/* Pinmux for the CAN controller on the adapter board */
+			pinmux@0 {
+				gpio5_6 {
+					pins = "gpio5", "gpio6";
+					function = "gpio";
+					bias-disable;
+				};
+			};
 		};
 	};
 
@@ -370,6 +385,28 @@
 			vin-supply = <&vddio_1v8>;
 		};
 
+		/* Regulators on the optional adapter board */
+		vdd_5v_adapter: regulator@200 {
+			compatible = "regulator-fixed";
+			reg = <200>;
+			regulator-name = "+5V";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			vin-supply = <&vdd_5v0_sys>;
+		};
+
+		vbus_adapter: regulator@201 {
+			compatible = "regulator-fixed";
+			reg = <201>;
+			regulator-name = "VBUS_CAN";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio TEGRA_GPIO(FF, 1) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+			vin-supply = <&vdd_5v_adapter>;
+		};
 	};
 
 	pwm-fan {
