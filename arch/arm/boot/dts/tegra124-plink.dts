@@ -9,6 +9,61 @@
 	compatible = "elber,plink", "ad,meerkat", "nvidia,tegra124";
 	nvidia,dtsfilename = __FILE__;
 
+	   pinmux {
+	      common {
+		 ulpi_clk_py0 {
+		    nvidia,pins = "ulpi_clk_py0";
+		    nvidia,function = "spi1";
+		    nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+		    nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+		    nvidia,tristate = <TEGRA_PIN_DISABLE>;
+		 };
+
+		 ulpi_dir_py1 {
+		    nvidia,pins = "ulpi_dir_py1";
+		    nvidia,function = "spi1";
+		    nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+		    nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+		    nvidia,tristate = <TEGRA_PIN_DISABLE>;
+		 };
+
+		 ulpi_nxt_py2 {
+		    nvidia,pins = "ulpi_nxt_py2";
+		    nvidia,function = "spi1";
+		    nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+		    nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+		    nvidia,tristate = <TEGRA_PIN_DISABLE>;
+		 };
+
+		 ulpi_stp_py3 {
+		    nvidia,pins = "ulpi_stp_py3";
+		    nvidia,function = "spi1";
+		    nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+		    nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+		    nvidia,tristate = <TEGRA_PIN_DISABLE>;
+		 };
+		gen2_i2c_scl_pt5 {
+			nvidia,pins = "gen2_i2c_scl_pt5";
+			nvidia,function = "i2c2";
+			nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+			nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			nvidia,lock = <TEGRA_PIN_DISABLE>;
+			nvidia,open-drain = <TEGRA_PIN_DISABLE>;
+		};
+
+		gen2_i2c_sda_pt6 {
+			nvidia,pins = "gen2_i2c_sda_pt6";
+			nvidia,function = "i2c2";
+			nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+			nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			nvidia,lock = <TEGRA_PIN_DISABLE>;
+			nvidia,open-drain = <TEGRA_PIN_DISABLE>;
+		};
+	      };
+	   };
+
 	serial@70006300 {
 		status = "okay";
 	};
@@ -20,13 +75,31 @@
 		status = "okay";
 	};
 
-	i2c_gen2: i2c@7000c400 {
+	i2c_gen1: i2c@7000c000 {
 		status = "okay";
 	};
 
-	spi1: spi@7000d600 {
+	i2c_gen2: i2c@7000c400 {
 		status = "okay";
+		clock-frequency = <70000>;
 	};
+
+
+	   spi@7000d400 {
+	      status = "okay";
+	      spi-max-frequency = <25000000>;
+
+	      spidev@0 {
+		 compatible = "spidev";
+		 reg = <0>;
+		 spi-max-frequency = <6000000>;
+
+		 controller-data {
+		    nvidia,enable-hw-based-cs;
+		 };
+	      };
+	   };
+
 
 	regulators {
 		vsys: regulator@100 {
