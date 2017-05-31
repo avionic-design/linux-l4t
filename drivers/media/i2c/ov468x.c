@@ -34,8 +34,6 @@
 #define OV468X_SC_CMMN_BIT_SEL		0x3031
 #define OV468X_AEC_LONG_EXPO		0x3500
 #define OV468X_AEC_LONG_GAIN		0x3507
-#define OV468X_H_WIN_OFF		0x3810
-#define OV468X_V_WIN_OFF		0x3812
 #define OV468X_FORMAT1			0x3820
 #define OV468X_FORMAT2			0x3821
 #define OV468X_OTP_LOAD_CTRL		0x3d81
@@ -171,9 +169,6 @@ struct ov468x_priv {
 	struct gpio_desc		*xshutdown;
 	struct clk			*extclk;
 	unsigned long			extclk_rate;
-
-	unsigned int			h_win_off;
-	unsigned int			v_win_off;
 };
 
 static const enum v4l2_mbus_pixelcode ov468x_mbus_pixelcodes[] = {
@@ -483,15 +478,6 @@ static int ov468x_s_mbus_fmt(struct v4l2_subdev *sd,
 	if (err)
 		return err;
 
-	/* Read the window offsets as we need to adjust them flipping */
-	err = regmap_read(priv->regmap, OV468X_H_WIN_OFF, &priv->h_win_off);
-	if (err)
-		return err;
-
-	err = regmap_read(priv->regmap, OV468X_V_WIN_OFF, &priv->v_win_off);
-	if (err)
-		return err;
-
 	/* Apply the controls */
 	err = v4l2_ctrl_handler_setup(priv->subdev.ctrl_handler);
 	if (err)
@@ -727,16 +713,12 @@ static int ov468x_s_ctrl(struct v4l2_ctrl *ctrl)
 					BIT(2) | BIT(1), (!ctrl->val) - 1);
 		if (err)
 			break;
-		err = regmap_write_u16(priv->regmap, OV468X_V_WIN_OFF,
-				priv->v_win_off + ctrl->val);
 		break;
 	case V4L2_CID_HFLIP:
 		err = regmap_update_bits(priv->regmap, OV468X_FORMAT2,
 					BIT(2) | BIT(1), (!ctrl->val) - 1);
 		if (err)
 			break;
-		err = regmap_write_u16(priv->regmap, OV468X_H_WIN_OFF,
-				priv->h_win_off + ctrl->val);
 		break;
 	case V4L2_CID_EXPOSURE:
 		err = regmap_write_u24(priv->regmap, OV468X_AEC_LONG_EXPO,
