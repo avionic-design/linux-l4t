@@ -560,6 +560,7 @@ static int tegra_vi_channel_capture_thread(void *data)
 
 	while (active_buffer) {
 		struct tegra_vi_buffer *done_buffer;
+		enum vb2_buffer_state buffer_state;
 
 		/* Wait for SOF */
 		tegra_vi_channel_arm_syncpt(chan, &syncpt_val);
@@ -589,6 +590,12 @@ static int tegra_vi_channel_capture_thread(void *data)
 			vb2_buffer_done(&done_buffer->vb, VB2_BUF_STATE_ERROR);
 			vi_writel(0xf003, &chan->mipi_regs->pp_command);
 			break;
+		} else if (readl(&chan->vi_regs->error_status)) {
+			dev_err(&vdev->dev, "Error  on frame %lu:\n", chan->sequence);
+			tegra_vi_channel_print_errors(chan);
+			buffer_state = VB2_BUF_STATE_ERROR;
+		} else {
+			buffer_state = VB2_BUF_STATE_DONE;
 		}
 
 		/* For interlaced we have to wait for the write to be done */
@@ -597,7 +604,7 @@ static int tegra_vi_channel_capture_thread(void *data)
 
 		/* Return the last active buffer */
 		done_buffer->vb.v4l2_buf.sequence = chan->sequence++;
-		vb2_buffer_done(&done_buffer->vb, VB2_BUF_STATE_DONE);
+		vb2_buffer_done(&done_buffer->vb, buffer_state);
 	}
 
 	if (show_statistics) {
