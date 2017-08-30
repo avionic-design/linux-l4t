@@ -1962,6 +1962,12 @@ static void tegra_vi_sensor_unbind(struct v4l2_async_notifier *notifier,
 	mutex_unlock(&input->lock);
 }
 
+const struct v4l2_async_notifier_operations tegra_vi_async_ops = {
+	.bound = tegra_vi_sensor_bound,
+	.complete = tegra_vi_sensors_complete,
+	.unbind = tegra_vi_sensor_unbind,
+};
+
 static int tegra_vi_input_init(struct platform_device *pdev,
 			enum tegra_vi_input_id id)
 {
@@ -2397,9 +2403,7 @@ static int tegra_vi2_probe(struct platform_device *pdev)
 
 	/* Init the async notifier once everything is setup */
 	vi2->sd_notifier.subdevs = vi2->asd;
-	vi2->sd_notifier.bound = tegra_vi_sensor_bound;
-	vi2->sd_notifier.complete = tegra_vi_sensors_complete;
-	vi2->sd_notifier.unbind = tegra_vi_sensor_unbind;
+	vi2->sd_notifier.ops = &tegra_vi_async_ops;
 	err = v4l2_async_notifier_register(&vi2->v4l2_dev, &vi2->sd_notifier);
 	if (err) {
 		dev_err(&pdev->dev, "Failed to register async notifier\n");
