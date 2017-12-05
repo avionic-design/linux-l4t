@@ -55,6 +55,10 @@ enum regmap_endian {
 	REGMAP_ENDIAN_BIG,
 	REGMAP_ENDIAN_LITTLE,
 	REGMAP_ENDIAN_NATIVE,
+	/* Mixed endian: be words in le order (like on PDP-11), 2-1-4-3 */
+	REGMAP_ENDIAN_BIG_LITTLE,
+	/* Mixed endian: le words in be order, 3-4-1-2 */
+	REGMAP_ENDIAN_LITTLE_BIG,
 };
 
 /**

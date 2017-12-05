@@ -236,6 +236,30 @@ static void regmap_format_32_le(void *buf, unsigned int val, unsigned int shift)
 	b[0] = cpu_to_le32(val << shift);
 }
 
+static void regmap_format_32_lbe(void *buf, unsigned int val, unsigned int shift)
+{
+	u8 *b = buf;
+
+	val <<= shift;
+
+	b[0] = val >> 16;
+	b[1] = val >> 24;
+	b[2] = val;
+	b[3] = val >> 8;
+}
+
+static void regmap_format_32_ble(void *buf, unsigned int val, unsigned int shift)
+{
+	u8 *b = buf;
+
+	val <<= shift;
+
+	b[0] = val >> 8;
+	b[1] = val;
+	b[2] = val >> 24;
+	b[3] = val >> 16;
+}
+
 static void regmap_format_32_native(void *buf, unsigned int val,
 				    unsigned int shift)
 {
@@ -310,6 +334,28 @@ static unsigned int regmap_parse_32_le(const void *buf)
 	return le32_to_cpu(b[0]);
 }
 
+static unsigned int regmap_parse_32_lbe(const void *buf)
+{
+	const u8 *b = buf;
+	unsigned int ret = b[2];
+	ret |= ((unsigned int)b[3]) << 8;
+	ret |= ((unsigned int)b[0]) << 16;
+	ret |= ((unsigned int)b[1]) << 24;
+
+	return ret;
+}
+
+static unsigned int regmap_parse_32_ble(const void *buf)
+{
+	const u8 *b = buf;
+	unsigned int ret = b[1];
+	ret |= ((unsigned int)b[0]) << 8;
+	ret |= ((unsigned int)b[3]) << 16;
+	ret |= ((unsigned int)b[2]) << 24;
+
+	return ret;
+}
+
 static void regmap_parse_32_be_inplace(void *buf)
 {
 	__be32 *b = buf;
@@ -322,6 +368,20 @@ static void regmap_parse_32_le_inplace(void *buf)
 	__le32 *b = buf;
 
 	b[0] = le32_to_cpu(b[0]);
+}
+
+static void regmap_parse_32_lbe_inplace(void *buf)
+{
+	u32 *b = buf;
+
+	b[0] = regmap_parse_32_lbe(buf);
+}
+
+static void regmap_parse_32_ble_inplace(void *buf)
+{
+	u32 *b = buf;
+
+	b[0] = regmap_parse_32_ble(buf);
 }
 
 static unsigned int regmap_parse_32_native(const void *buf)
@@ -658,6 +718,16 @@ struct regmap *regmap_init(struct device *dev,
 			map->format.format_val = regmap_format_32_le;
 			map->format.parse_val = regmap_parse_32_le;
 			map->format.parse_inplace = regmap_parse_32_le_inplace;
+			break;
+		case REGMAP_ENDIAN_LITTLE_BIG:
+			map->format.format_val = regmap_format_32_lbe;
+			map->format.parse_val = regmap_parse_32_lbe;
+			map->format.parse_inplace = regmap_parse_32_lbe_inplace;
+			break;
+		case REGMAP_ENDIAN_BIG_LITTLE:
+			map->format.format_val = regmap_format_32_ble;
+			map->format.parse_val = regmap_parse_32_ble;
+			map->format.parse_inplace = regmap_parse_32_ble_inplace;
 			break;
 		case REGMAP_ENDIAN_NATIVE:
 			map->format.format_val = regmap_format_32_native;
