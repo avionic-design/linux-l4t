@@ -1,0 +1,689 @@
+/dts-v1/;
+
+#include "tegra124-meerkat.dtsi"
+#include "panel-dsi2sdi.dtsi"
+#include <dt-bindings/media/gs3470.h>
+
+/ {
+	model = "Avionic Design VXB";
+	compatible = "ad,vxb", "ad,meerkat", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+
+	pinmux {
+		common {
+			/* VXB_HSYNC_OUT_K1 */
+			pk1 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+
+			/* VXB_VSYNC_OUT_K1 */
+			pi7 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+
+			/* HDMI_K1_Dx_SEL_1V8 */
+			ph5 {
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* HDMI_K1_OE_SW_1V8 */
+			ph4 {
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+			};
+
+			/* Crosslink FPGA reset */
+			spdif_out_pk5 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* CSI Bridge 1 reset */
+			gpio_w2_aud_pw2 {
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* CSI Bridge 2 reset */
+			gpio_x6_aud_px6 {
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* Clock generator reset */
+			gpio_x3_aud_px3 {
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SDI EQ 2 nCS */
+			dap1_dout_pn2 {
+			};
+
+			/* SDI EQ 3 nCS */
+			gpio_w3_aud_pw3 {
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SDI Deserializer 1 nCS */
+			dap3_din_pp1 {
+				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SDI Deserializer 2 nCS */
+			kb_row0_pr0 {
+				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+			};
+
+			/* SDI EQ 1 carrier detect */
+			pi5 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SDI EQ 2 carrier detect */
+			pk2 {
+			};
+
+			/* SDI EQ 3 carrier detect */
+			ph3 {
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SDI Deserializer 1 locked */
+			pk3 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SPI3 MOSI */
+			ulpi_data0_po1 {
+				nvidia,function = "spi3";
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+			};
+
+			/* SPI3 MISO */
+			ulpi_data1_po2 {
+				nvidia,function = "spi3";
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SPI3 SCK */
+			ulpi_data2_po3 {
+				nvidia,function = "spi3";
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SPI3 CS1 */
+			ulpi_data3_po4 {
+				nvidia,function = "spi3";
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* SDI Deserializer 2 locked */
+			ph6 {
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* FPGA SPI Enable */
+			ph1 {
+			};
+
+			/* H/V sync lock lost */
+			kb_row4_pr4 {
+				nvidia,pins = "kb_row4_pr4";
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* H/V sync ref lost */
+			kb_row7_pr7 {
+				nvidia,pins = "kb_row7_pr7";
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+			};
+		};
+	};
+
+	host1x {
+		dc@54200000 {
+			status = "okay";
+
+			nvidia,dc-connection = "internal-lcd";
+			panel = <&dsi_panel>;
+		};
+
+		dsi {
+			status = "okay";
+
+			dsi_panel: panel-dsi2sdi {
+				status = "okay";
+				nvidia,dsi-instance = <DSI_INSTANCE_0>;
+				reset-gpios = <&gpio TEGRA_GPIO(W, 3) GPIO_ACTIVE_LOW>;
+				reset-hold = <1>;
+			};
+		};
+
+		dc@54240000 {
+			status = "okay";
+
+			nvidia,dc-connection = "external-display";
+			vdd_hdmi_5v0-supply = <&ext_5v_hdmi>;
+		};
+
+		hdmi {
+			status = "okay";
+
+			hdmi-display {
+				disp-default-out {
+					nvidia,out-parent-clk = "pll_d2";
+				};
+			};
+		};
+
+		vi {
+			port@0 {
+				endpoint@0 {
+					remote-endpoint = <&csi_bridge2_out>;
+				};
+			};
+
+			port@1 {
+				endpoint@0 {
+					remote-endpoint = <&csi_bridge1_out>;
+				};
+			};
+		};
+	};
+
+	gpio: gpio@6000d000 {
+		gpio-init-names = "default";
+		gpio-init-0 = <&gpio_default>;
+		gpio_default: default {
+			gpio-output-high =
+				/* Enable CVBS converter */
+				<TEGRA_GPIO(K, 6)>,
+				/* Select HDMI output B */
+				<TEGRA_GPIO(H, 5)>,
+				/* Enable HDMI output */
+				<TEGRA_GPIO(H, 4)>,
+				/* Enable the FPGA */
+				<TEGRA_GPIO(K, 5)>;
+			gpio-output-low =
+				/* Disable the SPI flash */
+				<TEGRA_GPIO(H, 1)>;
+		};
+	};
+
+	serial@70006000 {
+		compatible = "nvidia,tegra114-hsuart", "nvidia,tegra30-hsuart";
+		status = "okay";
+	};
+
+	serial@70006300 {
+		status = "okay";
+	};
+
+	/* Recovery USB */
+	usb@7d000000 {
+		status = "okay";
+		nvidia,port-otg;
+		nvidia,remote-wakeup-supported;
+		nvidia,power-off-on-suspend;
+
+		usb_vbus-supply = <&usb_client_vbus>;
+	};
+
+	udc@7d000000 {
+		status = "okay";
+
+		usb_vbus-supply = <&usb_client_vbus>;
+	};
+
+	otg@7d000000 {
+		status = "okay";
+
+		usb_vbus-supply = <&usb_client_vbus>;
+	};
+
+	/* Ethernet over USB */
+	usb@7d004000 {
+		status = "okay";
+
+		/* There is no vbus, leave it out? */
+		usb_vbus-supply = <&ext_3v3>;
+	};
+
+	/* GEN1 I2C */
+	i2c@7000c000 {
+		status = "okay";
+
+		tc358748xbg@0e {
+			compatible = "toshiba,tc358748xbg";
+			reg = <0x0e>;
+
+			vddc-supply = <&ext_1v2>;
+			vdd_mipi-supply = <&ext_1v2>;
+			vddio-supply = <&ext_1v8>;
+
+			reset-gpio = <&gpio TEGRA_GPIO(W, 2) GPIO_ACTIVE_LOW>;
+
+			clock-rate = <27000000>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* Input port */
+				port@0 {
+					reg = <0>;
+					csi_bridge1_in: endpoint {
+						remote-endpoint = <&sdi_dser1_pout>;
+
+						bus-width = <10>;
+						hsync-active = <0>;
+						vsync-active = <1>;
+						data-active = <1>;
+						pclk-sample = <1>;
+					};
+				};
+
+				/* Ouput port */
+				port@1 {
+					reg = <1>;
+					csi_bridge1_out: endpoint {
+						remote-endpoint = <&csi_cd_ep>;
+
+						clock-lanes = <0>;
+						data-lanes = <0>, <1>, <2>, <3>;
+						clock-noncontinuous;
+					};
+				};
+			};
+		};
+	};
+
+	/* CAM I2C */
+	i2c@7000c500 {
+		status = "okay";
+
+		tc358748xbg@0e {
+			compatible = "toshiba,tc358748xbg";
+			reg = <0x0e>;
+
+			vddc-supply = <&ext_1v2>;
+			vdd_mipi-supply = <&ext_1v2>;
+			vddio-supply = <&ext_1v8>;
+
+			reset-gpio = <&gpio TEGRA_GPIO(X, 6) GPIO_ACTIVE_LOW>;
+
+			clock-rate = <27000000>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* Input port */
+				port@0 {
+					reg = <0>;
+					csi_bridge2_in: endpoint {
+						remote-endpoint = <&sdi_dser2_pout>;
+
+						bus-width = <10>;
+						hsync-active = <0>;
+						vsync-active = <1>;
+						data-active = <1>;
+						pclk-sample = <1>;
+					};
+				};
+
+				/* Ouput port */
+				port@1 {
+					reg = <1>;
+					csi_bridge2_out: endpoint {
+						remote-endpoint = <&csi_ab_ep>;
+
+						clock-lanes = <0>;
+						data-lanes = <0>, <1>, <2>, <3>;
+						clock-noncontinuous;
+					};
+				};
+			};
+		};
+	};
+
+	/* HDMI DDC */
+	i2c@7000c700 {
+		status = "okay";
+	};
+
+	/* SPI1 */
+	spi@7000d400 {
+		status = "okay";
+
+		gs4910b@0 {
+			compatible = "semtech,gs4910b";
+			reg = <0>;
+
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(R, 7) IRQ_TYPE_EDGE_BOTH>,
+				<TEGRA_GPIO(R, 4) IRQ_TYPE_EDGE_BOTH>;
+			interrupt-names = "ref_lost", "lock_lost";
+
+			io_vdd-supply = <&ext_3v3>;
+			lvds_pclk3_vdd-supply = <&ext_1v8>;
+
+			spi-max-frequency = <10000000>;
+
+			reset-gpio = <&gpio TEGRA_GPIO(X, 3) GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/* SPI2 */
+	spi@7000d600 {
+		status = "okay";
+		cs-gpios = <&gpio TEGRA_GPIO(P, 1) GPIO_ACTIVE_LOW>,
+			<&gpio TEGRA_GPIO(R, 0) GPIO_ACTIVE_LOW>;
+
+		gs3470@0 {
+			compatible = "semtech,gs3470";
+			reg = <0>;
+
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(K, 3) IRQ_TYPE_EDGE_BOTH>;
+			interrupt-names = "locked";
+
+			core_vdd-supply = <&ext_1v2>;
+			ddi0_vdd-supply = <&ext_1v2>;
+			ddi1_vdd-supply = <&ext_1v2>;
+			ddo_vdd-supply = <&ext_1v2>;
+			io_vdd-supply = <&ext_1v8>;
+			pll_vdd-supply = <&ext_1v2>;
+
+			//spi-max-frequency = <22000000>;
+			spi-max-frequency = <1000000>;
+
+			/* HACK: The CSI bridge needs HACTIVE and VACTIVE
+			 * signals (H and V on the GS3470) where HACTIVE
+			 * doesn't toggle while VACTIVE is not set. However
+			 * the GS3470 toggle the H signal all the time.
+			 *
+			 * As a workaround we enable the 861 timing mode
+			 * (HSYNC/VSYNC/DE) and use the data-enable (DE)
+			 * for HACTIVE. This also mean that we now have
+			 * a VSYNC pulse instead of a true VACTIVE, but that
+			 * is not a problem with the CSI bridge as it only
+			 * care that the transition is some time before the
+			 * first line.
+			 */
+			timing-861;
+			stat-mux = <STAT_F_DE>, <STAT_V_VSYNC>,
+				<STAT_H_HSYNC>, <STAT_LOCKED>,
+				<STAT_nDATA_ERROR>, <STAT_nVIDEO_ERROR>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					sdi_dser1_in0: endpoint {
+						/* Connected to SDI equalizer 1
+						 * but this chip doesn't appear
+						 * in the DT.
+						 */
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+					sdi_dser1_in1: endpoint {
+						/* Connected to SDI equalizer 2
+						 * but this chip doesn't appear
+						 * in the DT.
+						 */
+					};
+				};
+
+				port@2 {
+					reg = <2>;
+					sdi_dser1_pout: endpoint {
+						remote-endpoint = <&csi_bridge1_in>;
+
+						bus-width = <10>;
+						data-shift = <10>;
+						hsync-active = <1>;
+						vsync-active = <1>;
+						data-active = <1>;
+						pclk-sample = <1>;
+					};
+				};
+
+				port@3 {
+					reg = <3>;
+					sdi_dser1_sout: endpoint {
+						remote-endpoint = <&sdi_dser2_in0>;
+					};
+				};
+			};
+		};
+
+		gs3470@1 {
+			compatible = "semtech,gs3470";
+			reg = <1>;
+
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(H, 6) IRQ_TYPE_EDGE_BOTH>;
+			interrupt-names = "locked";
+
+			core_vdd-supply = <&ext_1v2>;
+			ddi0_vdd-supply = <&ext_1v2>;
+			ddi1_vdd-supply = <&ext_1v2>;
+			ddo_vdd-supply = <&ext_1v2>;
+			io_vdd-supply = <&ext_1v8>;
+			pll_vdd-supply = <&ext_1v2>;
+
+			//spi-max-frequency = <22000000>;
+			spi-max-frequency = <1000000>;
+
+			timing-861;
+			stat-mux = <STAT_F_DE>, <STAT_V_VSYNC>,
+				<STAT_H_HSYNC>, <STAT_LOCKED>,
+				<STAT_nDATA_ERROR>, <STAT_nVIDEO_ERROR>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					sdi_dser2_in0: endpoint {
+						remote-endpoint = <&sdi_dser1_sout>;
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+					sdi_dser2_in1: endpoint {
+						/* Connected to SDI equalizer 3
+						 * but this chip doesn't appear
+						 * in the DT.
+						 */
+					};
+				};
+
+				port@2 {
+					reg = <2>;
+					sdi_dser2_pout: endpoint {
+						remote-endpoint = <&csi_bridge2_in>;
+
+						bus-width = <10>;
+						data-shift = <10>;
+						hsync-active = <1>;
+						vsync-active = <1>;
+						data-active = <1>;
+						pclk-sample = <1>;
+					};
+				};
+
+				/* Serial out is not connected to anything */
+				port@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+			};
+		};
+	};
+
+	/* SPI3 */
+	spi@7000d800 {
+		status = "okay";
+
+		flash@1 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			compatible = "winbond,w25q64";
+			reg = <1>;
+
+			spi-max-frequency = <10000000>;
+
+			controller-data {
+				nvidia,enable-hw-based-cs;
+			};
+
+			partition@0 {
+				label = "bitstream";
+				reg = <0 0x800000>;
+			};
+		};
+	};
+
+	regulators {
+		vsys: regulator@100 {
+			compatible = "regulator-fixed";
+			reg = <100>;
+			regulator-name = "VSYS";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_5v0: regulator@101 {
+			compatible = "regulator-fixed";
+			reg = <101>;
+			regulator-name = "+5V_SYS";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+
+		vdd_3v3: regulator@102 {
+			compatible = "regulator-fixed";
+			reg = <102>;
+			regulator-name = "+3V3_SYS";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vsys>;
+		};
+
+		ext_5v0: regulator@103 {
+			compatible = "regulator-fixed";
+			reg = <103>;
+			regulator-name = "+5V_EXT";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_5v0>;
+		};
+
+		ext_3v3: regulator@104 {
+			compatible = "regulator-fixed";
+			reg = <104>;
+			regulator-name = "+3V3_EXT";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		ext_2v5: regulator@105 {
+			compatible = "regulator-fixed";
+			reg = <105>;
+			regulator-name = "+2V5_EXT";
+			regulator-min-microvolt = <2500000>;
+			regulator-max-microvolt = <2500000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&vdd_3v3>;
+		};
+
+		ext_1v8: regulator@106 {
+			compatible = "regulator-fixed";
+			reg = <106>;
+			regulator-name = "+1V8_EXT";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&ext_2v5>;
+		};
+
+		ext_1v2: regulator@107 {
+			compatible = "regulator-fixed";
+			reg = <107>;
+			regulator-name = "+1V2_EXT";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&ext_1v8>;
+		};
+
+		ext_5v_hdmi: regulator@108 {
+			compatible = "regulator-fixed";
+			reg = <108>;
+			regulator-name = "+5V_EXT_HDMI";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			vin-supply = <&ext_5v0>;
+		};
+
+		usb_client_vbus: regulator@109 {
+			compatible = "regulator-fixed";
+			reg = <109>;
+			regulator-name = "USB_CLIENT_VBUS";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio TEGRA_GPIO(N, 4) GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			gpio-open-drain;
+			vin-supply = <&ext_5v0>;
+		};
+	};
+
+	pwm-fan {
+		status = "okay";
+	};
+};

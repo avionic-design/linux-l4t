@@ -1,0 +1,57 @@
+#include <dt-bindings/display/tegra-dc.h>
+#include <dt-bindings/display/tegra-panel.h>
+
+/ {
+	host1x {
+		dsi {
+			panel-dsi2sdi {
+				compatible = "ad,dsi2sdi", "none,panel-generic";
+				status = "disabled";
+
+				nvidia,dsi-n-data-lanes = <4>;
+				nvidia,dsi-pixel-format = <TEGRA_DSI_PIXEL_FORMAT_24BIT_P>;
+				nvidia,dsi-refresh-rate = <30>;
+				nvidia,dsi-video-data-type = <TEGRA_DSI_VIDEO_TYPE_VIDEO_MODE>;
+				nvidia,dsi-video-burst-mode = <TEGRA_DSI_VIDEO_NONE_BURST_MODE_WITH_SYNC_END>;
+				nvidia,dsi-video-clock-mode = <TEGRA_DSI_VIDEO_CLOCK_CONTINUOUS>;
+				nvidia,dsi-virtual-channel = <TEGRA_DSI_VIRTUAL_CHANNEL_0>;
+				nvidia,dsi-panel-reset = <TEGRA_DSI_DISABLE>;
+				nvidia,dsi-power-saving-suspend = <TEGRA_DSI_DISABLE>;
+				nvidia,dsi-lp00-pre-panel-wakeup = <TEGRA_DSI_ENABLE>;
+				nvidia,dsi-max-panel-freq = <500000>;
+
+				reset-hold = <1>;
+				reset-settle = <10>;
+
+				disp-default-out {
+					nvidia,out-type = <TEGRA_DC_OUT_DSI>;
+					nvidia,out-width = <192>;
+					nvidia,out-height = <108>;
+					nvidia,out-flags = <TEGRA_DC_OUT_CONTINUOUS_MODE>;
+					nvidia,out-parent-clk = "pll_d_out0";
+					nvidia,out-xres = <1920>;
+					nvidia,out-yres = <1080>;
+				};
+
+				display-timings {
+					1920x1080-30 {
+						clock-frequency = <74250000>;
+
+						hsync-len = <44>;
+						hback-porch = <148>;
+						hactive = <1920>;
+						hfront-porch = <88>;
+						nvidia,h-ref-to-sync = <0>;
+
+						vsync-len = <5>;
+						vback-porch = <36>;
+						vactive = <1080>;
+						vfront-porch = <4>;
+						nvidia,v-ref-to-sync = <0>;
+					};
+				};
+			};
+		};
+	};
+};
+
