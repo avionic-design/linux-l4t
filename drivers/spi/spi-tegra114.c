@@ -919,6 +919,9 @@ static int tegra_spi_setup(struct spi_device *spi)
 
 	/* Set speed to the spi max fequency if spi device has not set */
 	spi->max_speed_hz = spi->max_speed_hz ? : tspi->spi_max_frequency;
+	/* Cap the frequency to the maximum supported by the controller */
+	if (spi->max_speed_hz > tspi->spi_max_frequency)
+		spi->max_speed_hz = tspi->spi_max_frequency;
 
 	if (gpio_is_valid(spi->cs_gpio)) {
 
