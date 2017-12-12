@@ -26,6 +26,7 @@
 #include <linux/slab.h>
 #include <linux/sched.h>
 #include <linux/mod_devicetable.h>
+#include <linux/gpio/consumer.h>
 
 #include <linux/mtd/cfi.h>
 #include <linux/mtd/mtd.h>
@@ -86,6 +87,8 @@ struct m25p {
 	u8			erase_opcode;
 	u8			*command;
 	bool			fast_read;
+
+	struct gpio_desc	*enable_gpio;
 };
 
 static inline struct m25p *mtd_to_m25p(struct mtd_info *mtd)
@@ -655,6 +658,24 @@ err:	mutex_unlock(&flash->lock);
 	return res;
 }
 
+static int m25p80_get_device(struct mtd_info *mtd)
+{
+	struct m25p *flash = mtd_to_m25p(mtd);
+
+	if (flash->enable_gpio)
+		gpiod_set_value_cansleep(flash->enable_gpio, 1);
+
+	return 0;
+}
+
+static void m25p80_put_device(struct mtd_info *mtd)
+{
+	struct m25p *flash = mtd_to_m25p(mtd);
+
+	if (flash->enable_gpio)
+		gpiod_set_value_cansleep(flash->enable_gpio, 0);
+}
+
 /****************************************************************************/
 
 /*
@@ -895,6 +916,12 @@ static const struct spi_device_id *jedec_probe(struct spi_device *spi)
 	return ERR_PTR(-ENODEV);
 }
 
+static void disable_gpiod(void *ctx)
+{
+	struct gpio_desc *gpio = ctx;
+
+	gpiod_set_value_cansleep(gpio, 0);
+}
 
 /*
  * board specific setup should have ensured the SPI clock used here
@@ -910,11 +937,25 @@ static int m25p_probe(struct spi_device *spi)
 	unsigned			i;
 	struct mtd_part_parser_data	ppdata;
 	struct device_node __maybe_unused *np = spi->dev.of_node;
+	struct gpio_desc *enable_gpio;
+	int err;
 
 #ifdef CONFIG_MTD_OF_PARTS
 	if (!of_device_is_available(np))
 		return -ENODEV;
 #endif
+
+	/* Get and enable the enable gpio */
+	enable_gpio = devm_gpiod_get_optional(&spi->dev, "enable", GPIOD_OUT_HIGH);
+	if (IS_ERR(enable_gpio))
+		return PTR_ERR(enable_gpio);
+	/* Make sure the chip get disabled when the device is removed */
+	if (enable_gpio) {
+		err = devm_add_action_or_reset(
+			&spi->dev, disable_gpiod, enable_gpio);
+		if (err)
+			return err;
+	}
 
 	/* Platform data helps sort out which chip type we have, as
 	 * well as how this board partitions it.  If we don't have
@@ -972,6 +1013,7 @@ static int m25p_probe(struct spi_device *spi)
 	}
 
 	flash->spi = spi;
+	flash->enable_gpio = enable_gpio;
 	mutex_init(&flash->lock);
 	dev_set_drvdata(&spi->dev, flash);
 
@@ -998,6 +1040,8 @@ static int m25p_probe(struct spi_device *spi)
 	flash->mtd.size = info->sector_size * info->n_sectors;
 	flash->mtd._erase = m25p80_erase;
 	flash->mtd._read = m25p80_read;
+	flash->mtd._get_device = m25p80_get_device;
+	flash->mtd._put_device = m25p80_put_device;
 
 	/* flash protection support for STmicro chips */
 	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ST) {
@@ -1069,6 +1113,9 @@ static int m25p_probe(struct spi_device *spi)
 				flash->mtd.eraseregions[i].erasesize / 1024,
 				flash->mtd.eraseregions[i].numblocks);
 
+	/* Disable the chip */
+	if (enable_gpio)
+		gpiod_set_value_cansleep(enable_gpio, 0);
 
 	/* partitions should match sector boundaries; and it may be good to
 	 * use readonly partitions for writeprotected sectors (BP2..BP0).
