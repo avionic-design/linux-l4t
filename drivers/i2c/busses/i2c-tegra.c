@@ -1364,6 +1364,8 @@ static struct tegra_i2c_platform_data *parse_i2c_tegra_dt(
 	pdata->sda_gpio = of_get_named_gpio(np, "sda-gpio", 0);
 	pdata->is_dvc = of_device_is_compatible(np, "nvidia,tegra20-i2c-dvc");
 
+	of_property_read_string(np, "nvidia,bus-name", &pdata->name);
+
 	/* Default configuration for device tree initiated driver */
 	pdata->slave_addr = 0xFC;
 	return pdata;
@@ -1630,7 +1632,7 @@ skip_pinctrl:
 	i2c_set_adapdata(&i2c_dev->adapter, i2c_dev);
 	i2c_dev->adapter.owner = THIS_MODULE;
 	i2c_dev->adapter.class = I2C_CLASS_HWMON;
-	strlcpy(i2c_dev->adapter.name, "Tegra I2C adapter",
+	strlcpy(i2c_dev->adapter.name, pdata->name ?: "Tegra I2C adapter",
 		sizeof(i2c_dev->adapter.name));
 	i2c_dev->adapter.algo = &tegra_i2c_algo;
 	i2c_dev->adapter.dev.parent = &pdev->dev;

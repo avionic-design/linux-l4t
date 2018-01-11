@@ -33,6 +33,7 @@ struct tegra_i2c_platform_data {
 	u16 hs_master_code;
 	bool needs_cl_dvfs_clock;
 	bool bit_banging_xfer_after_shutdown;
+	const char* name;
 };
 
 struct tegra_i2c_slave_platform_data {
