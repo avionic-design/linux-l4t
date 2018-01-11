@@ -1751,23 +1751,28 @@
 	   because not all baseboards will use them. */
 	i2c@7000c000 {
 		status = "disabled";
+		nvidia,bus-name = "GEN1 I2C";
 	};
 
 	i2c@7000c400 {
 		status = "disabled";
+		nvidia,bus-name = "GEN2 I2C";
 	};
 
 	i2c@7000c500 {
 		status = "disabled";
 		pull-ups-supply = <&avdd_1v8_cam_run>;
+		nvidia,bus-name = "CAM I2C";
 	};
 
 	i2c@7000c700 {
 		status = "disabled";
+		nvidia,bus-name = "HDMI DDC";
 	};
 
 	i2c@7000d000 {
 		status = "okay";
+		nvidia,bus-name = "PWR I2C";
 
 		/* Required for PMIC access via i2c during shutdown: */
 		nvidia,bit-banging-xfer-after-shutdown;
