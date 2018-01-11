@@ -1518,8 +1518,8 @@ static int uh2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		return -EINVAL;
 	}
 	if (rate < 40000000 || rate > 50000000) {
-		dev_err(&client->dev, "reference is out of range: %lu\n",
-			priv->refrate);
+		dev_err(&client->dev, "reference is out of range: %u\n",
+			(unsigned int)rate);
 		return -EINVAL;
 	}
 	priv->refrate = rate;
