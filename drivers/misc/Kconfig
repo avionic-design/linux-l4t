@@ -653,6 +653,10 @@ config MODS
 
 	If unsure, say N here.
 
+config GS4910B
+	tristate "Gennum GS4910B/11B Graphics Clock and Timing Generator"
+	depends on SPI
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
