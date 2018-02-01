@@ -574,6 +574,10 @@ config VIDEO_UH2C
 	tristate "uh2c hdmi-csi bridge support"
 	depends on I2C && VIDEO_V4L2
 
+config VIDEO_TC358748
+	tristate "Toshiba CSI-2 to Parallel port and Parallel port to CSI-2"
+        depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API
+
 source "drivers/media/i2c/smiapp/Kconfig"
 
 config VIDEO_S5C73M3
