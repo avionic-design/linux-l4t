@@ -469,9 +469,17 @@ static int gs3470_probe(struct spi_device *spi)
 	}
 
 	gs->reset_gpio = devm_gpiod_get_optional(
-		&spi->dev, "reset", GPIOD_OUT_LOW);
+		&spi->dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(gs->reset_gpio))
 		return PTR_ERR(gs->reset_gpio);
+
+	if (gs->reset_gpio) {
+		/* Keep the chip at least 1 ms in reset */
+		msleep(1);
+		/* Release reset and give the chip 1 ms to boot */
+		gpiod_set_value_cansleep(gs->reset_gpio, 0);
+		msleep(1);
+	}
 
 	/* Setup the GSPI bus mode */
 	err = regmap_update_bits(gs->regmap, HOST_CONF_REG_0,
