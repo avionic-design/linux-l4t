@@ -78,9 +78,17 @@
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
 
+			/* SDI Deserializer 1 reset */
+			kb_row16_pt0 {
+			};
+
 			/* SDI Deserializer 2 nCS */
 			kb_row0_pr0 {
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+			};
+
+			/* SDI Deserializer 2 reset */
+			dap_mclk1_req_pee2 {
 			};
 
 			/* SDI EQ 1 carrier detect */
@@ -171,8 +179,9 @@
 			dsi_panel: panel-dsi2sdi {
 				status = "okay";
 				nvidia,dsi-instance = <DSI_INSTANCE_0>;
-				reset-gpios = <&gpio TEGRA_GPIO(W, 3) GPIO_ACTIVE_LOW>;
+				reset-gpios = <&gpio TEGRA_GPIO(H, 1) GPIO_ACTIVE_LOW>;
 				reset-hold = <1>;
+				reset-settle = <1>;
 			};
 		};
 
@@ -218,12 +227,7 @@
 				/* Select HDMI output B */
 				<TEGRA_GPIO(H, 5)>,
 				/* Enable HDMI output */
-				<TEGRA_GPIO(H, 4)>,
-				/* Enable the FPGA */
-				<TEGRA_GPIO(K, 5)>;
-			gpio-output-low =
-				/* Disable the SPI flash */
-				<TEGRA_GPIO(H, 1)>;
+				<TEGRA_GPIO(H, 4)>;
 		};
 	};
 
@@ -415,6 +419,8 @@
 			//spi-max-frequency = <22000000>;
 			spi-max-frequency = <1000000>;
 
+			reset-gpio = <&gpio TEGRA_GPIO(T, 0) GPIO_ACTIVE_LOW>;
+
 			/* HACK: The CSI bridge needs HACTIVE and VACTIVE
 			 * signals (H and V on the GS3470) where HACTIVE
 			 * doesn't toggle while VACTIVE is not set. However
@@ -498,6 +504,8 @@
 			//spi-max-frequency = <22000000>;
 			spi-max-frequency = <1000000>;
 
+			reset-gpio = <&gpio TEGRA_GPIO(EE, 2) GPIO_ACTIVE_LOW>;
+
 			timing-861;
 			stat-mux = <STAT_F_DE>, <STAT_V_VSYNC>,
 				<STAT_H_HSYNC>, <STAT_LOCKED>,
@@ -559,6 +567,7 @@
 			reg = <1>;
 
 			spi-max-frequency = <10000000>;
+			enable-gpio = <&gpio TEGRA_GPIO(K, 5) GPIO_ACTIVE_LOW>;
 
 			controller-data {
 				nvidia,enable-hw-based-cs;
