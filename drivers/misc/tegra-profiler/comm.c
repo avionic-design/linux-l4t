@@ -483,6 +483,7 @@ device_ioctl(struct file *file,
 		break;
 
 	case IOCTL_GET_CAP:
+		memset(&cap, 0, sizeof(cap));
 		comm_ctx.control->get_capabilities(&cap);
 		if (copy_to_user((void __user *)ioctl_param, &cap,
 				 sizeof(struct quadd_comm_cap))) {
@@ -493,6 +494,7 @@ device_ioctl(struct file *file,
 		break;
 
 	case IOCTL_GET_VERSION:
+		memset(&versions, 0, sizeof(versions));
 		strcpy((char *)versions.branch, QUADD_MODULE_BRANCH);
 		strcpy((char *)versions.version, QUADD_MODULE_VERSION);
 

@@ -3,7 +3,7 @@
  *
  * GK20A Graphics channel
  *
- * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2017, NVIDIA CORPORATION.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -552,8 +552,7 @@ static int gk20a_init_error_notifier(struct channel_gk20a *ch,
 
 	dmabuf = dma_buf_get(args->mem);
 
-	if (ch->error_notifier_ref)
-		gk20a_free_error_notifiers(ch);
+	gk20a_free_error_notifiers(ch);
 
 	if (IS_ERR(dmabuf)) {
 		pr_err("Invalid handle: %d\n", args->mem);
@@ -574,16 +573,23 @@ static int gk20a_init_error_notifier(struct channel_gk20a *ch,
 		return -ENOMEM;
 	}
 
-	/* set channel notifiers pointer */
-	ch->error_notifier_ref = dmabuf;
 	ch->error_notifier = va + args->offset;
 	ch->error_notifier_va = va;
 	memset(ch->error_notifier, 0, sizeof(struct nvhost_notification));
+
+	/* set channel notifiers pointer */
+	mutex_lock(&ch->error_notifier_mutex);
+	ch->error_notifier_ref = dmabuf;
+	mutex_unlock(&ch->error_notifier_mutex);
+
 	return 0;
 }
 
 void gk20a_set_error_notifier(struct channel_gk20a *ch, __u32 error)
 {
+	bool notifier_set = false;
+
+	mutex_lock(&ch->error_notifier_mutex);
 	if (ch->error_notifier_ref) {
 		struct timespec time_data;
 		u64 nsec;
@@ -596,20 +602,27 @@ void gk20a_set_error_notifier(struct channel_gk20a *ch, __u32 error)
 				(u32)(nsec >> 32);
 		ch->error_notifier->info32 = error;
 		ch->error_notifier->status = 0xffff;
-		gk20a_err(dev_from_gk20a(ch->g),
-				"error notifier set to %d\n", error);
+
+		notifier_set = true;
 	}
+	mutex_unlock(&ch->error_notifier_mutex);
+
+	if (notifier_set)
+		gk20a_err(dev_from_gk20a(ch->g),
+		    "error notifier set to %d for ch %d", error, ch->hw_chid);
 }
 
 static void gk20a_free_error_notifiers(struct channel_gk20a *ch)
 {
+	mutex_lock(&ch->error_notifier_mutex);
 	if (ch->error_notifier_ref) {
 		dma_buf_vunmap(ch->error_notifier_ref, ch->error_notifier_va);
 		dma_buf_put(ch->error_notifier_ref);
-		ch->error_notifier_ref = 0;
-		ch->error_notifier = 0;
-		ch->error_notifier_va = 0;
+		ch->error_notifier_ref = NULL;
+		ch->error_notifier = NULL;
+		ch->error_notifier_va = NULL;
 	}
+	mutex_unlock(&ch->error_notifier_mutex);
 }
 
 void gk20a_free_channel(struct channel_gk20a *ch, bool finish)
@@ -706,8 +719,11 @@ unbind:
 int gk20a_channel_release(struct inode *inode, struct file *filp)
 {
 	struct channel_gk20a *ch = (struct channel_gk20a *)filp->private_data;
-	struct gk20a *g = ch->g;
+	struct gk20a *g = ch ? ch->g : NULL;
 	int err;
+
+	if (!ch)
+		return 0;
 
 	trace_gk20a_channel_release(dev_name(&g->dev->dev));
 
@@ -1630,6 +1646,7 @@ int gk20a_init_channel_support(struct gk20a *g, u32 chid)
 	c->bound = false;
 	c->remove_support = gk20a_remove_channel_support;
 	mutex_init(&c->jobs_lock);
+	mutex_init(&c->error_notifier_mutex);
 	INIT_LIST_HEAD(&c->jobs);
 #if defined(CONFIG_GK20A_CYCLE_STATS)
 	mutex_init(&c->cyclestate.cyclestate_buffer_mutex);
@@ -1982,7 +1999,7 @@ long gk20a_channel_ioctl(struct file *filp,
 {
 	struct channel_gk20a *ch = filp->private_data;
 	struct platform_device *dev = ch->g->dev;
-	u8 buf[NVHOST_IOCTL_CHANNEL_MAX_ARG_SIZE];
+	u8 buf[NVHOST_IOCTL_CHANNEL_MAX_ARG_SIZE] = {0};
 	int err = 0;
 
 	if ((_IOC_TYPE(cmd) != NVHOST_IOCTL_MAGIC) ||
@@ -2047,18 +2064,6 @@ long gk20a_channel_ioctl(struct file *filp,
 		}
 		err = gk20a_alloc_obj_ctx(ch,
 				(struct nvhost_alloc_obj_ctx_args *)buf);
-		gk20a_idle(dev);
-		break;
-	case NVHOST_IOCTL_CHANNEL_FREE_OBJ_CTX:
-		err = gk20a_busy(dev);
-		if (err) {
-			dev_err(&dev->dev,
-				"%s: failed to host gk20a for ioctl cmd: 0x%x",
-				__func__, cmd);
-			return err;
-		}
-		err = gk20a_free_obj_ctx(ch,
-				(struct nvhost_free_obj_ctx_args *)buf);
 		gk20a_idle(dev);
 		break;
 	case NVHOST_IOCTL_CHANNEL_ALLOC_GPFIFO:

@@ -3,7 +3,7 @@
  *
  * User-space interface to nvmap
  *
- * Copyright (c) 2011-2014, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2011-2017, NVIDIA CORPORATION. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,6 +88,7 @@ int nvmap_ioctl_pinop(struct file *filp, bool is_pin, void __user *arg,
 			return -EFAULT;
 		op.handles = (__u32 *)(uintptr_t)op32.handles;
 		op.count = op32.count;
+		op.addr = (unsigned long *)(uintptr_t)op32.addr;
 	} else
 #endif
 		if (copy_from_user(&op, arg, sizeof(op)))
@@ -226,6 +227,33 @@ const struct file_operations nvmap_fd_fops = {
 	.mmap		= nvmap_share_mmap,
 };
 
+static int nvmap_install_fd(struct nvmap_client *client,
+	struct nvmap_handle *handle, int fd, void __user *arg,
+	void *op, size_t op_size, bool free)
+{
+	int err = 0;
+
+	if (IS_ERR_VALUE(fd)) {
+		err = fd;
+		goto fd_fail;
+	}
+
+	if (copy_to_user(arg, op, op_size)) {
+		err = -EFAULT;
+		goto copy_fail;
+	}
+
+	fd_install(fd, handle->dmabuf->file);
+	return err;
+
+copy_fail:
+	put_unused_fd(fd);
+fd_fail:
+	if (free)
+		nvmap_free_handle(client, handle);
+	return err;
+}
+
 int nvmap_ioctl_getfd(struct file *filp, void __user *arg)
 {
 	struct nvmap_handle *handle;
@@ -241,14 +269,9 @@ int nvmap_ioctl_getfd(struct file *filp, void __user *arg)
 
 	op.fd = nvmap_get_dmabuf_fd(client, handle);
 	nvmap_handle_put(handle);
-	if (op.fd < 0)
-		return op.fd;
 
-	if (copy_to_user(arg, &op, sizeof(op))) {
-		sys_close(op.fd);
-		return -EFAULT;
-	}
-	return 0;
+	return nvmap_install_fd(client, handle,
+				op.fd, arg, &op, sizeof(op), 0);
 }
 
 int nvmap_ioctl_alloc(struct file *filp, void __user *arg)
@@ -309,30 +332,11 @@ int nvmap_ioctl_alloc_kind(struct file *filp, void __user *arg)
 	return err;
 }
 
-int nvmap_create_fd(struct nvmap_client *client, struct nvmap_handle *h)
-{
-	int fd;
-
-	fd = __nvmap_dmabuf_fd(client, h->dmabuf, O_CLOEXEC);
-	BUG_ON(fd == 0);
-	if (fd < 0) {
-		pr_err("Out of file descriptors");
-		return fd;
-	}
-	/* __nvmap_dmabuf_fd() associates fd with dma_buf->file *.
-	 * fd close drops one ref count on dmabuf->file *.
-	 * to balance ref count, ref count dma_buf.
-	 */
-	get_dma_buf(h->dmabuf);
-	return fd;
-}
-
 int nvmap_ioctl_create(struct file *filp, unsigned int cmd, void __user *arg)
 {
 	struct nvmap_create_handle op;
 	struct nvmap_handle_ref *ref = NULL;
 	struct nvmap_client *client = filp->private_data;
-	int err = 0;
 	int fd = 0;
 
 	if (copy_from_user(&op, arg, sizeof(op)))
@@ -354,20 +358,10 @@ int nvmap_ioctl_create(struct file *filp, unsigned int cmd, void __user *arg)
 	if (IS_ERR(ref))
 		return PTR_ERR(ref);
 
-	fd = nvmap_create_fd(client, ref->handle);
-	if (fd < 0)
-		err = fd;
-
+	fd = nvmap_get_dmabuf_fd(client, ref->handle);
 	op.handle = fd;
-
-	if (copy_to_user(arg, &op, sizeof(op))) {
-		err = -EFAULT;
-		nvmap_free_handle(client, __nvmap_ref_to_id(ref));
-	}
-
-	if (err && fd > 0)
-		sys_close(fd);
-	return err;
+	return nvmap_install_fd(client, ref->handle, fd,
+				arg, &op, sizeof(op), 1);
 }
 
 int nvmap_map_into_caller_ptr(struct file *filp, void __user *arg, bool is32)
@@ -472,9 +466,9 @@ int nvmap_ioctl_get_param(struct file *filp, void __user *arg, bool is32)
 	struct nvmap_handle_param __user *uarg = arg;
 	struct nvmap_handle_param op;
 	struct nvmap_client *client = filp->private_data;
-	struct nvmap_handle_ref *ref;
-	struct nvmap_handle *h;
-	u64 result;
+	struct nvmap_handle_ref *ref = NULL;
+	struct nvmap_handle *h = NULL;
+	u64 result = 0;
 	int err = 0;
 
 #ifdef CONFIG_COMPAT
@@ -500,6 +494,9 @@ int nvmap_ioctl_get_param(struct file *filp, void __user *arg, bool is32)
 	}
 
 	err = nvmap_get_handle_param(client, ref, op.param, &result);
+	if (err) {
+		goto ref_fail;
+	}
 
 #ifdef CONFIG_COMPAT
 	if (is32)
@@ -936,6 +933,11 @@ int __nvmap_do_cache_maint(struct nvmap_client *client,
 	if (!h)
 		return -EFAULT;
 
+	if ((start >= h->size) || (end > h->size)) {
+		nvmap_handle_put(h);
+		return -EFAULT;
+	}
+
 	if (op == NVMAP_CACHE_OP_INV)
 		op = NVMAP_CACHE_OP_WB_INV;
 
@@ -1088,7 +1090,7 @@ int nvmap_ioctl_cache_maint_list(struct file *filp, void __user *arg,
 	if (copy_from_user(&op, arg, sizeof(op)))
 		return -EFAULT;
 
-	if (!op.nr)
+	if (!op.nr || op.nr > UINT_MAX / sizeof(u32))
 		return -EINVAL;
 
 	if (!access_ok(VERIFY_READ, op.handles, op.nr * sizeof(u32)))

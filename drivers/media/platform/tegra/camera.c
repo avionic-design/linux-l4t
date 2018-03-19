@@ -1,7 +1,7 @@
 /*
  * camera.c - generic camera device driver
  *
- * Copyright (c) 2013-2014, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2013-2016, NVIDIA CORPORATION.  All rights reserved.
  *
  * Contributors:
  *	Charlie Huang <chahuang@nvidia.com>
@@ -132,12 +132,12 @@ int camera_copy_user_params(unsigned long arg, struct nvc_param *prm)
 #endif
 EXPORT_SYMBOL_GPL(camera_copy_user_params);
 
-int camera_get_params(
+int __camera_get_params(
 	struct camera_info *cam, unsigned long arg, int u_size,
-	struct nvc_param *prm, void **data)
+	struct nvc_param *prm, void **data, bool zero_size_ok)
 {
 	void *buf;
-	unsigned size;
+	size_t size;
 
 #ifdef CONFIG_COMPAT
 	memset(prm, 0, sizeof(*prm));
@@ -157,9 +157,14 @@ int camera_get_params(
 	if (!data)
 		return 0;
 
+	if (zero_size_ok && prm->sizeofvalue == 0) {
+		*data = ZERO_SIZE_PTR;
+		return 0;
+	}
+
 	size = prm->sizeofvalue * u_size;
-	buf = kzalloc(size, GFP_KERNEL);
-	if (!buf) {
+	buf = kcalloc(prm->sizeofvalue, u_size, GFP_KERNEL);
+	if (ZERO_OR_NULL_PTR(buf)) {
 		dev_err(cam->dev, "%s allocate memory failed!\n", __func__);
 		return -ENOMEM;
 	}
@@ -175,6 +180,20 @@ int camera_get_params(
 }
 EXPORT_SYMBOL_GPL(camera_get_params);
 
+static int camera_validate_p_i2c_table(struct camera_info *cam,
+		const struct nvc_param *params,
+		const struct camera_reg *p_i2c_table, const char *caller)
+{
+	u32 idx, last_idx = params->sizeofvalue / sizeof(p_i2c_table[0]);
+
+	for (idx = 0; idx < last_idx; idx++)
+		if (p_i2c_table[idx].addr == CAMERA_TABLE_END)
+			return 0;
+
+	dev_err(cam->dev, "%s: table is not properly terminated\n", caller);
+	return -EINVAL;
+}
+
 static int camera_seq_rd(struct camera_info *cam, unsigned long arg)
 {
 	struct nvc_param params;
@@ -186,6 +205,10 @@ static int camera_seq_rd(struct camera_info *cam, unsigned long arg)
 	if (err)
 		return err;
 
+	err = camera_validate_p_i2c_table(cam, &params, p_i2c_table, __func__);
+	if (err)
+		goto seq_rd_end;
+
 	err = camera_dev_rd_table(cam->cdev, p_i2c_table);
 	if (!err && copy_to_user(MAKE_USER_PTR(params.p_value),
 		p_i2c_table, params.sizeofvalue)) {
@@ -194,6 +217,7 @@ static int camera_seq_rd(struct camera_info *cam, unsigned long arg)
 		err = -EINVAL;
 	}
 
+seq_rd_end:
 	kfree(p_i2c_table);
 	return err;
 }
@@ -233,7 +257,7 @@ static int camera_seq_wr(struct camera_info *cam, unsigned long arg)
 	}
 
 	p_i2c_table = devm_kzalloc(cdev->dev, params.sizeofvalue, GFP_KERNEL);
-	if (p_i2c_table == NULL) {
+	if (ZERO_OR_NULL_PTR(p_i2c_table)) {
 		dev_err(cam->dev, "%s devm_kzalloc err line %d\n",
 			__func__, __LINE__);
 		return -ENOMEM;
@@ -247,6 +271,10 @@ static int camera_seq_wr(struct camera_info *cam, unsigned long arg)
 		err = -EFAULT;
 		goto seq_wr_end;
 	}
+
+	err = camera_validate_p_i2c_table(cam, &params, p_i2c_table, __func__);
+	if (err)
+		goto seq_wr_end;
 
 	switch (params.param) {
 	case CAMERA_SEQ_REGISTER_EXEC:
@@ -500,13 +528,13 @@ static int camera_new_device(struct camera_info *cam, unsigned long arg)
 			next_dev->client->addr == dev_info.addr) {
 			dev_dbg(cam_desc.dev,
 				"%s: device already exists.\n", __func__);
-			camera_remove_device(new_dev, false);
 			if (atomic_xchg(&next_dev->in_use, 1)) {
 				dev_err(cam_desc.dev, "%s device %s BUSY\n",
 					__func__, next_dev->name);
 				err = -EBUSY;
 				goto new_device_err;
-			}
+			} else
+				camera_remove_device(new_dev, false);
 			new_dev = next_dev;
 			goto new_device_done;
 		}
@@ -588,7 +616,8 @@ static int camera_update(struct camera_info *cam, unsigned long arg)
 		return err;
 	}
 
-	err = camera_get_params(cam, arg, sizeof(*upd), &param, (void **)&upd);
+	err = __camera_get_params(cam, arg, sizeof(*upd), &param, (void **)&upd,
+			true);
 	if (err)
 		return err;
 
@@ -659,9 +688,20 @@ static int camera_layout_get(struct camera_info *cam, unsigned long arg)
 	if (err)
 		return err;
 
+	if (param.variant > MAX_PARAM_VARIANT) {
+		dev_err(cam->dev, "%s param variant is too large: %u\n",
+		__func__, param.variant);
+		return -EINVAL;
+	}
+	if (param.sizeofvalue > MAX_PARAM_SIZE_OF_VALUE) {
+		dev_err(cam->dev, "%s size of param value is too large: %u\n",
+		__func__, param.sizeofvalue);
+		return -EINVAL;
+	}
+
 	len = (int)cam_desc.size_layout - param.variant;
 	if (len <= 0) {
-		dev_err(cam->dev, "%s invalid offset %d\n",
+		dev_err(cam->dev, "%s invalid offset %u\n",
 			__func__, param.variant);
 		err = -EINVAL;
 		goto getlayout_end;
@@ -840,31 +880,46 @@ static long camera_ioctl(struct file *file,
 		break;
 	case PCLLK_IOCTL_DEV_DEL:
 		mutex_lock(cam_desc.d_mutex);
+		if (!cam->cdev) {
+			err = -ENODEV;
+			mutex_unlock(cam_desc.d_mutex);
+			break;
+		}
 		list_del(&cam->cdev->list);
-		mutex_unlock(cam_desc.d_mutex);
 		camera_remove_device(cam->cdev, true);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_DEV_FREE:
 		err = camera_free_device(cam, arg);
 		break;
 	case PCLLK_IOCTL_SEQ_WR:
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_seq_wr(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_SEQ_RD:
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_seq_rd(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_PARAM_RD:
 		/* err = camera_param_rd(cam, arg); */
 		break;
 	case PCLLK_IOCTL_PWR_WR:
 		/* This is a Guaranteed Level of Service (GLOS) call */
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_dev_pwr_set(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_PWR_RD:
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_dev_pwr_get(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_UPDATE:
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_update(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_LAYOUT_WR:
 		err = camera_layout_update(cam, arg);
@@ -886,16 +941,22 @@ static long camera_ioctl(struct file *file,
 		err = virtual_device_add(cam_desc.dev, arg);
 		break;
 	case PCLLK_IOCTL_32_SEQ_WR:
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_seq_wr(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_32_SEQ_RD:
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_seq_rd(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_32_PARAM_RD:
 		/* err = camera_param_rd(cam, arg); */
 		break;
 	case PCLLK_IOCTL_32_UPDATE:
+		mutex_lock(cam_desc.d_mutex);
 		err = camera_update(cam, arg);
+		mutex_unlock(cam_desc.d_mutex);
 		break;
 	case PCLLK_IOCTL_32_LAYOUT_WR:
 		err = camera_layout_update(cam, arg);
