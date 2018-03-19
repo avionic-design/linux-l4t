@@ -1006,6 +1006,8 @@ static void crypt_free_tfms(struct crypt_config *cc)
 
 static int crypt_set_key(struct crypt_config *cc, char *key)
 {
+	int r;
+
 	/* The key size may not be changed. */
 	if (cc->key_size != (strlen(key) >> 1))
 		return -EINVAL;
@@ -1014,12 +1016,17 @@ static int crypt_set_key(struct crypt_config *cc, char *key)
 	if (!cc->key_size && strcmp(key, "-"))
 		return -EINVAL;
 
+	/* clear the flag since following operations may invalidate previously valid key */
+	clear_bit(DM_CRYPT_KEY_VALID, &cc->flags);
+
 	if (cc->key_size && crypt_decode_key(cc->key, key, cc->key_size) < 0)
 		return -EINVAL;
 
-	set_bit(DM_CRYPT_KEY_VALID, &cc->flags);
+	r = crypto_ablkcipher_setkey(cc->tfm, cc->key, cc->key_size);
+	if (!r)
+		set_bit(DM_CRYPT_KEY_VALID, &cc->flags);
 
-	return crypto_ablkcipher_setkey(cc->tfm, cc->key, cc->key_size);
+	return r;
 }
 
 static int crypt_wipe_key(struct crypt_config *cc)
