@@ -58,14 +58,12 @@ obj-$(CONFIG_LATTICE_ECP3_CONFIG)	+= lattice-ecp3-config.o
 obj-$(CONFIG_SRAM)		+= sram.o
 obj-$(CONFIG_SENSORS_NCT1008)	+= nct1008.o
 obj-$(CONFIG_BCM4329_RFKILL)	+= bcm4329_rfkill.o
-CFLAGS_tegra-cryptodev.o	 = -Werror
 obj-$(CONFIG_TEGRA_CRYPTO_DEV)	+= tegra-cryptodev.o
 obj-$(CONFIG_TEGRA_BB_SUPPORT)	+= tegra-baseband/
 obj-$(CONFIG_TEGRA_CEC_SUPPORT)	+= tegra-cec/
 obj-$(CONFIG_MAX1749_VIBRATOR)	+= max1749.o
 obj-$(CONFIG_APANIC)		+= apanic.o
 obj-$(CONFIG_THERM_EST)		+= therm_est.o
-CFLAGS_tegra-throughput.o	 = -Werror
 ifeq ($(CONFIG_ARM64),y)
 CFLAGS_tegra-throughput.o       += -Iarch/arm/mach-tegra/include
 endif

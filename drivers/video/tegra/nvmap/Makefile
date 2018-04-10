@@ -1,7 +1,5 @@
 GCOV_PROFILE := y
 
-subdir-ccflags-y := -Werror
-
 ifeq ($(CONFIG_ARM64),y)
 ccflags-y += -Iarch/arm/mach-tegra/include
 endif

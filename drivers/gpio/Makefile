@@ -75,7 +75,6 @@ obj-$(CONFIG_GPIO_STMPE)	+= gpio-stmpe.o
 obj-$(CONFIG_GPIO_STP_XWAY)	+= gpio-stp-xway.o
 obj-$(CONFIG_GPIO_SX150X)	+= gpio-sx150x.o
 obj-$(CONFIG_GPIO_TC3589X)	+= gpio-tc3589x.o
-CFLAGS_gpio-tegra.o		= -Werror
 ifeq ($(CONFIG_ARM64),y)
 CFLAGS_gpio-tegra.o		+= -Iarch/arm/mach-tegra/include
 endif

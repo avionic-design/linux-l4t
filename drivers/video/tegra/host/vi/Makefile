@@ -1,7 +1,6 @@
 GCOV_PROFILE := y
 ccflags-y += -Idrivers/video/tegra/host
 ccflags-y += -Idrivers/video/tegra/camera
-ccflags-y += -Werror
 
 obj-y += vi_irq.o
 obj-y += tegra_vi.o

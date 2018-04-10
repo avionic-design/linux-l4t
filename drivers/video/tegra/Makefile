@@ -1,5 +1,4 @@
 GCOV_PROFILE := y
-#subdir-ccflags-y := -Werror
 EXTRA_CFLAGS += -Idrivers/video/tegra/host
 ccflags-$(CONFIG_ADF_TEGRA) += -Idrivers/staging/android
 ifeq ($(CONFIG_ARM64),y)
