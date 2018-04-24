@@ -416,8 +416,7 @@
 			io_vdd-supply = <&ext_1v8>;
 			pll_vdd-supply = <&ext_1v2>;
 
-			//spi-max-frequency = <22000000>;
-			spi-max-frequency = <1000000>;
+			spi-max-frequency = <22000000>;
 
 			reset-gpio = <&gpio TEGRA_GPIO(T, 0) GPIO_ACTIVE_LOW>;
 
@@ -501,8 +500,7 @@
 			io_vdd-supply = <&ext_1v8>;
 			pll_vdd-supply = <&ext_1v2>;
 
-			//spi-max-frequency = <22000000>;
-			spi-max-frequency = <1000000>;
+			spi-max-frequency = <22000000>;
 
 			reset-gpio = <&gpio TEGRA_GPIO(EE, 2) GPIO_ACTIVE_LOW>;
 
