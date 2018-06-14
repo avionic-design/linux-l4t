@@ -227,7 +227,9 @@
 				/* Select HDMI output B */
 				<TEGRA_GPIO(H, 5)>,
 				/* Enable HDMI output */
-				<TEGRA_GPIO(H, 4)>;
+				<TEGRA_GPIO(H, 4)>,
+				/* Enable the FGPA */
+				<TEGRA_GPIO(K, 5)>;
 		};
 	};
 
