@@ -1,0 +1,16 @@
+#include "tegra124-vxb.dts"
+
+/ {
+	host1x {
+		dsi {
+			panel-dsi2sdi {
+				nvidia,dsi-refresh-rate = <25>;
+				display-timings {
+					1920x1080-30 {
+						hfront-porch = <528>;
+					};
+				};
+			};
+		};
+	};
+};
