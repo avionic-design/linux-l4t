@@ -20,11 +20,13 @@
 #include <linux/highmem.h>
 #include <linux/perf_event.h>
 
+#include <asm/cp15.h>
 #include <asm/exception.h>
 #include <asm/pgtable.h>
 #include <asm/system_misc.h>
 #include <asm/system_info.h>
 #include <asm/tlbflush.h>
+#include <asm/cputype.h>
 
 #include "fault.h"
 
@@ -393,9 +395,30 @@ no_context:
 	__do_kernel_fault(mm, addr, fsr, regs);
 	return 0;
 }
+
+static int __maybe_unused
+do_pabt_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
+{
+#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
+	if (addr > TASK_SIZE) {
+		switch (read_cpuid_part_number()) {
+		case ARM_CPU_PART_CORTEX_A15:
+			write_sysreg(0, ICIALLU);
+			break;
+		}
+	}
+#endif
+	return do_page_fault(addr, fsr, regs);
+}
 #else					/* CONFIG_MMU */
 static int
 do_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
+{
+	return 0;
+}
+
+static int
+do_pabt_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 {
 	return 0;
 }

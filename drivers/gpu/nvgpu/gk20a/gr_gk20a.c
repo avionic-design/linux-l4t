@@ -1,7 +1,7 @@
 /*
  * GK20A Graphics
  *
- * Copyright (c) 2011-2017, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -26,6 +26,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/firmware.h>
 #include <linux/nvhost.h>
+#include <asm/barrier.h>
 
 #include "gk20a.h"
 #include "kind_gk20a.h"
@@ -2697,6 +2698,7 @@ void gk20a_free_channel_ctx(struct channel_gk20a *c)
 
 	memset(&c->ch_ctx, 0, sizeof(struct channel_ctx_gk20a));
 
+	c->num_objects = 0;
 	c->first_init = false;
 }
 
@@ -2847,6 +2849,8 @@ int gk20a_alloc_obj_ctx(struct channel_gk20a  *c,
 		c->first_init = true;
 	}
 
+	c->num_objects++;
+
 	gk20a_dbg_fn("done");
 	return 0;
 out:
@@ -2856,6 +2860,29 @@ out:
 	   they pass, no need to undo. */
 	gk20a_err(dev_from_gk20a(g), "fail");
 	return err;
+}
+
+int gk20a_free_obj_ctx(struct channel_gk20a  *c,
+		       struct nvhost_free_obj_ctx_args *args)
+{
+	unsigned long timeout = gk20a_get_gr_idle_timeout(c->g);
+
+	gk20a_dbg_fn("");
+
+	if (c->num_objects == 0)
+		return 0;
+
+	c->num_objects--;
+
+	if (c->num_objects == 0) {
+		c->first_init = false;
+		gk20a_disable_channel(c,
+			!c->has_timedout,
+			timeout);
+		gr_gk20a_unmap_channel_patch_ctx(c);
+	}
+
+	return 0;
 }
 
 static void gk20a_remove_gr_support(struct gr_gk20a *gr)
@@ -3568,6 +3595,7 @@ int gr_gk20a_add_zbc(struct gk20a *g, struct gr_gk20a *gr,
 	mutex_lock(&gr->zbc_lock);
 	switch (zbc_val->type) {
 	case GK20A_ZBC_TYPE_COLOR:
+		speculation_barrier();
 		/* search existing tables */
 		for (i = 0; i < gr->max_used_color_index; i++) {
 
@@ -3606,6 +3634,7 @@ int gr_gk20a_add_zbc(struct gk20a *g, struct gr_gk20a *gr,
 		}
 		break;
 	case GK20A_ZBC_TYPE_DEPTH:
+		speculation_barrier();
 		/* search existing tables */
 		for (i = 0; i < gr->max_used_depth_index; i++) {
 

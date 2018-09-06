@@ -3,7 +3,7 @@
  *
  * GK20A Graphics channel
  *
- * Copyright (c) 2011-2017, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -669,7 +669,7 @@ void gk20a_free_channel(struct channel_gk20a *ch, bool finish)
 	memset(&ch->ramfc, 0, sizeof(struct mem_desc_sub));
 
 	/* free gpfifo */
-	if (ch->gpfifo.gpu_va)
+	if (ch->vm && ch->gpfifo.gpu_va)
 		gk20a_gmmu_unmap(ch_vm, ch->gpfifo.gpu_va,
 			ch->gpfifo.size, gk20a_mem_flag_none);
 	if (ch->gpfifo.cpu_va)
@@ -698,8 +698,9 @@ unbind:
 	channel_gk20a_unbind(ch);
 	channel_gk20a_free_inst(g, ch);
 
-	ch->vpr = false;
+	gk20a_vm_put(ch->vm); /* Don't use VM after this. */
 	ch->vm = NULL;
+	ch->vpr = false;
 	WARN_ON(ch->sync);
 
 	/* unlink all debug sessions */
@@ -2064,6 +2065,18 @@ long gk20a_channel_ioctl(struct file *filp,
 		}
 		err = gk20a_alloc_obj_ctx(ch,
 				(struct nvhost_alloc_obj_ctx_args *)buf);
+		gk20a_idle(dev);
+		break;
+	case NVHOST_IOCTL_CHANNEL_FREE_OBJ_CTX:
+		err = gk20a_busy(dev);
+		if (err) {
+			dev_err(&dev->dev,
+				"%s: failed to host gk20a for ioctl cmd: 0x%x",
+				__func__, cmd);
+			return err;
+		}
+		err = gk20a_free_obj_ctx(ch,
+				(struct nvhost_free_obj_ctx_args *)buf);
 		gk20a_idle(dev);
 		break;
 	case NVHOST_IOCTL_CHANNEL_ALLOC_GPFIFO:
