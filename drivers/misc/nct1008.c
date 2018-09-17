@@ -1100,7 +1100,6 @@ static void nct1008_work_func(struct work_struct *work)
 	struct nct1008_data *data = container_of(work, struct nct1008_data,
 						work);
 	int err;
-	struct timespec ts;
 	int intr_status;
 
 	mutex_lock(&data->mutex);
@@ -1129,8 +1128,7 @@ static void nct1008_work_func(struct work_struct *work)
 	nct1008_write_reg(data->client, ONE_SHOT, 0x1);
 
 	/* Give hardware necessary time to finish conversion */
-	ts = ns_to_timespec(MAX_CONV_TIME_ONESHOT_MS * 1000 * 1000);
-	hrtimer_nanosleep(&ts, NULL, HRTIMER_MODE_REL, CLOCK_MONOTONIC);
+	msleep(MAX_CONV_TIME_ONESHOT_MS);
 
 	nct1008_read_reg(data->client, STATUS_RD);
 
